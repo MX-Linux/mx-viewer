@@ -1,0 +1,17 @@
+Source: mx-flash
+Section: system
+Priority: optional
+Maintainer: Steven Pusser (Stevo) <maintainer@mepiscommunity.org>
+Build-Depends: debhelper (>=7.0.50~),
+               libqt4-dev, 
+	       libqtwebkit-dev
+Standards-Version: 3.9.4
+Homepage: https://github.com/AdrianTM/mx-view
+
+Package: mx-flash
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Displays a URL in a window
+ MX View displays a URL in a new window. It's an utility program used for
+ displaying help information by various MX Linux utilities
+
