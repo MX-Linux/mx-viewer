@@ -57,8 +57,8 @@ void mxview::displaySite(QString url, QString title) {
     this->setWindowTitle(title);
 
     // set webview
-    QWebView *webview = new QWebView(this);
-    webview->resize(width, height);
-    webview->load(QUrl(url));
+    QWebView *webview = new QWebView(this);    
+    this->setCentralWidget(webview);
+    webview->load(QUrl(url));    
     webview->show();
 }
