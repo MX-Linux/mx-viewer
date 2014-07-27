@@ -28,6 +28,7 @@
 int main(int argc, char *argv[])
 {    
     QApplication a(argc, argv);
+    a.setWindowIcon(QIcon("/usr/share/pixmaps/mx/mx-view.png"));
 
     QString arg1 = argv[1];
     if (argc == 1 or arg1 == "--help" or arg1 == "-h") {

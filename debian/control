@@ -1,14 +1,14 @@
-Source: mx-flash
+Source: mx-view
 Section: system
 Priority: optional
-Maintainer: Steven Pusser (Stevo) <maintainer@mepiscommunity.org>
+Maintainer: Adrian <adrian@mxlinux.org>
 Build-Depends: debhelper (>=7.0.50~),
                libqt4-dev, 
 	       libqtwebkit-dev
 Standards-Version: 3.9.4
 Homepage: https://github.com/AdrianTM/mx-view
 
-Package: mx-flash
+Package: mx-view
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: Displays a URL in a window
