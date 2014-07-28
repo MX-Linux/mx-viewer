@@ -26,15 +26,15 @@
 #include "mxview.h"
 
 int main(int argc, char *argv[])
-{    
+{
     QApplication a(argc, argv);
-    a.setWindowIcon(QIcon("/usr/share/pixmaps/mx/mx-view.png"));
+    a.setWindowIcon(QIcon("/usr/share/pixmaps/mx/mx-viewer.png"));
 
     QString arg1 = argv[1];
     if (argc == 1 or arg1 == "--help" or arg1 == "-h") {
         QMessageBox::information(0, QString::null,
                                  QApplication::tr("Usage: call program with: mx-view URL [window title]\n\n"
-                                                  "The 'mx-view' program will display the URL content in a window, window title is optional."));
+                                                  "The 'mx-viewer' program will display the URL content in a window, window title is optional."));
         return 1;
     }
 
@@ -43,6 +43,6 @@ int main(int argc, char *argv[])
 
     mxview w(url, title);
     w.show();
-    
+
     return a.exec();
 }
