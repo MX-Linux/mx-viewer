@@ -28,9 +28,6 @@
 #include <QDesktopWidget>
 #include <QWebView>
 #include <QToolBar>
-#include <QToolButton>
-#include <QStyle>
-
 
 mxview::mxview(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
@@ -49,26 +46,20 @@ void mxview::displaySite(QString url, QString title) {
     int height = 500;
 
     // set toolbar
-    QToolBar *myToolBar = new QToolBar();
-    this->addToolBar(myToolBar);
+    QToolBar *toolBar = new QToolBar();
+    this->addToolBar(toolBar);
 
-    QToolButton *backButton = new QToolButton;
-    QToolButton *fwdButton = new QToolButton;
-    QToolButton *reloadButton = new QToolButton;
+    // set webview
+    QWebView *webview = new QWebView(this);
+    this->setCentralWidget(webview);
+    webview->load(QUrl(url));
+    webview->show();
 
-    backButton->setIcon(style()->standardIcon(QStyle::SP_ArrowLeft));
-    backButton->setToolTip("Go Back");
-    myToolBar->addWidget(backButton);
+    toolBar->addAction(webview->pageAction(QWebPage::Back));
+    toolBar->addAction(webview->pageAction(QWebPage::Forward));
+    toolBar->addAction(webview->pageAction(QWebPage::Reload));
 
-    fwdButton->setIcon(style()->standardIcon(QStyle::SP_ArrowRight));
-    fwdButton->setToolTip("Go Forward");
-    myToolBar->addWidget(fwdButton);
-
-    reloadButton->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
-    reloadButton->setToolTip("Reload");
-    myToolBar->addWidget(reloadButton);
-
-    myToolBar->hide();
+    toolBar->hide();
 
     // resize main window
     this->resize(width, height);
@@ -82,15 +73,6 @@ void mxview::displaySite(QString url, QString title) {
     // set title
     this->setWindowTitle(title);
 
-    // set webview
-    QWebView *webview = new QWebView(this);    
-    this->setCentralWidget(webview);
-    webview->load(QUrl(url));
-    webview->show();
-
     // connect buttons
-    connect(webview, SIGNAL(loadStarted()), myToolBar, SLOT(show()));
-    connect(backButton, SIGNAL(clicked()), webview, SLOT(back()));
-    connect(fwdButton, SIGNAL(clicked()), webview, SLOT(forward()));
-    connect(reloadButton, SIGNAL(clicked()), webview, SLOT(reload()));
+    connect(webview, SIGNAL(loadStarted()), toolBar, SLOT(show()));
 }
