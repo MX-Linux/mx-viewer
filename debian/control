@@ -1,4 +1,4 @@
-Source: mx-view
+Source: mx-viewer
 Section: system
 Priority: optional
 Maintainer: Adrian <adrian@mxlinux.org>
@@ -6,12 +6,12 @@ Build-Depends: debhelper (>=7.0.50~),
                libqt4-dev, 
 	       libqtwebkit-dev
 Standards-Version: 3.9.4
-Homepage: https://github.com/AdrianTM/mx-view
+Homepage: https://github.com/AdrianTM/mx-viewer
 
-Package: mx-view
+Package: mx-viewer
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: Displays a URL in a window
- MX View displays a URL in a new window. It's an utility program used for
+ MX Viewer displays a URL in a new window. It's an utility program used for
  displaying help information by various MX Linux utilities
 
