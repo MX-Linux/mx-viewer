@@ -49,7 +49,7 @@ void mxview::displaySite(QString url, QString title) {
     int height = 500;
 
     // set toolbar
-    QToolBar * myToolBar = new QToolBar();
+    QToolBar *myToolBar = new QToolBar();
     this->addToolBar(myToolBar);
 
     QToolButton *backButton = new QToolButton;
