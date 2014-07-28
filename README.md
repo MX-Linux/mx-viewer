@@ -1,7 +1,7 @@
 mx-viewer
 =========
 
-Small utility program that displays a URL in a new windows
+Small utility program that displays a URL in a new window.
 
 Usage: 
 mx-viewer URL [window-title]
