@@ -73,6 +73,6 @@ void mxview::displaySite(QString url, QString title) {
     // set title
     this->setWindowTitle(title);
 
-    // connect buttons
+    // show toolbar when new page is loaded
     connect(webview, SIGNAL(loadStarted()), toolBar, SLOT(show()));
 }
