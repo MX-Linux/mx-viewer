@@ -1,3 +1,9 @@
+mx-viewer (15.2) mx; urgency=medium
+
+  * added search feature.
+
+ -- Adrian <adrian@mxlinux.org>  Mon, 16 Feb 2015 10:08:03 -0500
+
 mx-viewer (0.14.2mx142+1) mx; urgency=low
 
   * Initial packaging.
