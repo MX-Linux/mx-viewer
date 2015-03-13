@@ -10,8 +10,8 @@ Build-Depends: debhelper (>= 7.0.50~), libqt4-dev, libqtwebkit-dev
 Package-List: 
  mx-viewer deb system optional
 Checksums-Sha1: 
- 4f58385b236e0f2e66c6fc31a4ac6f75d1e57254 11177 mx-viewer_15.3mx14.tar.gz
+ bdfa2801255d99733d702552ad2626fd4bbe3785 11200 mx-viewer_15.3mx14.tar.gz
 Checksums-Sha256: 
- adba6639872d2e226063393ee46a464ae59047860e07491b262fac8bbbfb63c1 11177 mx-viewer_15.3mx14.tar.gz
+ 78c3301153c5f98267c756426dbef846e1bdfbba0f00cc89016481450fe08a8e 11200 mx-viewer_15.3mx14.tar.gz
 Files: 
- 02949a582c0a686f8e5051df7cba895d 11177 mx-viewer_15.3mx14.tar.gz
+ ce054344f14eb3b6d7543ae5206be0ee 11200 mx-viewer_15.3mx14.tar.gz
