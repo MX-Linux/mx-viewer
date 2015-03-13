@@ -26,13 +26,17 @@
 #include <QMainWindow>
 #include <QWebView>
 #include <QLineEdit>
+#include <QProgressBar>
+#include <QTimer>
 
 class mxview : public QMainWindow
 {
     Q_OBJECT
 
 protected:
+    QTimer *timer;
     void keyPressEvent(QKeyEvent* event);
+
 
 public:
     mxview(QString url, QString title, QWidget *parent = 0);
@@ -40,12 +44,16 @@ public:
 
     QWebView *webview;
     QLineEdit *searchBox;
+    QProgressBar *progressBar;
     QString word;
     void displaySite(QString url, QString title);
 
 public slots:
     void search();
     void findInPage();
+    void loading();
+    void done(bool);
+    void procTime();
 };
 
 
