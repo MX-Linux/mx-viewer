@@ -119,7 +119,6 @@ void mxview::loading()
     progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
     progressBar->setFocus();
     progressBar->show();
-    setCursor(QCursor(Qt::BusyCursor));
     timer->start(100);
     disconnect(timer, SIGNAL(timeout()), 0, 0);
     connect(timer, SIGNAL(timeout()), SLOT(procTime()));
