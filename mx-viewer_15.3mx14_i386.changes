@@ -15,14 +15,14 @@ Changes:
  .
    * added progress bar
 Checksums-Sha1: 
- 7af4fb84c39ee7484bc9d212cd05cd734979d97e 601 mx-viewer_15.3mx14.dsc
- 4f58385b236e0f2e66c6fc31a4ac6f75d1e57254 11177 mx-viewer_15.3mx14.tar.gz
- d56c6914501dc58648e529cceba91c656509fd42 10292 mx-viewer_15.3mx14_i386.deb
+ 432e19075f0606a23798f782be6467089474fe7d 601 mx-viewer_15.3mx14.dsc
+ bdfa2801255d99733d702552ad2626fd4bbe3785 11200 mx-viewer_15.3mx14.tar.gz
+ 63030e77c0c8b71e67b69cf231558efa7229db27 10322 mx-viewer_15.3mx14_i386.deb
 Checksums-Sha256: 
- a2c2bdc119d139cb9baadcd370a3643699fa784da366f858ecb26044608aa1a4 601 mx-viewer_15.3mx14.dsc
- adba6639872d2e226063393ee46a464ae59047860e07491b262fac8bbbfb63c1 11177 mx-viewer_15.3mx14.tar.gz
- d33a26fbe1a257dd5ace43174abbb11e3673ee91dc00a25345ad6a343c6dc264 10292 mx-viewer_15.3mx14_i386.deb
+ ea2c0293742c3c550e39d4bbe584ffe6e3faecf14b99eea1f047b5ba7d91091d 601 mx-viewer_15.3mx14.dsc
+ 78c3301153c5f98267c756426dbef846e1bdfbba0f00cc89016481450fe08a8e 11200 mx-viewer_15.3mx14.tar.gz
+ 74b1173f7161d5414c4d1bf3f412361e158b0c91e525068b3f3c27b5ed8ff424 10322 mx-viewer_15.3mx14_i386.deb
 Files: 
- 522707f3551d313aaeb665c2fc2e0a85 601 system optional mx-viewer_15.3mx14.dsc
- 02949a582c0a686f8e5051df7cba895d 11177 system optional mx-viewer_15.3mx14.tar.gz
- ba6b8980b6ecae3001f8974b7d05b922 10292 system optional mx-viewer_15.3mx14_i386.deb
+ a7bf1af5bbbbfd4a40bfb7909df88a2a 601 system optional mx-viewer_15.3mx14.dsc
+ ce054344f14eb3b6d7543ae5206be0ee 11200 system optional mx-viewer_15.3mx14.tar.gz
+ 8eeed0ba3f3501fa918e15c0d5f13935 10322 system optional mx-viewer_15.3mx14_i386.deb

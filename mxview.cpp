@@ -56,8 +56,7 @@ void mxview::displaySite(QString url, QString title)
     webview = new QWebView(this);
     this->setCentralWidget(webview);
     webview->load(QUrl::fromUserInput(url));
-    webview->show();
-    loading();
+    webview->show();    
 
     toolBar->addAction(webview->pageAction(QWebPage::Back));
     toolBar->addAction(webview->pageAction(QWebPage::Forward));
@@ -68,6 +67,7 @@ void mxview::displaySite(QString url, QString title)
 
     // resize main window
     this->resize(width, height);
+    loading(); // display loading progressBar
 
     // center main window
     QRect screenGeometry = QApplication::desktop()->screenGeometry();
@@ -116,7 +116,7 @@ void mxview::loading()
     progressBar = new QProgressBar(this);
     progressBar->setFixedHeight(20);
     progressBar->setTextVisible(false);
-    progressBar->move(800/2 - progressBar->width()/2, 500 - 40); //todo change numbers to variables
+    progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
     progressBar->setFocus();
     progressBar->show();
     setCursor(QCursor(Qt::BusyCursor));
