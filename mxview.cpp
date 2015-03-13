@@ -32,8 +32,9 @@
 
 mxview::mxview(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
-{    
+{
     timer = new QTimer(this);
+    searchBox = new QLineEdit(this);
     displaySite(url, title);
 }
 
@@ -56,7 +57,7 @@ void mxview::displaySite(QString url, QString title)
     webview = new QWebView(this);
     this->setCentralWidget(webview);
     webview->load(QUrl::fromUserInput(url));
-    webview->show();    
+    webview->show();
 
     toolBar->addAction(webview->pageAction(QWebPage::Back));
     toolBar->addAction(webview->pageAction(QWebPage::Forward));
@@ -72,7 +73,7 @@ void mxview::displaySite(QString url, QString title)
     // center main window
     QRect screenGeometry = QApplication::desktop()->screenGeometry();
     int x = (screenGeometry.width()-this->width()) / 2;
-    int y = (screenGeometry.height()-this->height()) / 2;    
+    int y = (screenGeometry.height()-this->height()) / 2;
     this->move(x, y);
 
     // set title
@@ -85,7 +86,7 @@ void mxview::displaySite(QString url, QString title)
 }
 
 void mxview::search()
-{    
+{
     searchBox = new QLineEdit(this);
     searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
     searchBox->setFocus();
@@ -108,6 +109,13 @@ void mxview::keyPressEvent(QKeyEvent *event)
     if (event->key() == Qt::Key_Escape)
         if (searchBox->isVisible())
             searchBox->hide();
+}
+
+// resize event
+void mxview::resizeEvent(QResizeEvent *event)
+{
+    progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
+    searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
 }
 
 // display progressbar while loading page
@@ -140,3 +148,4 @@ void mxview::procTime()
     }
     progressBar->setValue(i);
 }
+

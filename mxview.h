@@ -28,6 +28,7 @@
 #include <QLineEdit>
 #include <QProgressBar>
 #include <QTimer>
+//#include <QResizeEvent>
 
 class mxview : public QMainWindow
 {
@@ -35,8 +36,8 @@ class mxview : public QMainWindow
 
 protected:
     QTimer *timer;
-    void keyPressEvent(QKeyEvent* event);
-
+    void keyPressEvent(QKeyEvent *event);
+    void resizeEvent(QResizeEvent *event);
 
 public:
     mxview(QString url, QString title, QWidget *parent = 0);
