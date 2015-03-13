@@ -32,7 +32,8 @@
 
 mxview::mxview(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
-{
+{    
+    timer = new QTimer(this);
     displaySite(url, title);
 }
 
@@ -56,6 +57,7 @@ void mxview::displaySite(QString url, QString title)
     this->setCentralWidget(webview);
     webview->load(QUrl::fromUserInput(url));
     webview->show();
+    loading();
 
     toolBar->addAction(webview->pageAction(QWebPage::Back));
     toolBar->addAction(webview->pageAction(QWebPage::Forward));
@@ -70,7 +72,7 @@ void mxview::displaySite(QString url, QString title)
     // center main window
     QRect screenGeometry = QApplication::desktop()->screenGeometry();
     int x = (screenGeometry.width()-this->width()) / 2;
-    int y = (screenGeometry.height()-this->height()) / 2;
+    int y = (screenGeometry.height()-this->height()) / 2;    
     this->move(x, y);
 
     // set title
@@ -78,6 +80,8 @@ void mxview::displaySite(QString url, QString title)
 
     // show toolbar when new page is loaded
     connect(webview, SIGNAL(loadStarted()), toolBar, SLOT(show()));
+    connect(webview, SIGNAL(loadStarted()), SLOT(loading()));
+    connect(webview, SIGNAL(loadFinished(bool)), SLOT(done(bool)));
 }
 
 void mxview::search()
@@ -97,10 +101,43 @@ void mxview::findInPage()
 }
 
 // process keystrokes
-void mxview::keyPressEvent(QKeyEvent *event) {
+void mxview::keyPressEvent(QKeyEvent *event)
+{
     if (event->matches(QKeySequence::Find))
         search();
     if (event->key() == Qt::Key_Escape)
         if (searchBox->isVisible())
             searchBox->hide();
+}
+
+// display progressbar while loading page
+void mxview::loading()
+{
+    progressBar = new QProgressBar(this);
+    progressBar->setFixedHeight(20);
+    progressBar->setTextVisible(false);
+    progressBar->move(800/2 - progressBar->width()/2, 500 - 40); //todo change numbers to variables
+    progressBar->setFocus();
+    progressBar->show();
+    setCursor(QCursor(Qt::BusyCursor));
+    timer->start(100);
+    disconnect(timer, SIGNAL(timeout()), 0, 0);
+    connect(timer, SIGNAL(timeout()), SLOT(procTime()));
+}
+
+// done loading
+void mxview::done(bool)
+{
+    progressBar->hide();
+    timer->stop();
+}
+
+// advance progressbar
+void mxview::procTime()
+{
+    int i = progressBar->value() + 5;
+    if (i > 100) {
+        i = 0;
+    }
+    progressBar->setValue(i);
 }

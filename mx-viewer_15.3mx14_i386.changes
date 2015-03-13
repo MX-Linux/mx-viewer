@@ -1,0 +1,28 @@
+Format: 1.8
+Date: Fri, 13 Mar 2015 12:16:37 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source i386
+Version: 15.3mx14
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description: 
+ mx-viewer  - Displays a URL in a window
+Changes: 
+ mx-viewer (15.3mx14) mx; urgency=medium
+ .
+   * added progress bar
+Checksums-Sha1: 
+ 7af4fb84c39ee7484bc9d212cd05cd734979d97e 601 mx-viewer_15.3mx14.dsc
+ 4f58385b236e0f2e66c6fc31a4ac6f75d1e57254 11177 mx-viewer_15.3mx14.tar.gz
+ d56c6914501dc58648e529cceba91c656509fd42 10292 mx-viewer_15.3mx14_i386.deb
+Checksums-Sha256: 
+ a2c2bdc119d139cb9baadcd370a3643699fa784da366f858ecb26044608aa1a4 601 mx-viewer_15.3mx14.dsc
+ adba6639872d2e226063393ee46a464ae59047860e07491b262fac8bbbfb63c1 11177 mx-viewer_15.3mx14.tar.gz
+ d33a26fbe1a257dd5ace43174abbb11e3673ee91dc00a25345ad6a343c6dc264 10292 mx-viewer_15.3mx14_i386.deb
+Files: 
+ 522707f3551d313aaeb665c2fc2e0a85 601 system optional mx-viewer_15.3mx14.dsc
+ 02949a582c0a686f8e5051df7cba895d 11177 system optional mx-viewer_15.3mx14.tar.gz
+ ba6b8980b6ecae3001f8974b7d05b922 10292 system optional mx-viewer_15.3mx14_i386.deb
