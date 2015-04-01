@@ -15,14 +15,14 @@ Changes:
  .
    * added zoom in +, zoom out -, restore size 0
 Checksums-Sha1: 
- d514fa7cb1273988b49aea3baba5b991538fc344 601 mx-viewer_15.4mx14.dsc
- 611631c2248dbf2cc47fb552467b6f0b55fc0a71 11340 mx-viewer_15.4mx14.tar.gz
- 9c07675be697714a3412cb062b8e275cca2739f6 10654 mx-viewer_15.4mx14_i386.deb
+ fdde9f8a379d98499647d299f0975c1c3d74ccb6 601 mx-viewer_15.4mx14.dsc
+ ccec6f140aa5a1fcfee3c59181ade03394732c41 22842 mx-viewer_15.4mx14.tar.gz
+ 97d90e51e6fdbd8c864d91afc86c6ed4f6f76a03 10648 mx-viewer_15.4mx14_i386.deb
 Checksums-Sha256: 
- fa49a96179c15007ecd8e2ef34a468f6e7c1b628eb363205b4c75ca2fee5007c 601 mx-viewer_15.4mx14.dsc
- 4f36711b9634ff01bba3e767ab38311f95f2b6efb190733f9eee61fc97ab8a59 11340 mx-viewer_15.4mx14.tar.gz
- 1981d8bcda05e7064a87fe7e055beae14dced3470ac6838359083da170393aaa 10654 mx-viewer_15.4mx14_i386.deb
+ 7c65186477277eba9290f109202ef8539fab7e09155418148777091b0f18c95e 601 mx-viewer_15.4mx14.dsc
+ f5ff1d937480fe4c3ed1cb6dbdf3b923b2f45309cea1d38f61532e4a9670b0e8 22842 mx-viewer_15.4mx14.tar.gz
+ a14ac180545d469b002d489a3c2dd9d4b54ff3f47b724c2556e7ec92baa8f5ad 10648 mx-viewer_15.4mx14_i386.deb
 Files: 
- cf4c0a6d6a352774bc838549145f811d 601 system optional mx-viewer_15.4mx14.dsc
- b9e533c97f99e267d7b039c1d64abc8e 11340 system optional mx-viewer_15.4mx14.tar.gz
- 98951fa6af782d66408be2627a5b2450 10654 system optional mx-viewer_15.4mx14_i386.deb
+ 9cf28e650da8716fb32647200aa6b057 601 system optional mx-viewer_15.4mx14.dsc
+ b3007713ab44956510a60653e2699aee 22842 system optional mx-viewer_15.4mx14.tar.gz
+ 9db23f3d894a6c103a802e3cc8dd5e7e 10648 system optional mx-viewer_15.4mx14_i386.deb

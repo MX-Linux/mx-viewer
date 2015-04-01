@@ -28,7 +28,7 @@
 #include <QToolBar>
 #include <QKeyEvent>
 
-#include <QDebug>
+//#include <QDebug>
 
 mxview::mxview(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
