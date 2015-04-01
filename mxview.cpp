@@ -28,7 +28,7 @@
 #include <QToolBar>
 #include <QKeyEvent>
 
-//#include <QDebug>
+#include <QDebug>
 
 mxview::mxview(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
@@ -104,11 +104,18 @@ void mxview::findInPage()
 // process keystrokes
 void mxview::keyPressEvent(QKeyEvent *event)
 {
+    qreal zoom = webview->zoomFactor();
     if (event->matches(QKeySequence::Find))
         search();
     if (event->key() == Qt::Key_Escape)
         if (searchBox->isVisible())
             searchBox->hide();
+    if (event->key() == Qt::Key_Plus)
+        webview->setZoomFactor(zoom + 0.1);
+    if (event->key() == Qt::Key_Minus)
+        webview->setZoomFactor(zoom - 0.1);
+    if (event->key() == Qt::Key_0)
+        webview->setZoomFactor(1);
 }
 
 // resize event

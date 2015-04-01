@@ -30,15 +30,21 @@ int main(int argc, char *argv[])
     a.setWindowIcon(QIcon("/usr/share/pixmaps/mx/mx-viewer.png"));
 
     QString arg1 = argv[1];
-    if (argc == 1 or arg1 == "--help" or arg1 == "-h") {
+    QString url;
+    QString title;
+
+    if (argc == 1) {
+        url = "http://google.com";
+        title = "MX Viewer";
+    } else if (arg1 == "--help" or arg1 == "-h") {
         QMessageBox::information(0, QString::null,
                                  QApplication::tr("Usage: call program with: mx-view URL [window title]\n\n"
                                                   "The 'mx-viewer' program will display the URL content in a window, window title is optional."));
         return 1;
+    } else {
+        url = argc > 1 ? QString(argv[1]) : QString();
+        title = argc > 2 ? QString(argv[2]) : QString();
     }
-
-    const QString url = argc > 1 ? QString(argv[1]) : QString();
-    const QString title = argc > 2 ? QString(argv[2]) : QString();
 
     mxview w(url, title);
     w.show();
