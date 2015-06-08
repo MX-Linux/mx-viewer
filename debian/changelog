@@ -1,3 +1,11 @@
+mx-viewer (15.4.1mx14) mx; urgency=medium
+
+  * Provides: x-www-browser.
+  * Add qtchooser and qt4-default as build-depends to avoid any Qt 5
+    and Qt 3 qmake issues on other platforms.
+
+ -- Steven Pusser (Stevo) <maintainer@mepiscommunity.org>  Sat, 06 Jun 2015 19:05:48 -0700
+
 mx-viewer (15.4mx14) mx; urgency=medium
 
   * added zoom in +, zoom out -, restore size 0
