@@ -1,16 +1,20 @@
 Source: mx-viewer
 Section: system
 Priority: optional
-Maintainer: Adrian <adrian@mxlinux.org>
+Maintainer: Steven Pusser (Stevo) <maintainer@mepiscommunity.org>
+Bugs: mailto: maintainer@mepiscommunity.org
+XSBC-Original-Maintainer: Adrian <adrian@mxlinux.org>
 Build-Depends: debhelper (>=7.0.50~),
-               libqt4-dev, 
-	       libqtwebkit-dev
+               libqt4-dev,
+               libqtwebkit-dev,
+               qtchooser | qt4-default | libqt4-dev (<< 4:4.8.6) 
 Standards-Version: 3.9.4
 Homepage: https://github.com/AdrianTM/mx-viewer
 
 Package: mx-viewer
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
+Provides: x-www-browser 
 Description: Displays a URL in a window
  MX Viewer displays a URL in a new window. It's an utility program used for
  displaying help information by various MX Linux utilities
