@@ -5,9 +5,8 @@ Maintainer: Steven Pusser (Stevo) <maintainer@mepiscommunity.org>
 Bugs: mailto: maintainer@mepiscommunity.org
 XSBC-Original-Maintainer: Adrian <adrian@mxlinux.org>
 Build-Depends: debhelper (>=7.0.50~),
-               libqt4-dev,
-               libqtwebkit-dev,
-               qtchooser | qt4-default | libqt4-dev (<< 4:4.8.6) 
+               qt5-qmake,
+               libqt5webkit5-dev
 Standards-Version: 3.9.4
 Homepage: https://github.com/AdrianTM/mx-viewer
 

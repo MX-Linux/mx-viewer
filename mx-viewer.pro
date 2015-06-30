@@ -21,9 +21,7 @@
 # * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
 # **********************************************************************/
 
-QT       += core gui webkit
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       += core gui webkitwidgets
 
 TARGET = mx-viewer
 TEMPLATE = app
