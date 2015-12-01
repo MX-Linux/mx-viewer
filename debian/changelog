@@ -1,3 +1,9 @@
+mx-viewer (15.12mx15) mx; urgency=medium
+
+  * moved icon location
+
+ -- Adrian <adrian@mxlinux.org>  Tue, 01 Dec 2015 08:56:57 -0500
+
 mx-viewer (15.7.1mx15) mx; urgency=medium
 
   * added build-deps, fixed license

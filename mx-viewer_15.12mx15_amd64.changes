@@ -1,0 +1,44 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+Format: 1.8
+Date: Tue, 01 Dec 2015 08:56:57 -0500
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 15.12mx15
+Distribution: mx
+Urgency: medium
+Maintainer: Steven Pusser (Stevo) <maintainer@mepiscommunity.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (15.12mx15) mx; urgency=medium
+ .
+   * moved icon location
+Checksums-Sha1:
+ dbde8d52b0865c6da9e085aa37051035fe946421 1237 mx-viewer_15.12mx15.dsc
+ 678de4a3394f9f2401b6b21fd943b07d3df20954 5676 mx-viewer_15.12mx15.tar.xz
+ b1f24bf921a9e5d7c277212bf98294fc1363adcf 12202 mx-viewer_15.12mx15_amd64.deb
+Checksums-Sha256:
+ 781f83212d1eaaf068cad76a7854962da262edb60bfc8359c8e54470fb34508c 1237 mx-viewer_15.12mx15.dsc
+ ed40545f459c6be5a3c60b6431200ae2576b1e2ba8ce2b9d62257db30cb1f54b 5676 mx-viewer_15.12mx15.tar.xz
+ b4c4b9b857640ec78e629cf5f750ef9de49d123faaaeac96b1115785e0418a47 12202 mx-viewer_15.12mx15_amd64.deb
+Files:
+ f7640a09f10628d6d136848b85a822cd 1237 system optional mx-viewer_15.12mx15.dsc
+ 24b4adcec887a3b7b3029105f9d6dddd 5676 system optional mx-viewer_15.12mx15.tar.xz
+ 6fcbc5aadf968d42789e57e70c76e65d 12202 system optional mx-viewer_15.12mx15_amd64.deb
+Original-Maintainer: Adrian <adrian@mxlinux.org>
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQEcBAEBAgAGBQJWXafkAAoJEHCTjHgGee6YV+0IAL5Epxll1my7ZYTypwKeIJuQ
+VRxDcq+EZLtFmeRNNGvsTQVx0UnIoXt2WHxoFbGWJ5rYeO4lwayrcFilQ2wirp13
+wFmXC5s1YWT3dSt87XW7gEzhh41Ch3Tw3jLZGLCb+gMM5cGY/wGH6pmPcTrshIC6
+WiE78O+uV55WRVsyVvIgSJDsEGZfypBlvV3tx1KEAWpfJb9DPX4JtfNdofyp2WBO
+6ZsvUqfuxl58q77EVehYUKeDvEju11Hf0wkdMGZZAxHS5kDgh4oEsj4xzf7Dn+sA
+eV4T2efAgdeheFihtPUI+J6W6ndgnDCV/4R/8bEgTSMOR4opd0qtiQXU1CDzZ58=
+=0rzn
+-----END PGP SIGNATURE-----

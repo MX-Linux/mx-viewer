@@ -27,7 +27,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    a.setWindowIcon(QIcon("/usr/share/pixmaps/mx/mx-viewer.png"));
+    a.setWindowIcon(QIcon("/usr/share/pixmaps/mx-viewer.png"));
 
     QString arg1 = argv[1];
     QString url;
