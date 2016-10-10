@@ -1,3 +1,9 @@
+mx-viewer (16.10mx16) mx; urgency=medium
+
+  * changed URLs
+
+ -- Adrian <adrian@mxlinux.org>  Mon, 10 Oct 2016 14:59:38 -0400
+
 mx-viewer (15.12.1mx15) mx; urgency=medium
 
   * version bump
