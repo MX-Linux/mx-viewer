@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
         title = argc > 2 ? QString(argv[2]) : QString();
     }
 
-    mxview w(url, title);
+    MainWindow w(url, title);
     w.show();
 
     return a.exec();

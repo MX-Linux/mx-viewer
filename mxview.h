@@ -30,7 +30,7 @@
 #include <QTimer>
 //#include <QResizeEvent>
 
-class mxview : public QMainWindow
+class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
@@ -40,8 +40,8 @@ protected:
     void resizeEvent(QResizeEvent *event);
 
 public:
-    mxview(QString url, QString title, QWidget *parent = 0);
-    ~mxview();
+    MainWindow(QString url, QString title, QWidget *parent = 0);
+    ~MainWindow();
 
     QWebView *webview;
     QLineEdit *searchBox;

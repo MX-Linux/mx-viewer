@@ -28,9 +28,10 @@
 #include <QToolBar>
 #include <QKeyEvent>
 
+//#include <QWebSettings>
 //#include <QDebug>
 
-mxview::mxview(QString url, QString title, QWidget *parent)
+MainWindow::MainWindow(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
 {
     timer = new QTimer(this);
@@ -38,13 +39,13 @@ mxview::mxview(QString url, QString title, QWidget *parent)
     displaySite(url, title);
 }
 
-mxview::~mxview()
+MainWindow::~MainWindow()
 {
 
 }
 
 // pop up a window and display website
-void mxview::displaySite(QString url, QString title)
+void MainWindow::displaySite(QString url, QString title)
 {
     int width = 800;
     int height = 500;
@@ -55,6 +56,10 @@ void mxview::displaySite(QString url, QString title)
 
     // set webview
     webview = new QWebView(this);
+//    QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, true);
+//    webview->settings()->setAttribute(QWebSettings::PluginsEnabled, true);
+
+
     this->setCentralWidget(webview);
     webview->load(QUrl::fromUserInput(url));
     webview->show();
@@ -85,7 +90,7 @@ void mxview::displaySite(QString url, QString title)
     connect(webview, SIGNAL(loadFinished(bool)), SLOT(done(bool)));
 }
 
-void mxview::search()
+void MainWindow::search()
 {
     searchBox = new QLineEdit(this);
     searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
@@ -95,14 +100,14 @@ void mxview::search()
     connect(searchBox,SIGNAL(returnPressed()),this, SLOT(findInPage()));
 }
 
-void mxview::findInPage()
+void MainWindow::findInPage()
 {
     word = searchBox->text();
     webview->findText(word);
 }
 
 // process keystrokes
-void mxview::keyPressEvent(QKeyEvent *event)
+void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     qreal zoom = webview->zoomFactor();
     if (event->matches(QKeySequence::Find))
@@ -119,14 +124,14 @@ void mxview::keyPressEvent(QKeyEvent *event)
 }
 
 // resize event
-void mxview::resizeEvent(QResizeEvent *event)
+void MainWindow::resizeEvent(QResizeEvent *event)
 {
     progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
     searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
 }
 
 // display progressbar while loading page
-void mxview::loading()
+void MainWindow::loading()
 {
     progressBar = new QProgressBar(this);
     progressBar->setFixedHeight(20);
@@ -140,14 +145,14 @@ void mxview::loading()
 }
 
 // done loading
-void mxview::done(bool)
+void MainWindow::done(bool)
 {
     progressBar->hide();
     timer->stop();
 }
 
 // advance progressbar
-void mxview::procTime()
+void MainWindow::procTime()
 {
     int i = progressBar->value() + 5;
     if (i > 100) {
