@@ -39,7 +39,9 @@ MainWindow::MainWindow(QString url, QString title, QWidget *parent)
     searchBox = new QLineEdit(this);
     searchBox->setPlaceholderText(tr("search"));
     searchBox->setClearButtonEnabled(true);
-    searchBox->setMaximumWidth(130);
+    searchBox->setMaximumWidth(150);
+    connect(searchBox,SIGNAL(textChanged(QString)),this, SLOT(findInPage()));
+    connect(searchBox,SIGNAL(returnPressed()),this, SLOT(findInPage()));
 
     toolBar = new QToolBar(this);
     webview = new QWebView(this);
@@ -60,9 +62,6 @@ void MainWindow::displaySite(QString url, QString title)
 
     this->addToolBar(toolBar);
 
-//    QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, true);
-//    webview->settings()->setAttribute(QWebSettings::PluginsEnabled, true);
-
     this->setCentralWidget(webview);
     webview->load(QUrl::fromUserInput(url));
     webview->show();
@@ -75,7 +74,7 @@ void MainWindow::displaySite(QString url, QString title)
 
     QWidget* spacer = new QWidget(this);
     spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    toolBar->addWidget(spacer);
+    toolBar->addWidget(spacer);    
 
     toolBar->addWidget(searchBox);
 
@@ -102,12 +101,8 @@ void MainWindow::displaySite(QString url, QString title)
 
 void MainWindow::search()
 {
-    //searchBox = new QLineEdit(this);
-    //searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
     searchBox->setFocus();
-    searchBox->show();    
-    connect(searchBox,SIGNAL(textChanged(QString)),this, SLOT(findInPage()));
-    connect(searchBox,SIGNAL(returnPressed()),this, SLOT(findInPage()));
+    findInPage();
 }
 
 void MainWindow::findInPage()
@@ -120,7 +115,7 @@ void MainWindow::findInPage()
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     qreal zoom = webview->zoomFactor();
-    if (event->matches(QKeySequence::Find)) {
+    if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_F3) {
         search();
     }
     if (event->key() == Qt::Key_Escape) {
@@ -142,7 +137,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
-    //searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
 }
 
 // display progressbar while loading page

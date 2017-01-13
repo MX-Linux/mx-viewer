@@ -18,27 +18,27 @@ Changes:
  .
    * add search to toolbar, display toolbar permanently
 Checksums-Sha1:
- d26c9937b9c0f7124a07baf110dd9e4cecce7388 1236 mx-viewer_17.1mx16.dsc
- 016d8e607a4d9fd4ead6ad53c47f9f004ec0b5d7 21880 mx-viewer_17.1mx16.tar.xz
- 5edc75fd4c869a30a83cf2097d105e501772bdfa 12468 mx-viewer_17.1mx16_amd64.deb
+ 74841d7ab6f524c72864d294e4193bf2731a159c 1236 mx-viewer_17.1mx16.dsc
+ 671ae5bd1f903748cfdb642587b3c6f36f0de8cf 64380 mx-viewer_17.1mx16.tar.xz
+ 6fc4d748f800dfa62c30f3916184021968270321 12454 mx-viewer_17.1mx16_amd64.deb
 Checksums-Sha256:
- b702cdcee3bb9f7c2be3c8f6fcacecf08dadfb29b85e76f5897a1480ad4d39b7 1236 mx-viewer_17.1mx16.dsc
- f0588a01257baa6bd4c3ee8810a8e9f6f02d768bde66b27f6d005d381bf71161 21880 mx-viewer_17.1mx16.tar.xz
- adcafee702fa59c1425027d9e625b159714239471a86935f2c359378086a8be2 12468 mx-viewer_17.1mx16_amd64.deb
+ 42d7cd3508add350acf32d90376c0fcce533c6661af5769a3769fdc7b902885a 1236 mx-viewer_17.1mx16.dsc
+ 411e5eded942997b183b9c8ab9fb5bc38af33bb0e4009c5aef91c4fad2025cbc 64380 mx-viewer_17.1mx16.tar.xz
+ 26c47628182f61356c23e7030dcf4332c70baac534abc998407a5eaab0ad3b2d 12454 mx-viewer_17.1mx16_amd64.deb
 Files:
- 254ba45ad365002ed9f90df8b3ac13c9 1236 system optional mx-viewer_17.1mx16.dsc
- 2b809b49888e46673dec1f6bdffd5333 21880 system optional mx-viewer_17.1mx16.tar.xz
- 92d8a26318f4cb2e33e86277ed4714bb 12468 system optional mx-viewer_17.1mx16_amd64.deb
+ 48719e60463a020d107e921a44114e55 1236 system optional mx-viewer_17.1mx16.dsc
+ f83e806944b60a4f1effe9ec7d8d1990 64380 system optional mx-viewer_17.1mx16.tar.xz
+ 8c1a6bff3d2baa9cd67733ca20171f1e 12454 system optional mx-viewer_17.1mx16_amd64.deb
 Original-Maintainer: Adrian <adrian@mxlinux.org>
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iQEcBAEBAgAGBQJYeRn5AAoJEHCTjHgGee6YaK4IAM3QlhaKVMBJkAGe3BxcKvLy
-lmfKuwOOe1RyMib/3zfytdJ9xogzfSkItUtoszBYe+bzK278/fevYx/aU1zS2Tnp
-B+/qUNXQ6JFihQKgRmUViFgzmM1rZK2q1kYqvUbNIiHYU00qqkkhGeIAwitPW6Gq
-DrDfVGXv208YbJfGotoLzvTwO9BtVke5bOfu/baqNLulpSmty2DTypcmPWSEvYVS
-nI35lTdegF9boDcvoIo2L63BbHNXL0HPBd5NBSr+2Q8fH0Zq4lutOYEIp6yBPVxu
-czxrWFgNoFeBbj+KY7uqxPLZboWgoG4zxsMTxOYRS2Tz/fEfZfWG7igwaK8ggps=
-=vcB+
+iQEcBAEBAgAGBQJYeTDpAAoJEHCTjHgGee6YhCQH/0QkjIWSm3/aPpututlLdkV9
+bjzJILcnO0jy7KXQt2te/+aU59VFkiHukKymSSa56jJej6iFSOihn3FZ29zlbRhd
+Ju602qdszqDOztMLFN761hNMQ/YOr5mOqOAX1rcl8DsaB4gDRZhMxv74OjcITTFg
+BxiAbALJJR1nBysr8hwQyt7WTNMM7mVim9w/36Q8NCPfKRVqvoEjyHeuxI6DSNjx
+KXp7eHJ9c5VN2cL5osiKhTpZ8wi0CLnYogycTRV4vXVN+clJE7iceFkS8LEWVHnx
+C+Wb+JRaT5/qU2tKI63AXXXss5zBTNbQzAsO9WyBwIoPDVlHqSQkqPLhGjuooU4=
+=A/VR
 -----END PGP SIGNATURE-----
