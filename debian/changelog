@@ -1,3 +1,9 @@
+mx-viewer (17.1mx16) mx; urgency=medium
+
+  * add search to toolbar, display toolbar permanently
+
+ -- Adrian <adrian@mxlinux.org>  Fri, 13 Jan 2017 13:03:38 -0500
+
 mx-viewer (16.10mx16) mx; urgency=medium
 
   * changed URLs

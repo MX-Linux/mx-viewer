@@ -35,7 +35,15 @@ MainWindow::MainWindow(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
 {
     timer = new QTimer(this);
+
     searchBox = new QLineEdit(this);
+    searchBox->setPlaceholderText(tr("search"));
+    searchBox->setClearButtonEnabled(true);
+    searchBox->setMaximumWidth(130);
+
+    toolBar = new QToolBar(this);
+    webview = new QWebView(this);
+
     displaySite(url, title);
 }
 
@@ -50,26 +58,28 @@ void MainWindow::displaySite(QString url, QString title)
     int width = 800;
     int height = 500;
 
-    // set toolbar
-    QToolBar *toolBar = new QToolBar();
     this->addToolBar(toolBar);
 
-    // set webview
-    webview = new QWebView(this);
 //    QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, true);
 //    webview->settings()->setAttribute(QWebSettings::PluginsEnabled, true);
-
 
     this->setCentralWidget(webview);
     webview->load(QUrl::fromUserInput(url));
     webview->show();
+
 
     toolBar->addAction(webview->pageAction(QWebPage::Back));
     toolBar->addAction(webview->pageAction(QWebPage::Forward));
     toolBar->addAction(webview->pageAction(QWebPage::Reload));
     toolBar->addAction(webview->pageAction(QWebPage::Stop));
 
-    toolBar->hide();
+    QWidget* spacer = new QWidget(this);
+    spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    toolBar->addWidget(spacer);
+
+    toolBar->addWidget(searchBox);
+
+    toolBar->show();
 
     // resize main window
     this->resize(width, height);
@@ -92,10 +102,10 @@ void MainWindow::displaySite(QString url, QString title)
 
 void MainWindow::search()
 {
-    searchBox = new QLineEdit(this);
-    searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
+    //searchBox = new QLineEdit(this);
+    //searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
     searchBox->setFocus();
-    searchBox->show();
+    searchBox->show();    
     connect(searchBox,SIGNAL(textChanged(QString)),this, SLOT(findInPage()));
     connect(searchBox,SIGNAL(returnPressed()),this, SLOT(findInPage()));
 }
@@ -110,24 +120,29 @@ void MainWindow::findInPage()
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     qreal zoom = webview->zoomFactor();
-    if (event->matches(QKeySequence::Find))
+    if (event->matches(QKeySequence::Find)) {
         search();
-    if (event->key() == Qt::Key_Escape)
-        if (searchBox->isVisible())
-            searchBox->hide();
-    if (event->key() == Qt::Key_Plus)
+    }
+    if (event->key() == Qt::Key_Escape) {
+        searchBox->clear();
+        webview->setFocus();
+    }
+    if (event->key() == Qt::Key_Plus) {
         webview->setZoomFactor(zoom + 0.1);
-    if (event->key() == Qt::Key_Minus)
+    }
+    if (event->key() == Qt::Key_Minus) {
         webview->setZoomFactor(zoom - 0.1);
-    if (event->key() == Qt::Key_0)
+    }
+    if (event->key() == Qt::Key_0) {
         webview->setZoomFactor(1);
+    }
 }
 
 // resize event
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
-    searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
+    //searchBox->move(this->geometry().width() - 120,this->geometry().height() - 40);
 }
 
 // display progressbar while loading page

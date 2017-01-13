@@ -40,13 +40,8 @@ protected:
     void resizeEvent(QResizeEvent *event);
 
 public:
-    MainWindow(QString url, QString title, QWidget *parent = 0);
+    MainWindow(QString url, QString title, QWidget *parent = 0);    
     ~MainWindow();
-
-    QWebView *webview;
-    QLineEdit *searchBox;
-    QProgressBar *progressBar;
-    QString word;
     void displaySite(QString url, QString title);
 
 public slots:
@@ -55,6 +50,14 @@ public slots:
     void loading();
     void done(bool);
     void procTime();
+
+private:
+    QLineEdit *searchBox;
+    QProgressBar *progressBar;
+    QString word;
+    QToolBar *toolBar;
+    QWebView *webview;
+
 };
 
 
