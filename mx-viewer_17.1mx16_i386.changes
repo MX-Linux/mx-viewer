@@ -1,0 +1,38 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+Format: 1.8
+Date: Fri, 13 Jan 2017 13:03:38 -0500
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: i386
+Version: 17.1mx16
+Distribution: mx
+Urgency: medium
+Maintainer: Steven Pusser (Stevo) <maintainer@mepiscommunity.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (17.1mx16) mx; urgency=medium
+ .
+   * add search to toolbar, display toolbar permanently
+Checksums-Sha1:
+ 75f3b6f9e64ca26330d921f2c04478a7b1b6fb14 12974 mx-viewer_17.1mx16_i386.deb
+Checksums-Sha256:
+ 6c4976eaa923b60a185e7381db8946857cde1b95dfbde2a0d2f580ea8fc463c1 12974 mx-viewer_17.1mx16_i386.deb
+Files:
+ 7c8b9e6c1227fe3358622e47b6c8167e 12974 system optional mx-viewer_17.1mx16_i386.deb
+Original-Maintainer: Adrian <adrian@mxlinux.org>
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQEcBAEBAgAGBQJYeTH/AAoJEHCTjHgGee6YbbcH/2NmgAEvdlhW5OE+mWdpSEyN
+29w60roV8/8GCYdZOGMNRnxkPbe2UVY4IHJLo5qfnVGRRcxyDCpIBGkYgkEBW5et
+5S8ZGyJugnIMIBb7AWtOWoD7mCbX0TEKFwC6ztPW5IJ//be2tM1yf/2Jb9sBgQR3
+orSqEQphoOGvvRb1xcRZsJhIlF+rLo8TM26sttdJeuIz1PZxTfRl95frUDDu7GNe
+p3lCqwk5R4L/b5rk/UHeh9Qz/H0FnXSGTi1KRmOZxRWvUe1yNsKSpdvRiCl5PBz/
+PiP5/90Z+PC+LU8f/3bIQmiowFCE0WgTVliMmPBngSJ0wtq+JBNA207W3r1Od6w=
+=YwAI
+-----END PGP SIGNATURE-----
