@@ -1,9 +1,7 @@
 Source: mx-viewer
 Section: system
 Priority: optional
-Maintainer: Steven Pusser (Stevo) <maintainer@mepiscommunity.org>
-Bugs: mailto: maintainer@mepiscommunity.org
-XSBC-Original-Maintainer: Adrian <adrian@mxlinux.org>
+Maintainer: Adrian <adrian@mxlinux.org>
 Build-Depends: debhelper (>=7.0.50~),
 	qt5-qmake,
 	qt5-default,
