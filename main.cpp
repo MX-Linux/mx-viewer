@@ -24,6 +24,30 @@
 #include <QMessageBox>
 #include "mxview.h"
 
+#include <unistd.h>
+
+static bool dropElevatedPrivileges()
+{
+    //   COULD check, and conditionally skip           if (getuid() == 0) || geteuid == 0)
+
+    //    initgroups()
+    // ref:  https://www.safaribooksonline.com/library/view/secure-programming-cookbook/0596003943/ch01s03.html#secureprgckbk-CHP-1-SECT-3.3
+
+    // change guid + uid   ~~  nobody (uid 65534), nogroup (gid 65534), users (gid 100)
+    setgid(65534);
+    setuid(65534);
+
+    // On systems with defined _POSIX_SAVED_IDS in the unistd.h file, it should be
+    // impossible to regain elevated privs after the setuid() call, above.  Test, try to regain elev priv:
+    if (setuid(0) != -1) return false;   // and the calling fn should EXIT/abort the program
+    // COULD also confirm that setregid() fails
+
+    // change cwd, for good measure (if unable to, treat as overall failure)
+    if (chdir("/tmp") != 0) return false;  // consider fprint()ing or logging the failure reason
+
+    return true;
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -32,6 +56,12 @@ int main(int argc, char *argv[])
     QString arg1 = argv[1];
     QString url;
     QString title;
+
+    if(!dropElevatedPrivileges())
+    {
+        qDebug() << "Could not drop elevated privileges";
+        exit(1);
+    }
 
     if (argc == 1) {
         url = "http://google.com";
