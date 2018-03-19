@@ -1,0 +1,37 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+Format: 1.8
+Date: Tue, 13 Mar 2018 19:15:36 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: i386
+Version: 18.3
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (18.3) mx; urgency=medium
+ .
+   * dropping rights if ran as root
+Checksums-Sha1:
+ ec002ce67e498055c22d5456615c8250a79d7348 13792 mx-viewer_18.3_i386.deb
+Checksums-Sha256:
+ 0f27c61253b7011df91b2f22031386399c545c2d10b042c8390b1004bfa1f1f0 13792 mx-viewer_18.3_i386.deb
+Files:
+ d881d03a122776f5c810e2c02797d58a 13792 system optional mx-viewer_18.3_i386.deb
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQEcBAEBAgAGBQJar7B0AAoJEHCTjHgGee6YS9EIAK7nFg4ewgZoez2CjR3YgKGg
+7LlW7tvWwvM1CF9UJwNHFZ0EehbWQN2FKCjR17AwR5UPeED0JIQGR6yde9DNnAoo
+7rk0RdEUBp8cMVN7+wDRs2dDrnZAn+Ts89C7iqY42hA9ySCPN9iAw2QX2kJxLVlp
+Aq95V5yVMBYugwpuYNg0iPwiSk3n6NM8ZvnJyyHSiouKTL2dG6Po96ci6lX3oUMh
+QuS6YjbYWnpBQpdCFddKe9yih2tf4MsYzes7tw5E6tzgrPNoEaMRPKQmcADA57VO
+RozvsCkWJoDzosq5SbWYaKXZZdlTVM0yKr1iVlTjF3ZD6AeAmi+oWsxL0JXtAn0=
+=Bh8K
+-----END PGP SIGNATURE-----
