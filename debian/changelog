@@ -1,4 +1,4 @@
-mx-viewer (17.3mx17) mx; urgency=medium
+mx-viewer (18.3) mx; urgency=medium
 
   * dropping rights if ran as root
 
