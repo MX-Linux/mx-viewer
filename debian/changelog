@@ -1,3 +1,9 @@
+mx-viewer (18.8) mx; urgency=medium
+
+  * fix icon other themes
+
+ -- Adrian <adrian@mxlinux.org>  Sat, 11 Aug 2018 23:28:47 -0400
+
 mx-viewer (18.3) mx; urgency=medium
 
   * dropping rights if ran as root

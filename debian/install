@@ -1,3 +1,4 @@
-mx-viewer 		 usr/bin
-mx-viewer.png 		 usr/share/pixmaps
+mx-viewer		 usr/bin
+mx-viewer.png		 usr/share/pixmaps
+mx-viewer.png		 usr/share/icons/hicolor/24x24/apps
 license.html		 usr/share/doc/mx-viewer
