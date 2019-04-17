@@ -37,10 +37,10 @@ class MainWindow : public QMainWindow
 protected:
     QTimer *timer;
     void keyPressEvent(QKeyEvent *event);
-    void resizeEvent(QResizeEvent *event);
+    void resizeEvent();
 
 public:
-    MainWindow(QString url, QString title, QWidget *parent = 0);    
+    MainWindow(QString url, QString title, QWidget *parent = 0);
     ~MainWindow();
     void displaySite(QString url, QString title);
 
