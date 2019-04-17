@@ -40,8 +40,8 @@ MainWindow::MainWindow(QString url, QString title, QWidget *parent)
     searchBox->setPlaceholderText(tr("search"));
     searchBox->setClearButtonEnabled(true);
     searchBox->setMaximumWidth(150);
-    connect(searchBox,SIGNAL(textChanged(QString)),this, SLOT(findInPage()));
-    connect(searchBox,SIGNAL(returnPressed()),this, SLOT(findInPage()));
+    connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findInPage);
+    connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findInPage);
 
     toolBar = new QToolBar(this);
     webview = new QWebView(this);
@@ -74,7 +74,7 @@ void MainWindow::displaySite(QString url, QString title)
 
     QWidget* spacer = new QWidget(this);
     spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    toolBar->addWidget(spacer);    
+    toolBar->addWidget(spacer);
 
     toolBar->addWidget(searchBox);
 
@@ -94,9 +94,9 @@ void MainWindow::displaySite(QString url, QString title)
     this->setWindowTitle(title);
 
     // show toolbar when new page is loaded
-    connect(webview, SIGNAL(loadStarted()), toolBar, SLOT(show()));
-    connect(webview, SIGNAL(loadStarted()), SLOT(loading()));
-    connect(webview, SIGNAL(loadFinished(bool)), SLOT(done(bool)));
+    connect(webview, &QWebView::loadStarted, toolBar, &QToolBar::show);
+    connect(webview, &QWebView::loadStarted, this, &MainWindow::loading);
+    connect(webview, &QWebView::loadFinished, this, &MainWindow::done);
 }
 
 void MainWindow::search()
@@ -134,7 +134,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 }
 
 // resize event
-void MainWindow::resizeEvent(QResizeEvent *event)
+void MainWindow::resizeEvent()
 {
     progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
 }
@@ -149,8 +149,8 @@ void MainWindow::loading()
     progressBar->setFocus();
     progressBar->show();
     timer->start(100);
-    disconnect(timer, SIGNAL(timeout()), 0, 0);
-    connect(timer, SIGNAL(timeout()), SLOT(procTime()));
+    disconnect(timer, &QTimer::timeout, 0, 0);
+    connect(timer, &QTimer::timeout, this, &MainWindow::procTime);
 }
 
 // done loading
