@@ -22,6 +22,7 @@
 
 
 #include "mxview.h"
+#include "version.h"
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -34,6 +35,7 @@
 MainWindow::MainWindow(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
 {
+    qDebug() << "Program Version:" << VERSION;
     timer = new QTimer(this);
 
     searchBox = new QLineEdit(this);
