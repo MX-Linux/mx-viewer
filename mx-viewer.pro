@@ -30,4 +30,5 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mxview.cpp
 
-HEADERS  += mxview.h
+HEADERS  += mxview.h \
+    version.h
