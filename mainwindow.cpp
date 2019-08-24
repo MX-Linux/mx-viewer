@@ -21,7 +21,7 @@
  **********************************************************************/
 
 
-#include "mxview.h"
+#include "mainwindow.h"
 #include "version.h"
 
 #include <QApplication>
@@ -29,7 +29,6 @@
 #include <QToolBar>
 #include <QKeyEvent>
 
-//#include <QWebSettings>
 //#include <QDebug>
 
 MainWindow::MainWindow(QString url, QString title, QWidget *parent)
@@ -46,21 +45,32 @@ MainWindow::MainWindow(QString url, QString title, QWidget *parent)
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findInPage);
 
     toolBar = new QToolBar(this);
-    webview = new QWebView(this);
+    webview = new QWebEngineView(this);
 
     displaySite(url, title);
 }
 
 MainWindow::~MainWindow()
 {
-
+    QSettings settings("mx-viewer");
+    settings.setValue("geometry", saveGeometry());
 }
 
 // pop up a window and display website
 void MainWindow::displaySite(QString url, QString title)
 {
+
     int width = 800;
     int height = 500;
+
+    this->resize(width, height);
+
+    QSettings settings("mx-viewer");
+    restoreGeometry(settings.value("geometry").toByteArray());
+
+    if (this->isMaximized()) {
+        this->resize(width, height);
+    }
 
     this->addToolBar(toolBar);
 
@@ -69,10 +79,10 @@ void MainWindow::displaySite(QString url, QString title)
     webview->show();
 
 
-    toolBar->addAction(webview->pageAction(QWebPage::Back));
-    toolBar->addAction(webview->pageAction(QWebPage::Forward));
-    toolBar->addAction(webview->pageAction(QWebPage::Reload));
-    toolBar->addAction(webview->pageAction(QWebPage::Stop));
+    toolBar->addAction(webview->pageAction(QWebEnginePage::Back));
+    toolBar->addAction(webview->pageAction(QWebEnginePage::Forward));
+    toolBar->addAction(webview->pageAction(QWebEnginePage::Reload));
+    toolBar->addAction(webview->pageAction(QWebEnginePage::Stop));
 
     QWidget* spacer = new QWidget(this);
     spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
@@ -82,8 +92,6 @@ void MainWindow::displaySite(QString url, QString title)
 
     toolBar->show();
 
-    // resize main window
-    this->resize(width, height);
     loading(); // display loading progressBar
 
     // center main window
@@ -96,9 +104,9 @@ void MainWindow::displaySite(QString url, QString title)
     this->setWindowTitle(title);
 
     // show toolbar when new page is loaded
-    connect(webview, &QWebView::loadStarted, toolBar, &QToolBar::show);
-    connect(webview, &QWebView::loadStarted, this, &MainWindow::loading);
-    connect(webview, &QWebView::loadFinished, this, &MainWindow::done);
+    connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
+    connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
+    connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
 }
 
 void MainWindow::search()
@@ -158,6 +166,7 @@ void MainWindow::loading()
 // done loading
 void MainWindow::done(bool)
 {
+    qDebug() << "done loading";
     progressBar->hide();
     timer->stop();
 }

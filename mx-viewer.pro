@@ -21,14 +21,17 @@
 # * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
 # **********************************************************************/
 
-QT       += core gui webkitwidgets
+QT       += core gui webenginewidgets
+
+CONFIG   += c++11
 
 TARGET = mx-viewer
 TEMPLATE = app
 
 
-SOURCES += main.cpp\
-        mxview.cpp
+SOURCES += main.cpp \
+    mainwindow.cpp
 
-HEADERS  += mxview.h \
-    version.h
+HEADERS  += \
+    version.h \
+    mainwindow.h
