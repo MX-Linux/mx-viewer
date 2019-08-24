@@ -27,8 +27,9 @@ TARGET = mx-viewer
 TEMPLATE = app
 
 
-SOURCES += main.cpp\
-        mxview.cpp
+SOURCES += main.cpp \
+    mainwindow.cpp
 
-HEADERS  += mxview.h \
-    version.h
+HEADERS  += \
+    version.h \
+    mainwindow.h

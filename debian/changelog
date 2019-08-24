@@ -1,3 +1,9 @@
+mx-viewer (19.8) mx; urgency=medium
+
+  * save window geometry
+
+ -- Adrian <adrian@mxlinux.org>  Sat, 24 Aug 2019 03:59:08 -0400
+
 mx-viewer (18.8) mx; urgency=medium
 
   * fix icon other themes

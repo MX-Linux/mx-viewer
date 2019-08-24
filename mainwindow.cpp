@@ -21,16 +21,16 @@
  **********************************************************************/
 
 
-#include "mxview.h"
+#include "mainwindow.h"
 #include "version.h"
 
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QToolBar>
 #include <QKeyEvent>
+#include <QSettings>
 
-//#include <QWebSettings>
-//#include <QDebug>
+#include <QDebug>
 
 MainWindow::MainWindow(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
@@ -53,7 +53,8 @@ MainWindow::MainWindow(QString url, QString title, QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-
+    QSettings settings("mx-viewer");
+    settings.setValue("geometry", saveGeometry());
 }
 
 // pop up a window and display website
@@ -61,6 +62,19 @@ void MainWindow::displaySite(QString url, QString title)
 {
     int width = 800;
     int height = 500;
+
+    this->resize(width, height);
+
+    QSettings settings("mx-viewer");
+    if (settings.contains("geometry")) {
+        restoreGeometry(settings.value("geometry").toByteArray());
+        if (this->isMaximized()) { // add option to resize if maximized
+            this->resize(width, height);
+            centerWindow();
+        }
+    } else {
+        centerWindow();
+    }
 
     this->addToolBar(toolBar);
 
@@ -86,12 +100,6 @@ void MainWindow::displaySite(QString url, QString title)
     this->resize(width, height);
     loading(); // display loading progressBar
 
-    // center main window
-    QRect screenGeometry = QApplication::desktop()->screenGeometry();
-    int x = (screenGeometry.width()-this->width()) / 2;
-    int y = (screenGeometry.height()-this->height()) / 2;
-    this->move(x, y);
-
     // set title
     this->setWindowTitle(title);
 
@@ -99,6 +107,15 @@ void MainWindow::displaySite(QString url, QString title)
     connect(webview, &QWebView::loadStarted, toolBar, &QToolBar::show);
     connect(webview, &QWebView::loadStarted, this, &MainWindow::loading);
     connect(webview, &QWebView::loadFinished, this, &MainWindow::done);
+}
+
+// center main window
+void MainWindow::centerWindow()
+{
+    QRect screenGeometry = QApplication::desktop()->screenGeometry();
+    int x = (screenGeometry.width()-this->width()) / 2;
+    int y = (screenGeometry.height()-this->height()) / 2;
+    this->move(x, y);
 }
 
 void MainWindow::search()

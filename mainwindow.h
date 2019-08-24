@@ -43,6 +43,7 @@ public:
     MainWindow(QString url, QString title, QWidget *parent = 0);
     ~MainWindow();
     void displaySite(QString url, QString title);
+    void centerWindow();
 
 public slots:
     void search();
