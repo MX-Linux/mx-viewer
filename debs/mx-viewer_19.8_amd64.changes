@@ -1,0 +1,43 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+Format: 1.8
+Date: Sat, 24 Aug 2019 03:59:08 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 19.8
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (19.8) mx; urgency=medium
+ .
+   * save window geometry
+Checksums-Sha1:
+ 8f491198e7ab8ea79ed1c49aa9592b5d736dfc44 1177 mx-viewer_19.8.dsc
+ 9d743db7fe1376cdf3c026b97c3b8f6d071a4049 6624 mx-viewer_19.8.tar.xz
+ 133305fb331ecf01b1432aaa9d72c22c89b3e38a 15682 mx-viewer_19.8_amd64.deb
+Checksums-Sha256:
+ 44100fb53723601c2445f836ba1caa4fe3fa26fd093bb51e1376d006926c5e89 1177 mx-viewer_19.8.dsc
+ cef9fd26fc3c52e60b7bfdce101c7a8cabe685275c1f7a6364c3c06dc551b7bf 6624 mx-viewer_19.8.tar.xz
+ 0e33df0c7591e54bcf14bc68eba28c3ff4c2e479e1b1cbe632b148e735abb945 15682 mx-viewer_19.8_amd64.deb
+Files:
+ ec6829c9439811336f86031383ee8092 1177 system optional mx-viewer_19.8.dsc
+ d35ee163dbc6a9b24edc5f0349dddbc5 6624 system optional mx-viewer_19.8.tar.xz
+ d3d161c97255b807b6acc5c4d39050af 15682 system optional mx-viewer_19.8_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCAAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAl1g7q4THGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumFqrCACGw1ByPzYFMuhRfGaS8+CbjRCXK0nQ
+VzFJXl1tyHLzN4Fwm+Y3wsOO7rOOppuopWkh3zxOPECjmYGd/SVLbs3hRKDIQCH1
+mQuD5movvSdhMH9db7zxeyUUI5DMlQ79+iuFm31/8V8n9MILAXrmvBzuknQjmu/f
+/Y2ZkWsCMKsUy5JhoI4crKgmqE1EAcm/y9vV1DJFTll2qSh00tgJiUnS+MWm2jKJ
+U/oRaNwm+e1OFLS3syVYX9h2ojcwOfFGJPglItDNV6MQVwI4LgceFMbLhw30//kk
+1Z6+xKdepq1BvEfR+iysY91JSwh7GKd283NcmCdagm0MiYNNJt9O7G38
+=79Ez
+-----END PGP SIGNATURE-----
