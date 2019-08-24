@@ -22,7 +22,7 @@
 
 #include <QApplication>
 #include <QMessageBox>
-#include "mainwindow.h"
+#include "mxview.h"
 
 #include <unistd.h>
 

@@ -24,7 +24,7 @@
 #define MXVIEW_H
 
 #include <QMainWindow>
-#include <QtWebEngineWidgets/QtWebEngineWidgets>
+#include <QWebView>
 #include <QLineEdit>
 #include <QProgressBar>
 #include <QTimer>
@@ -56,7 +56,7 @@ private:
     QProgressBar *progressBar;
     QString word;
     QToolBar *toolBar;
-    QWebEngineView *webview;
+    QWebView *webview;
 
 };
 
