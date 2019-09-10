@@ -35,7 +35,7 @@
 MainWindow::MainWindow(QString url, QString title, QWidget *parent)
     : QMainWindow(parent)
 {
-    qDebug() << "Program Version:" << VERSION;
+    qDebug().noquote() << QCoreApplication::applicationName() << "version:" << VERSION;
     timer = new QTimer(this);
 
     searchBox = new QLineEdit(this);
