@@ -1,0 +1,49 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+Format: 1.8
+Date: Sun, 29 Sep 2019 15:11:19 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 19.9
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (19.9) mx; urgency=medium
+ .
+   * minor change: show program name when displaying version
+Checksums-Sha1:
+ 8d325c213e2ced4ff3bb89f0e309e79be52e47b3 1166 mx-viewer_19.9.dsc
+ 54416b61e7578dd1d91da19355ce245a829e57ca 6696 mx-viewer_19.9.tar.xz
+ 025a98307aba6cdaf759a156979e2974857497c8 405388 mx-viewer-dbgsym_19.9_amd64.deb
+ 95952739a6aa1c96f04c14d658905a2e7fc0f16a 11463 mx-viewer_19.9_amd64.buildinfo
+ ec620139acf0773dbc24d887951d8be607bb7dee 14262 mx-viewer_19.9_amd64.deb
+Checksums-Sha256:
+ db58fe00b3e872946c952b6e613133a67963652c322981498f5417e67cb2c084 1166 mx-viewer_19.9.dsc
+ 6062d7e645a3ca8861b09dda2b4a0f9ee7319bceb0ec21f7e2cd314229db2f74 6696 mx-viewer_19.9.tar.xz
+ 052b6fb7da08d99a71e4e30c29fe6615134c563b585a32ea985ee94123fae1a3 405388 mx-viewer-dbgsym_19.9_amd64.deb
+ 3badd6fb1cff314698d1ecfff0b8ef711ca79746478edcb0614da1ac78e6ec3a 11463 mx-viewer_19.9_amd64.buildinfo
+ 2578315abb9074e080904f4f3c47a8ea04e62806c258ac62370006d8ff7fba40 14262 mx-viewer_19.9_amd64.deb
+Files:
+ 237a7f5f47c8747668819ef04dfa6329 1166 system optional mx-viewer_19.9.dsc
+ 8f753fa2b9972b935f9613d97ea3e29f 6696 system optional mx-viewer_19.9.tar.xz
+ dec41d842ec68b05dbb5f70fa5518fcd 405388 debug optional mx-viewer-dbgsym_19.9_amd64.deb
+ c088973df7d72c2ca090e29d711a2a58 11463 system optional mx-viewer_19.9_amd64.buildinfo
+ 71a492939870b2dde85977b380d89b06 14262 system optional mx-viewer_19.9_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCAAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAl2RAmQTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumKqUCACRAwpdy6h9Hr88wZHKOO48yktjV3/J
+x6lA56key13nGxVthzfjGXj0H+UwRidGF50TzzgmsuIJl0qmxcLwB0TL/DF0h1sh
+Id9BMlctq1zqV2TYxkZW90NkqUh9/H/4+Oi74veuCYgTHIMYhlU5NQeum9nT53Yb
+CssNk9aVdRCFjQcC3Ltge7udgH6eWa9Ymo7Zna/pcvwGzMmFBa4lUyKuUOtI/JTw
+x5EMVC7FTSDjvenhX+TK81AdtVAFOX099ElXHfOypq22M2pu3CogiOLZM3WKBpl9
+MxZRapNMZ/LyNLdNibE/vEHjo1vaxxbuyH1p8zIJMuOatl8BuHhNQuoL
+=JNNG
+-----END PGP SIGNATURE-----
