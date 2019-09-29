@@ -1,3 +1,9 @@
+mx-viewer (19.9) mx; urgency=medium
+
+  * minor change: show program name when displaying version
+
+ -- Adrian <adrian@mxlinux.org>  Sun, 29 Sep 2019 15:11:19 -0400
+
 mx-viewer (19.8) mx; urgency=medium
 
   * save window geometry
