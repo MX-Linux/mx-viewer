@@ -1,0 +1,34 @@
+Format: 1.8
+Date: Sat, 12 Oct 2019 13:16:47 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 19.10
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Dolphin Oracle <dolphinoracle@gmail.com>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (19.10) mx; urgency=medium
+ .
+   * update color scheme handling
+Checksums-Sha1:
+ 9946f57f0ea5ad7329e33667d2be5aeb9bbac23e 611 mx-viewer_19.10.dsc
+ ae28c7cf048e7eb0407edc9bca634f2469036f11 44728 mx-viewer_19.10.tar.xz
+ 059390e473bd449dca572d80cf0bdfd28c56235c 433604 mx-viewer-dbgsym_19.10_amd64.deb
+ 9e37837cc8df56114b5e164438d89a997f482dd7 11014 mx-viewer_19.10_amd64.buildinfo
+ 90be1c9407c62aba758d9feadc56010a10deaf6a 15850 mx-viewer_19.10_amd64.deb
+Checksums-Sha256:
+ b13773a40427a70c09ac56e48a50c300af614fd2735f57a7c93eab4f696ce3d4 611 mx-viewer_19.10.dsc
+ 2b4b75bfe5038ad686a5b01420a08d59503814356ea1bb1bbea310f6eee416a1 44728 mx-viewer_19.10.tar.xz
+ d1dad751e5873174a7debdbf8a05951295b82e7d1caa5fc12ba5435afe856718 433604 mx-viewer-dbgsym_19.10_amd64.deb
+ e6baa8b7df4777006fac72c1a23537bef8859cf20ed6f6efd787ff53dddae148 11014 mx-viewer_19.10_amd64.buildinfo
+ 8231ff2615d54e1e1f6dd8c2295b7a6a2ba9a03869ab0ade0622c7a265ca45a5 15850 mx-viewer_19.10_amd64.deb
+Files:
+ a432137a361c975e4296edb25f9491ad 611 system optional mx-viewer_19.10.dsc
+ f5aaed469dbf529d199f00df75b8418c 44728 system optional mx-viewer_19.10.tar.xz
+ 84e00ee143c04cefde476db2b3282959 433604 debug optional mx-viewer-dbgsym_19.10_amd64.deb
+ 043fc9609aa2b761272e735c61452100 11014 system optional mx-viewer_19.10_amd64.buildinfo
+ 0ce7f30797f611ded97662686ffe39ea 15850 system optional mx-viewer_19.10_amd64.deb
