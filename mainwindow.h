@@ -38,6 +38,7 @@ protected:
     QTimer *timer;
     void keyPressEvent(QKeyEvent *event);
     void resizeEvent();
+    void changeEvent(QEvent *event);
 
 public:
     MainWindow(QString url, QString title, QWidget *parent = 0);
