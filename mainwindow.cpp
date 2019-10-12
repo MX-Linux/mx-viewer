@@ -29,6 +29,7 @@
 #include <QToolBar>
 #include <QKeyEvent>
 #include <QSettings>
+#include <QStyle>
 
 #include <QDebug>
 
@@ -47,6 +48,8 @@ MainWindow::MainWindow(QString url, QString title, QWidget *parent)
 
     toolBar = new QToolBar(this);
     webview = new QWebView(this);
+    QEvent palevent(QEvent::PaletteChange);
+    qApp->sendEvent(this, &palevent);
 
     displaySite(url, title);
 }
@@ -156,6 +159,24 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 void MainWindow::resizeEvent()
 {
     progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
+}
+
+// for colour scheme changes
+void MainWindow::changeEvent(QEvent *event)
+{
+    const QEvent::Type etype = event->type();
+    if (etype == QEvent::ApplicationPaletteChange
+        || etype == QEvent::PaletteChange || etype == QEvent::StyleChange)
+    {
+        const QPalette &pal = webview->style()->standardPalette();
+        QString css("body{background-color:" + pal.color(QPalette::Base).name()
+                    + ";color:" + pal.color(QPalette::WindowText).name() + "}"
+                    "a{color:" + pal.color(QPalette::Link).name() + "}"
+                    "a:visited{color:" + pal.color(QPalette::LinkVisited).name() + "}");
+        QUrl cssdata("data:text/css;charset=utf-8;base64,"
+                     + css.toUtf8().toBase64(), QUrl::StrictMode);
+        webview->settings()->setUserStyleSheetUrl(cssdata);
+    }
 }
 
 // display progressbar while loading page
