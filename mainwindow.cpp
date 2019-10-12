@@ -48,6 +48,11 @@ MainWindow::MainWindow(QString url, QString title, QWidget *parent)
 
     toolBar = new QToolBar(this);
     webview = new QWebView(this);
+    QWebSettings *websettings = webview->settings();
+    websettings->setAttribute(QWebSettings::SiteSpecificQuirksEnabled, false);
+    websettings->setAttribute(QWebSettings::JavascriptEnabled, false);
+    websettings->setAttribute(QWebSettings::CSSRegionsEnabled, false);
+    websettings->setThirdPartyCookiePolicy(QWebSettings::AlwaysBlockThirdPartyCookies);
     QEvent palevent(QEvent::PaletteChange);
     qApp->sendEvent(this, &palevent);
 
