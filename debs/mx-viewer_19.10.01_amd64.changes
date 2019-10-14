@@ -1,0 +1,49 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+Format: 1.8
+Date: Sun, 13 Oct 2019 23:05:10 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 19.10.01
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (19.10.01) mx; urgency=medium
+ .
+   * security improvements
+Checksums-Sha1:
+ a743a81f3fb8269833393f167e8adbde750e3d55 1182 mx-viewer_19.10.01.dsc
+ 3d369034522782f16ada2155f0049db99e51e3d2 7152 mx-viewer_19.10.01.tar.xz
+ 0cf22b8eb7dc1425093a51baf32ccb439aacc7c7 433810 mx-viewer-dbgsym_19.10.01_amd64.deb
+ 7d3b23bdf19bfb0f553d2323478f34dd2e7103fd 11507 mx-viewer_19.10.01_amd64.buildinfo
+ b2f1b93d7d865b53b61747986cc179cd11a31086 15940 mx-viewer_19.10.01_amd64.deb
+Checksums-Sha256:
+ 2dd21579b844cbf5a0ed46c7a0d096e897ea055addd2c0f336447b143768e3f1 1182 mx-viewer_19.10.01.dsc
+ 8f0a0bc0d95812bee4e828fc5087b4b51cb30959813ebee4b55df31410159065 7152 mx-viewer_19.10.01.tar.xz
+ ffd19b2d00663f042dd8264be45c8a39ca7367c15d3a0f0d6df2d19ad2463c65 433810 mx-viewer-dbgsym_19.10.01_amd64.deb
+ 55ee9cb36e7abe24f4754e7f202b9264a7e08e186f1d40073c669a25a6be0b3c 11507 mx-viewer_19.10.01_amd64.buildinfo
+ a10ad3b729fcebb644c3db02015ba8d6276ffa314a2273aadc9839f0555864c9 15940 mx-viewer_19.10.01_amd64.deb
+Files:
+ f31517f4b60b94db1be464d0fa4f743a 1182 system optional mx-viewer_19.10.01.dsc
+ 982543cb080b7e66a2e004bb40fac36f 7152 system optional mx-viewer_19.10.01.tar.xz
+ 9e005c0ddca5e018a8e8b13be0ed6642 433810 debug optional mx-viewer-dbgsym_19.10.01_amd64.deb
+ 6929a412c366e0a6fd6073a033a79720 11507 system optional mx-viewer_19.10.01_amd64.buildinfo
+ 83818cbbf24c42dc72ad59198de9a689 15940 system optional mx-viewer_19.10.01_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCAAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAl2j5lQTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumBXLB/4u0KGKNxr19sFmOgTgwfg+LiLn23V5
+kG86NPCIk9Ik3F4cSbpX32RdHlCTJ3xKm51VpL6Ke+7t2xRhIxrz/6GjYfpOf3s8
+bk0yMwrxa/aPupBySTyNkUHrtUOX/RqfGu1a7QycuUSAyhCl9GMgqbYLg/uWNxtq
+1hLsDiiHXqie+ODpfMXwyCQg6olfSy153DmM0G38zjuNPcj2RjVnd0WfNDRUJx9f
+MnCh50RFJHFz0igQAOvo10YxXUgKXz4fEv7gCZnL+L7gBCqpA9EiKr4VowxYi2UY
+trNb7aRe8HL2m5Fgj8rn8pOy1rn1WcR4r8ID82ro81w2ZTfWoXoz8nXr
+=5EAf
+-----END PGP SIGNATURE-----
