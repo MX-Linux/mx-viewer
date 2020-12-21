@@ -41,7 +41,7 @@ protected:
     void changeEvent(QEvent *event);
 
 public:
-    MainWindow(QString url, QString title, QWidget *parent = 0);
+    MainWindow(QString url, QString title, QWidget *parent = nullptr);
     ~MainWindow();
     void displaySite(QString url, QString title);
     void centerWindow();
