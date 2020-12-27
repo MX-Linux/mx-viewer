@@ -1,4 +1,3 @@
-#---
 #/*****************************************************************************
 #* mx-viewer.pro
 # *****************************************************************************
@@ -26,10 +25,11 @@ QT       += core gui webkitwidgets
 TARGET = mx-viewer
 TEMPLATE = app
 
-
 SOURCES += main.cpp \
     mainwindow.cpp
 
 HEADERS  += \
     version.h \
     mainwindow.h
+
+TRANSLATIONS += translations/mx-viewer_fr.ts

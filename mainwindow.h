@@ -23,12 +23,12 @@
 #ifndef MXVIEW_H
 #define MXVIEW_H
 
-#include <QMainWindow>
-#include <QWebView>
+#include <QCommandLineParser>
 #include <QLineEdit>
+#include <QMainWindow>
 #include <QProgressBar>
 #include <QTimer>
-//#include <QResizeEvent>
+#include <QWebView>
 
 class MainWindow : public QMainWindow
 {
@@ -37,11 +37,11 @@ class MainWindow : public QMainWindow
 protected:
     QTimer *timer;
     void keyPressEvent(QKeyEvent *event);
-    void resizeEvent();
+    void resizeEvent(QResizeEvent *event);
     void changeEvent(QEvent *event);
 
 public:
-    MainWindow(QString url, QString title, QWidget *parent = nullptr);
+    MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
     ~MainWindow();
     void displaySite(QString url, QString title);
     void centerWindow();

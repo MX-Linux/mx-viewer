@@ -1,3 +1,11 @@
+mx-viewer (20.12) mx; urgency=medium
+
+  * added command line options to enable/disable javascript, 3rd party cookies, spatial navigation, etc
+  * default to duckduckgo instead of google
+  * fix: remember window size
+
+ -- Adrian <adrian@mxlinux.org>  Sun, 27 Dec 2020 03:14:41 -0500
+
 mx-viewer (19.10.01) mx; urgency=medium
 
   * security improvements
