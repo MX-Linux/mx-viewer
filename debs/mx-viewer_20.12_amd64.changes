@@ -1,0 +1,51 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Date: Sun, 27 Dec 2020 03:14:41 -0500
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 20.12
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (20.12) mx; urgency=medium
+ .
+   * added command line options to enable/disable javascript, 3rd party cookies, spatial navigation, etc
+   * default to duckduckgo instead of google
+   * fix: remember window size
+Checksums-Sha1:
+ 6921a0b4e601434a858245b8b66a5c0df1592fec 1173 mx-viewer_20.12.dsc
+ 3b97206b5eff3b63d019d179f11841f63c580d21 18256 mx-viewer_20.12.tar.xz
+ 7b260a58fb204029f6a698ee4cc64d42f4ea63c7 448382 mx-viewer-dbgsym_20.12_amd64.deb
+ 689b4189299c3ac8541784a5a28026df039ddb39 10855 mx-viewer_20.12_amd64.buildinfo
+ cfca245d8a16c9128db35641e2da8093ff3c6ba6 18712 mx-viewer_20.12_amd64.deb
+Checksums-Sha256:
+ 6c23863660edfe0f9de879c5f13310e17981ede99a308219041780f0dfa2ea07 1173 mx-viewer_20.12.dsc
+ 4010f6c8acaf18cfccc35ae474000c321994c669e68746626b509af885639b87 18256 mx-viewer_20.12.tar.xz
+ 7ac2a142f58986b7bb7d80e2c76f5d10c7bc61385165f4e02753379531b264da 448382 mx-viewer-dbgsym_20.12_amd64.deb
+ d3666426b3c36f0a014f7ae1578469bc4e42844d67d0510424003258e43fc0f8 10855 mx-viewer_20.12_amd64.buildinfo
+ 4415e21af3bea66ccaad616daba4594798f15f1dd0912bc23efe207ada3d823e 18712 mx-viewer_20.12_amd64.deb
+Files:
+ 03bc38b295ceb8014e0edd2f1caecec5 1173 system optional mx-viewer_20.12.dsc
+ d9e2ed3a6bcd826cd8a74af48ac9c4cc 18256 system optional mx-viewer_20.12.tar.xz
+ 1db71dadc976ef48027bb39b99bc106d 448382 debug extra mx-viewer-dbgsym_20.12_amd64.deb
+ 1891c7ebf0e26d4b4431dd79ca93de3d 10855 system optional mx-viewer_20.12_amd64.buildinfo
+ 39fbfdb5a9aca4c29bf67801b984c984 18712 system optional mx-viewer_20.12_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAl/oRjUTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumLtYB/42tPZenxRlaX/+8fEZ1LZDkTaUGWVA
+XS7Q+Xas/Luwx/dAOda0m40W9jGBxKMjsdeg7UzL2ZbhNdbMTZTtiwUepeq+7XQs
+WYMWHcoQqOEzetqiI3C9ypGjh+SaKH6YPrrO6LLzwIAA6TIjjmxD7QhT90JSVhBo
+641G+H9BZ/v6y/ECjwJYCmfEGNudc3XtEcqCROULcJxOp7NQdNSrW33n7ZHyliN/
+aQY8wFFrxSPrVrWdVPM5bpO027jb1LtHTf6meXYkj20QR4F8NDDozw5M90vt1LOm
+UvcAzleEEbKjYdXDT0FuA/oReCKr6+tle+tYX/EdZPn90/Q9KOKLLZi9
+=WcaZ
+-----END PGP SIGNATURE-----
