@@ -25,43 +25,56 @@
 #include "version.h"
 
 #include <QApplication>
+#include <QDebug>
 #include <QDesktopWidget>
-#include <QToolBar>
 #include <QKeyEvent>
 #include <QSettings>
 #include <QStyle>
+#include <QToolBar>
 
-#include <QDebug>
-
-MainWindow::MainWindow(QString url, QString title, QWidget *parent)
+MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     : QMainWindow(parent)
 {
-    qDebug().noquote() << QCoreApplication::applicationName() << "version:" << VERSION;
     timer = new QTimer(this);
-
+    toolBar = new QToolBar(this);
+    webview = new QWebView(this);
+    progressBar = new QProgressBar(this);
     searchBox = new QLineEdit(this);
+
     searchBox->setPlaceholderText(tr("search"));
     searchBox->setClearButtonEnabled(true);
     searchBox->setMaximumWidth(150);
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findInPage);
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findInPage);
 
-    toolBar = new QToolBar(this);
-    webview = new QWebView(this);
     QWebSettings *websettings = webview->settings();
-    websettings->setAttribute(QWebSettings::SiteSpecificQuirksEnabled, false);
-    websettings->setAttribute(QWebSettings::JavascriptEnabled, false);
+    websettings->setAttribute(QWebSettings::SiteSpecificQuirksEnabled, !arg_parser.isSet("disable-quirks"));
+    websettings->setAttribute(QWebSettings::JavascriptEnabled, !arg_parser.isSet("disable-js"));
+    websettings->setAttribute(QWebSettings::SpatialNavigationEnabled, arg_parser.isSet("enable-spatial-navigation"));
+    websettings->setAttribute(QWebSettings::PrivateBrowsingEnabled, true);
     websettings->setAttribute(QWebSettings::CSSRegionsEnabled, false);
-    websettings->setThirdPartyCookiePolicy(QWebSettings::AlwaysBlockThirdPartyCookies);
+
+    if (!arg_parser.isSet("enable-cookies"))
+        websettings->setThirdPartyCookiePolicy(QWebSettings::AlwaysBlockThirdPartyCookies);
+
     QEvent palevent(QEvent::PaletteChange);
     qApp->sendEvent(this, &palevent);
+
+    QString url, title;
+    if (!arg_parser.positionalArguments().isEmpty()) {
+        url = arg_parser.positionalArguments().at(0);
+        (arg_parser.positionalArguments().size() > 1) ? title = arg_parser.positionalArguments().at(1) : title = url;
+    } else {
+       url = "https://duckduckgo.com";
+       title = "DuckDuckGo";
+    }
 
     displaySite(url, title);
 }
 
 MainWindow::~MainWindow()
 {
-    QSettings settings("mx-viewer");
+    QSettings settings(qApp->applicationName());
     settings.setValue("geometry", saveGeometry());
 }
 
@@ -70,10 +83,9 @@ void MainWindow::displaySite(QString url, QString title)
 {
     int width = 800;
     int height = 500;
-
     this->resize(width, height);
 
-    QSettings settings("mx-viewer");
+    QSettings settings(qApp->applicationName());
     if (settings.contains("geometry")) {
         restoreGeometry(settings.value("geometry").toByteArray());
         if (this->isMaximized()) { // add option to resize if maximized
@@ -90,7 +102,6 @@ void MainWindow::displaySite(QString url, QString title)
     webview->load(QUrl::fromUserInput(url));
     webview->show();
 
-
     toolBar->addAction(webview->pageAction(QWebPage::Back));
     toolBar->addAction(webview->pageAction(QWebPage::Forward));
     toolBar->addAction(webview->pageAction(QWebPage::Reload));
@@ -104,8 +115,6 @@ void MainWindow::displaySite(QString url, QString title)
 
     toolBar->show();
 
-    // resize main window
-    this->resize(width, height);
     loading(); // display loading progressBar
 
     // set title
@@ -146,6 +155,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         search();
     }
     if (event->key() == Qt::Key_Escape) {
+        webview->stop();
         searchBox->clear();
         webview->setFocus();
     }
@@ -161,7 +171,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 }
 
 // resize event
-void MainWindow::resizeEvent()
+void MainWindow::resizeEvent(QResizeEvent*)
 {
     progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
 }
@@ -187,14 +197,12 @@ void MainWindow::changeEvent(QEvent *event)
 // display progressbar while loading page
 void MainWindow::loading()
 {
-    progressBar = new QProgressBar(this);
     progressBar->setFixedHeight(20);
     progressBar->setTextVisible(false);
     progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
     progressBar->setFocus();
     progressBar->show();
     timer->start(100);
-    disconnect(timer, &QTimer::timeout, 0, 0);
     connect(timer, &QTimer::timeout, this, &MainWindow::procTime);
 }
 
@@ -203,15 +211,12 @@ void MainWindow::done(bool)
 {
     progressBar->hide();
     timer->stop();
+    timer->disconnect();
 }
 
 // advance progressbar
 void MainWindow::procTime()
 {
-    int i = progressBar->value() + 5;
-    if (i > 100) {
-        i = 0;
-    }
-    progressBar->setValue(i);
+    progressBar->setValue((progressBar->value() + 5) % 100);
 }
 

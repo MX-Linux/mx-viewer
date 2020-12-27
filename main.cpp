@@ -21,14 +21,18 @@
  **********************************************************************/
 
 #include <QApplication>
+#include <QCommandLineParser>
+#include <QLibraryInfo>
 #include <QMessageBox>
-#include "mainwindow.h"
+#include <QTranslator>
 
+#include "mainwindow.h"
 #include <unistd.h>
+#include <version.h>
 
 static bool dropElevatedPrivileges()
 {
-    //   COULD check, and conditionally skip           if (getuid() == 0) || geteuid == 0)
+    if (getuid() != 0 && geteuid() != 0) return true;
 
     //    initgroups()
     // ref:  https://www.safaribooksonline.com/library/view/secure-programming-cookbook/0596003943/ch01s03.html#secureprgckbk-CHP-1-SECT-3.3
@@ -50,34 +54,42 @@ static bool dropElevatedPrivileges()
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    a.setWindowIcon(QIcon("/usr/share/pixmaps/mx-viewer.png"));
+    QApplication app(argc, argv);
+    //app.setWindowIcon(QIcon("/usr/share/pixmaps/mx-viewer.png"));
+    app.setWindowIcon(QIcon::fromTheme(app.applicationName()));
+    app.setApplicationVersion(VERSION);
 
-    QString arg1 = argv[1];
-    QString url;
-    QString title;
+    QCommandLineParser parser;
+    parser.setApplicationDescription(QObject::tr("This tool will display the URL content in a window, window title is optional."));
+    parser.addHelpOption();
+    parser.addVersionOption();
+    parser.addOption({{"j", "disable-js"}, QObject::tr("Disable JavaScript")});
+    parser.addOption({{"q", "disable-quirks"}, QObject::tr("Disable workaround for broken sites")});
+    parser.addOption({{"s", "enable-spatial-navigation"}, QObject::tr("Enable spatial navigation with keyboard")});
+    parser.addOption({{"3", "enable-cookies"}, QObject::tr("Enable 3rd party cookies")});
+    parser.addPositionalArgument("URL", QObject::tr("URL of the page you want to load") + "\ne.g., https://google.com, google.com, file:///home/user/file.html");
+    parser.addPositionalArgument("Title", QObject::tr("Window title for the viewer"), "[title]");
+    parser.process(app);
 
-    if(!dropElevatedPrivileges())
-    {
+    if(!dropElevatedPrivileges()) {
         qDebug() << "Could not drop elevated privileges";
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
-    if (argc == 1) {
-        url = "http://google.com";
-        title = "MX Viewer";
-    } else if (arg1 == "--help" or arg1 == "-h") {
-        QMessageBox::information(0, QString::null,
-                                 QApplication::tr("Usage: call program with: mx-view URL [window title]\n\n"
-                                                  "The 'mx-viewer' program will display the URL content in a window, window title is optional."));
-        return 1;
-    } else {
-        url = argc > 1 ? QString(argv[1]) : QString();
-        title = argc > 2 ? QString(argv[2]) : QString();
-    }
+    QTranslator qtTran;
+    if (qtTran.load(QLocale::system(), "qt", "_", QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
+        app.installTranslator(&qtTran);
 
-    MainWindow w(url, title);
+    QTranslator qtBaseTran;
+    if (qtBaseTran.load("qtbase_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
+        app.installTranslator(&qtBaseTran);
+
+    QTranslator appTran;
+    if (appTran.load(app.applicationName() + "_" + QLocale::system().name(), "/usr/share/" + app.applicationName() + "/locale"))
+        app.installTranslator(&appTran);
+
+    MainWindow w(parser);
     w.show();
 
-    return a.exec();
+    return app.exec();
 }
