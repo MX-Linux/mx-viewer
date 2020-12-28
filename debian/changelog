@@ -1,3 +1,9 @@
+mx-viewer (20.12.01) mx; urgency=medium
+
+  * add open/browse option, help dialog 
+
+ -- Adrian <adrian@mxlinux.org>  Mon, 28 Dec 2020 02:33:29 -0500
+
 mx-viewer (20.12) mx; urgency=medium
 
   * added command line options to enable/disable javascript, 3rd party cookies, spatial navigation, etc
