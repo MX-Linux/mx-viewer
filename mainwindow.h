@@ -43,8 +43,12 @@ protected:
 public:
     MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
     ~MainWindow();
-    void displaySite(QString url, QString title);
+    void addToolbar();    
     void centerWindow();
+    void displaySite(QString url, QString title);
+    void openBrowseDialog();
+    void openDialog();
+    void openQuickInfo();
 
 public slots:
     void search();
