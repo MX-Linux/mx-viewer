@@ -27,7 +27,10 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDesktopWidget>
+#include <QFileDialog>
+#include <QInputDialog>
 #include <QKeyEvent>
+#include <QMessageBox>
 #include <QSettings>
 #include <QStyle>
 #include <QToolBar>
@@ -41,11 +44,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     progressBar = new QProgressBar(this);
     searchBox = new QLineEdit(this);
 
-    searchBox->setPlaceholderText(tr("search"));
-    searchBox->setClearButtonEnabled(true);
-    searchBox->setMaximumWidth(150);
-    connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findInPage);
-    connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findInPage);
+    addToolbar();
 
     QWebSettings *websettings = webview->settings();
     websettings->setAttribute(QWebSettings::SiteSpecificQuirksEnabled, !arg_parser.isSet("disable-quirks"));
@@ -78,6 +77,40 @@ MainWindow::~MainWindow()
     settings.setValue("geometry", saveGeometry());
 }
 
+void MainWindow::addToolbar()
+{
+    this->addToolBar(toolBar);
+    this->setCentralWidget(webview);
+
+    toolBar->addAction(webview->pageAction(QWebPage::Back));
+    toolBar->addAction(webview->pageAction(QWebPage::Forward));
+    toolBar->addAction(webview->pageAction(QWebPage::Reload));
+    toolBar->addAction(webview->pageAction(QWebPage::Stop));
+
+    searchBox->setPlaceholderText(tr("search"));
+    searchBox->setClearButtonEnabled(true);
+    searchBox->setMaximumWidth(150);
+    connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findInPage);
+    connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findInPage);
+
+    QWidget* spacer = new QWidget(this);
+    spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    toolBar->addWidget(spacer);
+    toolBar->addWidget(searchBox);
+    toolBar->show();
+
+    // show toolbar when new page is loaded
+    connect(webview, &QWebView::loadStarted, toolBar, &QToolBar::show);
+    connect(webview, &QWebView::loadStarted, this, &MainWindow::loading);
+    connect(webview, &QWebView::loadFinished, this, &MainWindow::done);
+}
+
+void MainWindow::openBrowseDialog()
+{
+    QString file = QFileDialog::getOpenFileName(this, tr("Select file to open"), QDir::homePath(), tr("Hypertext Files (*.htm *.html);;All Files (*.*)"));
+    if (QFileInfo::exists(file)) displaySite(file, file);
+}
+
 // pop up a window and display website
 void MainWindow::displaySite(QString url, QString title)
 {
@@ -96,34 +129,11 @@ void MainWindow::displaySite(QString url, QString title)
         centerWindow();
     }
 
-    this->addToolBar(toolBar);
-
-    this->setCentralWidget(webview);
     webview->load(QUrl::fromUserInput(url));
     webview->show();
 
-    toolBar->addAction(webview->pageAction(QWebPage::Back));
-    toolBar->addAction(webview->pageAction(QWebPage::Forward));
-    toolBar->addAction(webview->pageAction(QWebPage::Reload));
-    toolBar->addAction(webview->pageAction(QWebPage::Stop));
-
-    QWidget* spacer = new QWidget(this);
-    spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    toolBar->addWidget(spacer);
-
-    toolBar->addWidget(searchBox);
-
-    toolBar->show();
-
-    loading(); // display loading progressBar
-
-    // set title
+    loading(); // display loading progressBar    
     this->setWindowTitle(title);
-
-    // show toolbar when new page is loaded
-    connect(webview, &QWebView::loadStarted, toolBar, &QToolBar::show);
-    connect(webview, &QWebView::loadStarted, this, &MainWindow::loading);
-    connect(webview, &QWebView::loadFinished, this, &MainWindow::done);
 }
 
 // center main window
@@ -133,6 +143,26 @@ void MainWindow::centerWindow()
     int x = (screenGeometry.width()-this->width()) / 2;
     int y = (screenGeometry.height()-this->height()) / 2;
     this->move(x, y);
+}
+
+void MainWindow::openDialog()
+{
+    bool ok;
+    QString url  = QInputDialog::getText(this, tr("Open"),
+                                         tr("Enter site or file URL:"), QLineEdit::Normal, QString(), &ok);
+    if (ok && !url.isEmpty()) displaySite(url, url);
+}
+
+void MainWindow::openQuickInfo()
+{
+    QMessageBox::about(this, tr("Keyboard Shortcuts"),
+                       tr("Ctrl-F, or F3") + " - " + tr("Find") + "\n" +
+                       tr("Ctrl-R, or F5") + " - " + tr("Reload") + "\n" +
+                       tr("Ctrl-O") + " - " + tr("Open URL") + "\n" +
+                       tr("Ctrl-B") + " - " + tr("Browse file to open") + "\n" +
+                       tr("Esc - Stop loading/clear Find field") + "\n" +
+                       tr("Alt-LeftArrow, Alt-RightArrow") + " - " + tr("Back/Forward") + "\n" +
+                       tr("F1, or ?") + " - " + tr("Open this help dialog"));
 }
 
 void MainWindow::search()
@@ -153,20 +183,27 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     qreal zoom = webview->zoomFactor();
     if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_F3) {
         search();
-    }
-    if (event->key() == Qt::Key_Escape) {
-        webview->stop();
-        searchBox->clear();
-        webview->setFocus();
-    }
-    if (event->key() == Qt::Key_Plus) {
+    } else if (event->key() == Qt::Key_Escape) {
+        done(false);
+    } else if (event->key() == Qt::Key_Plus) {
         webview->setZoomFactor(zoom + 0.1);
-    }
-    if (event->key() == Qt::Key_Minus) {
+    } else if (event->key() == Qt::Key_Minus) {
         webview->setZoomFactor(zoom - 0.1);
-    }
-    if (event->key() == Qt::Key_0) {
+    } else if (event->key() == Qt::Key_0) {
         webview->setZoomFactor(1);
+    } else if (event->matches(QKeySequence::Back)) {
+        webview->back();
+    } else if (event->matches(QKeySequence::Forward)) {
+        webview->forward();
+    } else if (event->matches(QKeySequence::Refresh) ||
+               (event->key() == Qt::Key_R && (QApplication::keyboardModifiers() & Qt::ControlModifier))) {
+        webview->reload();            
+    } else if (event->matches(QKeySequence::Open)) {
+        openDialog();
+    } else if (event->key() == Qt::Key_B && (QApplication::keyboardModifiers() & Qt::ControlModifier)) {
+        openBrowseDialog();
+    } else if (event->key() == Qt::Key_Question || event->matches(QKeySequence::HelpContents)) {
+        openQuickInfo();
     }
 }
 
@@ -209,9 +246,12 @@ void MainWindow::loading()
 // done loading
 void MainWindow::done(bool)
 {
-    progressBar->hide();
     timer->stop();
     timer->disconnect();
+    webview->stop();
+    webview->setFocus();
+    searchBox->clear();
+    progressBar->hide();       
 }
 
 // advance progressbar
