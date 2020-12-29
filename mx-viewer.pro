@@ -20,7 +20,7 @@
 # * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
 # **********************************************************************/
 
-QT       += core gui webkitwidgets
+QT       += core gui webenginewidgets
 
 TARGET = mx-viewer
 TEMPLATE = app

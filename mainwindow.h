@@ -28,7 +28,7 @@
 #include <QMainWindow>
 #include <QProgressBar>
 #include <QTimer>
-#include <QWebView>
+#include <QtWebEngineWidgets/QWebEngineView>
 
 class MainWindow : public QMainWindow
 {
@@ -62,7 +62,7 @@ private:
     QProgressBar *progressBar;
     QString word;
     QToolBar *toolBar;
-    QWebView *webview;
+    QWebEngineView *webview;
 
 };
 

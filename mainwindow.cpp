@@ -34,27 +34,23 @@
 #include <QSettings>
 #include <QStyle>
 #include <QToolBar>
+#include <QtWebEngineWidgets/QWebEngineSettings>
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     : QMainWindow(parent)
 {
     timer = new QTimer(this);
     toolBar = new QToolBar(this);
-    webview = new QWebView(this);
+    webview = new QWebEngineView(this);
     progressBar = new QProgressBar(this);
     searchBox = new QLineEdit(this);
 
     addToolbar();
 
-    QWebSettings *websettings = webview->settings();
-    websettings->setAttribute(QWebSettings::SiteSpecificQuirksEnabled, !arg_parser.isSet("disable-quirks"));
-    websettings->setAttribute(QWebSettings::JavascriptEnabled, !arg_parser.isSet("disable-js"));
-    websettings->setAttribute(QWebSettings::SpatialNavigationEnabled, arg_parser.isSet("enable-spatial-navigation"));
-    websettings->setAttribute(QWebSettings::PrivateBrowsingEnabled, true);
-    websettings->setAttribute(QWebSettings::CSSRegionsEnabled, false);
+    QWebEngineSettings *websettings = webview->settings();
+    websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !arg_parser.isSet("disable-js"));
+    websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, arg_parser.isSet("enable-spatial-navigation"));
 
-    if (!arg_parser.isSet("enable-cookies"))
-        websettings->setThirdPartyCookiePolicy(QWebSettings::AlwaysBlockThirdPartyCookies);
 
     QEvent palevent(QEvent::PaletteChange);
     qApp->sendEvent(this, &palevent);
@@ -82,10 +78,19 @@ void MainWindow::addToolbar()
     this->addToolBar(toolBar);
     this->setCentralWidget(webview);
 
-    toolBar->addAction(webview->pageAction(QWebPage::Back));
-    toolBar->addAction(webview->pageAction(QWebPage::Forward));
-    toolBar->addAction(webview->pageAction(QWebPage::Reload));
-    toolBar->addAction(webview->pageAction(QWebPage::Stop));
+    QAction *back;
+    QAction *forward;
+    QAction *reload;
+    QAction *stop;
+
+    toolBar->addAction(back = webview->pageAction(QWebEnginePage::Back));
+    back->setShortcut(QKeySequence::Back);
+    toolBar->addAction(forward = webview->pageAction(QWebEnginePage::Forward));
+    forward->setShortcut(QKeySequence::Forward);
+    toolBar->addAction(reload = webview->pageAction(QWebEnginePage::Reload));
+    reload->setShortcuts(QList<QKeySequence>({QKeySequence::Refresh, QKeySequence(tr("Ctrl+R"))}));
+    toolBar->addAction(stop = webview->pageAction(QWebEnginePage::Stop));
+    reload->setShortcut(Qt::Key_Escape);
 
     searchBox->setPlaceholderText(tr("search"));
     searchBox->setClearButtonEnabled(true);
@@ -100,9 +105,9 @@ void MainWindow::addToolbar()
     toolBar->show();
 
     // show toolbar when new page is loaded
-    connect(webview, &QWebView::loadStarted, toolBar, &QToolBar::show);
-    connect(webview, &QWebView::loadStarted, this, &MainWindow::loading);
-    connect(webview, &QWebView::loadFinished, this, &MainWindow::done);
+    connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
+    connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
+    connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
 }
 
 void MainWindow::openBrowseDialog()
@@ -132,7 +137,7 @@ void MainWindow::displaySite(QString url, QString title)
     webview->load(QUrl::fromUserInput(url));
     webview->show();
 
-    loading(); // display loading progressBar    
+    loading(); // display loading progressBar
     this->setWindowTitle(title);
 }
 
@@ -183,21 +188,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     qreal zoom = webview->zoomFactor();
     if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_F3) {
         search();
-    } else if (event->key() == Qt::Key_Escape) {
-        done(false);
     } else if (event->key() == Qt::Key_Plus) {
         webview->setZoomFactor(zoom + 0.1);
     } else if (event->key() == Qt::Key_Minus) {
         webview->setZoomFactor(zoom - 0.1);
     } else if (event->key() == Qt::Key_0) {
         webview->setZoomFactor(1);
-    } else if (event->matches(QKeySequence::Back)) {
-        webview->back();
-    } else if (event->matches(QKeySequence::Forward)) {
-        webview->forward();
-    } else if (event->matches(QKeySequence::Refresh) ||
-               (event->key() == Qt::Key_R && (QApplication::keyboardModifiers() & Qt::ControlModifier))) {
-        webview->reload();            
     } else if (event->matches(QKeySequence::Open)) {
         openDialog();
     } else if (event->key() == Qt::Key_B && (QApplication::keyboardModifiers() & Qt::ControlModifier)) {
@@ -227,7 +223,7 @@ void MainWindow::changeEvent(QEvent *event)
                     "a:visited{color:" + pal.color(QPalette::LinkVisited).name() + "}");
         QUrl cssdata("data:text/css;charset=utf-8;base64,"
                      + css.toUtf8().toBase64(), QUrl::StrictMode);
-        webview->settings()->setUserStyleSheetUrl(cssdata);
+//        webview->settings()->setUserStyleSheetUrl(cssdata);
     }
 }
 
@@ -251,7 +247,8 @@ void MainWindow::done(bool)
     webview->stop();
     webview->setFocus();
     searchBox->clear();
-    progressBar->hide();       
+    progressBar->hide();
+    this->setWindowTitle(webview->title());
 }
 
 // advance progressbar

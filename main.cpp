@@ -64,9 +64,7 @@ int main(int argc, char *argv[])
     parser.addHelpOption();
     parser.addVersionOption();
     parser.addOption({{"j", "disable-js"}, QObject::tr("Disable JavaScript")});
-    parser.addOption({{"q", "disable-quirks"}, QObject::tr("Disable workaround for broken sites")});
     parser.addOption({{"s", "enable-spatial-navigation"}, QObject::tr("Enable spatial navigation with keyboard")});
-    parser.addOption({{"3", "enable-cookies"}, QObject::tr("Enable 3rd party cookies")});
     parser.addPositionalArgument("URL", QObject::tr("URL of the page you want to load") + "\ne.g., https://google.com, google.com, file:///home/user/file.html");
     parser.addPositionalArgument("Title", QObject::tr("Window title for the viewer"), "[title]");
     parser.process(app);
