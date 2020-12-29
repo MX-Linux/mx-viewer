@@ -82,10 +82,19 @@ void MainWindow::addToolbar()
     this->addToolBar(toolBar);
     this->setCentralWidget(webview);
 
-    toolBar->addAction(webview->pageAction(QWebPage::Back));
-    toolBar->addAction(webview->pageAction(QWebPage::Forward));
-    toolBar->addAction(webview->pageAction(QWebPage::Reload));
-    toolBar->addAction(webview->pageAction(QWebPage::Stop));
+    QAction *back;
+    QAction *forward;
+    QAction *reload;
+    QAction *stop;
+
+    toolBar->addAction(back = webview->pageAction(QWebPage::Back));
+    back->setShortcut(QKeySequence::Back);
+    toolBar->addAction(forward = webview->pageAction(QWebPage::Forward));
+    forward->setShortcut(QKeySequence::Forward);
+    toolBar->addAction(reload = webview->pageAction(QWebPage::Reload));
+    reload->setShortcuts(QList<QKeySequence>({QKeySequence::Refresh, QKeySequence(tr("Ctrl+R"))}));
+    toolBar->addAction(stop = webview->pageAction(QWebPage::Stop));
+    reload->setShortcut(Qt::Key_Escape);
 
     searchBox->setPlaceholderText(tr("search"));
     searchBox->setClearButtonEnabled(true);
@@ -183,21 +192,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     qreal zoom = webview->zoomFactor();
     if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_F3) {
         search();
-    } else if (event->key() == Qt::Key_Escape) {
-        done(false);
     } else if (event->key() == Qt::Key_Plus) {
         webview->setZoomFactor(zoom + 0.1);
     } else if (event->key() == Qt::Key_Minus) {
         webview->setZoomFactor(zoom - 0.1);
     } else if (event->key() == Qt::Key_0) {
-        webview->setZoomFactor(1);
-    } else if (event->matches(QKeySequence::Back)) {
-        webview->back();
-    } else if (event->matches(QKeySequence::Forward)) {
-        webview->forward();
-    } else if (event->matches(QKeySequence::Refresh) ||
-               (event->key() == Qt::Key_R && (QApplication::keyboardModifiers() & Qt::ControlModifier))) {
-        webview->reload();            
+        webview->setZoomFactor(1);               
     } else if (event->matches(QKeySequence::Open)) {
         openDialog();
     } else if (event->key() == Qt::Key_B && (QApplication::keyboardModifiers() & Qt::ControlModifier)) {
