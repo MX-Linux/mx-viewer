@@ -189,7 +189,7 @@ void MainWindow::findInPage()
 // process keystrokes
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    qreal zoom = webview->zoomFactor();
+    auto zoom = webview->zoomFactor();
     if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_F3) {
         search();
     } else if (event->key() == Qt::Key_Plus) {
