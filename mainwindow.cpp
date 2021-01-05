@@ -62,7 +62,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     QString url, title;
     if (!arg_parser.positionalArguments().isEmpty()) {
         url = arg_parser.positionalArguments().at(0);
-        (arg_parser.positionalArguments().size() > 1) ? title = arg_parser.positionalArguments().at(1) : title = url;
+        title = (arg_parser.positionalArguments().size() > 1) ? arg_parser.positionalArguments().at(1) : url;
     } else {
        url = "https://duckduckgo.com";
        title = "DuckDuckGo";
@@ -138,10 +138,11 @@ void MainWindow::displaySite(QString url, QString title)
         centerWindow();
     }
 
+    connect(webview, &QWebView::loadFinished, [url]() { qDebug() << "Error loading:" << url; });
     webview->load(QUrl::fromUserInput(url));
     webview->show();
 
-    loading(); // display loading progressBar    
+    loading(); // display loading progressBar
     this->setWindowTitle(title);
 }
 
@@ -197,7 +198,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     } else if (event->key() == Qt::Key_Minus) {
         webview->setZoomFactor(zoom - 0.1);
     } else if (event->key() == Qt::Key_0) {
-        webview->setZoomFactor(1);               
+        webview->setZoomFactor(1);
     } else if (event->matches(QKeySequence::Open)) {
         openDialog();
     } else if (event->key() == Qt::Key_B && (QApplication::keyboardModifiers() & Qt::ControlModifier)) {
@@ -251,7 +252,7 @@ void MainWindow::done(bool)
     webview->stop();
     webview->setFocus();
     searchBox->clear();
-    progressBar->hide();       
+    progressBar->hide();
 }
 
 // advance progressbar
