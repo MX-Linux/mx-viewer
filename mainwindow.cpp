@@ -58,7 +58,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     QString url, title;
     if (!arg_parser.positionalArguments().isEmpty()) {
         url = arg_parser.positionalArguments().at(0);
-        (arg_parser.positionalArguments().size() > 1) ? title = arg_parser.positionalArguments().at(1) : title = url;
+        title = (arg_parser.positionalArguments().size() > 1) ? arg_parser.positionalArguments().at(1) : url;
     } else {
        url = "https://duckduckgo.com";
        title = "DuckDuckGo";
@@ -134,6 +134,7 @@ void MainWindow::displaySite(QString url, QString title)
         centerWindow();
     }
 
+    connect(webview, &QWebEngineView::loadFinished, [url]() { qDebug() << "Error loading:" << url; });
     webview->load(QUrl::fromUserInput(url));
     webview->show();
 
