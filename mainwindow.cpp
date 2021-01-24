@@ -138,7 +138,8 @@ void MainWindow::displaySite(QString url, QString title)
         centerWindow();
     }
 
-    connect(webview, &QWebView::loadFinished, [url]() { qDebug() << "Error loading:" << url; });
+    disconnect(conn);
+    conn = connect(webview, &QWebView::loadFinished, [url](bool ok) { if (not ok) qDebug() << "Error loading:" << url; });
     webview->load(QUrl::fromUserInput(url));
     webview->show();
 
