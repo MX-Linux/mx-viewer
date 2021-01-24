@@ -43,7 +43,7 @@ protected:
 public:
     MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
     ~MainWindow();
-    void addToolbar();    
+    void addToolbar();
     void centerWindow();
     void displaySite(QString url, QString title);
     void openBrowseDialog();
@@ -63,6 +63,7 @@ private:
     QString word;
     QToolBar *toolBar;
     QWebView *webview;
+    QMetaObject::Connection conn;
 
 };
 
