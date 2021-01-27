@@ -1,3 +1,10 @@
+mx-viewer (21.1) mx; urgency=medium
+
+  * show which URL failed to load
+  * various fixes
+
+ -- Adrian <adrian@mxlinux.org>  Wed, 27 Jan 2021 11:44:36 -0500
+
 mx-viewer (20.12.01) mx; urgency=medium
 
   * add open/browse option, help dialog 
