@@ -188,21 +188,20 @@ void MainWindow::findInPage()
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     qreal zoom = webview->zoomFactor();
-    if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_F3) {
+    if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_F3)
         search();
-    } else if (event->key() == Qt::Key_Plus) {
+    else if (event->key() == Qt::Key_Plus)
         webview->setZoomFactor(zoom + 0.1);
-    } else if (event->key() == Qt::Key_Minus) {
+    else if (event->key() == Qt::Key_Minus)
         webview->setZoomFactor(zoom - 0.1);
-    } else if (event->key() == Qt::Key_0) {
+    else if (event->key() == Qt::Key_0)
         webview->setZoomFactor(1);
-    } else if (event->matches(QKeySequence::Open)) {
+    else if (event->matches(QKeySequence::Open))
         openDialog();
-    } else if (event->key() == Qt::Key_B && (QApplication::keyboardModifiers() & Qt::ControlModifier)) {
+    else if (event->key() == Qt::Key_B && (QApplication::keyboardModifiers() & Qt::ControlModifier))
         openBrowseDialog();
-    } else if (event->key() == Qt::Key_Question || event->matches(QKeySequence::HelpContents)) {
+    else if (event->key() == Qt::Key_Question || event->matches(QKeySequence::HelpContents))
         openQuickInfo();
-    }
 }
 
 // resize event
