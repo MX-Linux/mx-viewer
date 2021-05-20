@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     parser.addPositionalArgument("Title", QObject::tr("Window title for the viewer"), "[title]");
     parser.process(app);
 
-    if(!dropElevatedPrivileges()) {
+    if (!dropElevatedPrivileges()) {
         qDebug() << "Could not drop elevated privileges";
         exit(EXIT_FAILURE);
     }
