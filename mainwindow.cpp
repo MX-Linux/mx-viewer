@@ -73,7 +73,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    QSettings settings(qApp->applicationName());
+    QSettings settings(qApp->organizationName(), qApp->applicationName());
     settings.setValue("geometry", saveGeometry());
 }
 
@@ -127,7 +127,7 @@ void MainWindow::displaySite(QString url, QString title)
     int height = 500;
     this->resize(width, height);
 
-    QSettings settings(qApp->applicationName());
+    QSettings settings(qApp->organizationName(), qApp->applicationName());
     if (settings.contains("geometry")) {
         restoreGeometry(settings.value("geometry").toByteArray());
         if (this->isMaximized()) { // add option to resize if maximized
