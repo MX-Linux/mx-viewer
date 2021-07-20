@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
     //app.setWindowIcon(QIcon("/usr/share/pixmaps/mx-viewer.png"));
     app.setWindowIcon(QIcon::fromTheme(app.applicationName()));
     app.setApplicationVersion(VERSION);
+    app.setOrganizationName("MX-Linux");
 
     QCommandLineParser parser;
     parser.setApplicationDescription(QObject::tr("This tool will display the URL content in a window, window title is optional."));
