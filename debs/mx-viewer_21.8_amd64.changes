@@ -1,0 +1,47 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Date: Sun, 01 Aug 2021 13:28:55 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 21.8
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (21.8) mx; urgency=medium
+ .
+   * Use webenginewidgets instead of webkitwidgets
+   * Save .conf file in ~/.conf/MX-Linux
+Checksums-Sha1:
+ 28fdd6bd32f7a89541726ce29b214443248b61d3 1172 mx-viewer_21.8.dsc
+ 33b2f45f10e85e1bec3fab74f21d58adef42b188 245864 mx-viewer_21.8.tar.xz
+ 8769dda277c1ab3725a8f180685a3510cbe5c28f 12815 mx-viewer_21.8_amd64.buildinfo
+ 1e9fce792c30ff3fb14286fbffacb20db9a3dbe4 22216 mx-viewer_21.8_amd64.deb
+Checksums-Sha256:
+ cac8d9211df39fbb1264ab69d47dea9b9526f7e96941b1ca0412e67a25722734 1172 mx-viewer_21.8.dsc
+ 2f133fdefd097c8ef00d9a5cf0e4ba0faed1efc9b91e5c2608426231b45e8453 245864 mx-viewer_21.8.tar.xz
+ 703ac11b993a1385d7b44b9107813f1eb6f5de96f61478f514df8f2a4788e3d8 12815 mx-viewer_21.8_amd64.buildinfo
+ 861f1eed12a01994073e58d0ec2e65304bc82688a99ef19b3a3fcd9597f3bc2b 22216 mx-viewer_21.8_amd64.deb
+Files:
+ 609a04f686c0856a0bfdc0e82b5f2074 1172 system optional mx-viewer_21.8.dsc
+ 1a22131002136ca7342c182ac1b7804e 245864 system optional mx-viewer_21.8.tar.xz
+ dc2ee208efc6a0093827882cdc4fac77 12815 system optional mx-viewer_21.8_amd64.buildinfo
+ 6d5c25a00607b427eb26aca5ed86e77f 22216 system optional mx-viewer_21.8_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmEG4FkTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumJ5ICACf0SrQ+r+SMqvpwfQD0UfYT4pUnsF5
+Fdkym9tFH/wsU8S3XeggxUMc0w0+EVh2fkTg+7kUIfaBBqlPvq7sNhC6SJeIxxBd
+tyDQJXtggOxBRhR3TIsME9QI/Lf3ZvRCiktD9Rx1V+etDXGT0kpBJdDvazalSsbC
+Y5q9+subKup5RxtQzRv7aKB2o1zCfjzQ4QzQU4+kXmiaVpqwyX761XJ28x2NXFLJ
+x7Gc2ibSOiV+mMDdYYmCHjynzXLfto3naIkvFozz4aDR9ebAj80ss505XM3QUS00
+BExCy28ZYjC8WIW5QlcuXsf4kauOT5zAFhtCjcXrE16Ifd/rbLT+4YNK
+=QvyF
+-----END PGP SIGNATURE-----
