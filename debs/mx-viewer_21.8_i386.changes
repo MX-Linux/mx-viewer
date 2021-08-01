@@ -19,23 +19,23 @@ Changes:
    * Use webenginewidgets instead of webkitwidgets
    * Save .conf file in ~/.conf/MX-Linux
 Checksums-Sha1:
- 66d6d278d83a7dd1e2187a89eba753eaefe39430 12513 mx-viewer_21.8_i386.buildinfo
- 07bcd6147f0e82b7e6831a678500bc2ed034dc56 23420 mx-viewer_21.8_i386.deb
+ d0ca5e8c4b959e1cf987b51adadf35140fb2b5df 12129 mx-viewer_21.8_i386.buildinfo
+ 53be28e024a8df78cc19c942b00e7434b3c5b625 24434 mx-viewer_21.8_i386.deb
 Checksums-Sha256:
- 73e380fdc3de2d9c49426529c9128c64a5bda7f8d73c6b432180cca9c241c410 12513 mx-viewer_21.8_i386.buildinfo
- 5d04bb23c3144c66247a9111fc03981d1d75d788e68bbc4f04c64245a525fb12 23420 mx-viewer_21.8_i386.deb
+ 5cae38df6a796e00f252bd69f67428c5c820b43c93a1c85d880d124b84622d56 12129 mx-viewer_21.8_i386.buildinfo
+ ef38f5d248c098d6f5e3bb68ba24b8c5b40b174806f566e4141c9e64891c391f 24434 mx-viewer_21.8_i386.deb
 Files:
- fe056524a825020753fff7100280ebf4 12513 system optional mx-viewer_21.8_i386.buildinfo
- e888f3c377d60d73380db5d7a89ed6db 23420 system optional mx-viewer_21.8_i386.deb
+ 10d88998bac7e3d489adc62bee416568 12129 system optional mx-viewer_21.8_i386.buildinfo
+ fc626ed21f467e877fa4540c341c373e 24434 system optional mx-viewer_21.8_i386.deb
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmEG4FoTHGFkcmlhbkBt
-eGxpbnV4Lm9yZwAKCRBwk4x4BnnumCBUB/9M3T0nADJNjKXr8viz4upvRQrPboPE
-HeaIzVEJ0oW5ODz5rLMLTP6UhzvCzM8GFi4Zw0N8Ye+K7sUPK0IMKZ3xrio8JIEW
-n6GwRzilv7OCnxr/wEwdj454ia6jPQ/4zfpjQkLGnKjohd5puDNqxFaBgA581Mhj
-3VuGX9jxYQKPreRUn27PClT2lTvQqJPla9EBki3up0TDXdYpKCq3TXRotwOxHTBE
-qJ6B3OBjPalF6FKpk18opqlG/ViytvHRva21Lg44NLtRLD9olN1JILUZRtxDUMmE
-lVFtf0cSEvo3EOFgVHPGW/9babqTBIlpSXCPC4e9vYMKikJOnlqmvoKO
-=GAN+
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmEHMUgTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumIqhB/4hwJmQ+8Q7t9/5YUhAexde/58GCVbE
+Zp7EYODxjdoZ/aoIPdXngDBpHGMkeleDwu2OcATG1S/vZl1gIrLy0dHDcj0+M3mG
+g619RcWrsLeAm2QJoYgtW8EDilVl/m/GCjtiT3nCuQ7xe5j1Nai1IsXWX49RNa/w
+K5ULDBJCkMi7JzMzuKmvLPxls8aCHtxdoiGAGow15H9CK6kzqjLlxK7V5L4fTNBT
+keM8JISE1/OLYWzbjkjnizK1GOQkwADmaDEBRxiWD4HIDQpTnC2Y/dbZ+CrlX7Vh
+RQ2rIjWrnlwuWztY/dxezB6LxeWWBmIBbeXLcLcqLfMyGhrFbxQx7xFT
+=ksIc
 -----END PGP SIGNATURE-----
