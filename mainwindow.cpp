@@ -220,7 +220,7 @@ void MainWindow::changeEvent(QEvent *event)
                     "a:visited{color:" + pal.color(QPalette::LinkVisited).name() + "}");
         QUrl cssdata("data:text/css;charset=utf-8;base64,"
                      + css.toUtf8().toBase64(), QUrl::StrictMode);
-//        webview->settings()->setUserStyleSheetUrl(cssdata);
+        //webview->settings()->setUserStyleSheetUrl(cssdata);
     }
 }
 
