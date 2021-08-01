@@ -27,6 +27,7 @@
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QProgressBar>
+#include <QSettings>
 #include <QTimer>
 #include <QtWebEngineWidgets/QWebEngineView>
 
@@ -60,6 +61,7 @@ public slots:
 private:
     QLineEdit *searchBox;
     QProgressBar *progressBar;
+    QSettings settings;
     QString word;
     QToolBar *toolBar;
     QWebEngineView *webview;

@@ -31,7 +31,6 @@
 #include <QInputDialog>
 #include <QKeyEvent>
 #include <QMessageBox>
-#include <QSettings>
 #include <QStyle>
 #include <QToolBar>
 #include <QtWebEngineWidgets/QWebEngineSettings>
@@ -69,7 +68,6 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    QSettings settings(qApp->organizationName(), qApp->applicationName());
     settings.setValue("geometry", saveGeometry());
 }
 
@@ -119,15 +117,13 @@ void MainWindow::openBrowseDialog()
 // pop up a window and display website
 void MainWindow::displaySite(QString url, QString title)
 {
-    int width = 800;
-    int height = 500;
-    this->resize(width, height);
+    QSize size {800, 500};
+    this->resize(size);
 
-    QSettings settings(qApp->organizationName(), qApp->applicationName());
     if (settings.contains("geometry")) {
         restoreGeometry(settings.value("geometry").toByteArray());
         if (this->isMaximized()) { // add option to resize if maximized
-            this->resize(width, height);
+            this->resize(size);
             centerWindow();
         }
     } else {
@@ -135,7 +131,7 @@ void MainWindow::displaySite(QString url, QString title)
     }
 
     disconnect(conn);
-    conn = connect(webview, &QWebEngineView::loadFinished, [url](bool ok) { if (not ok) qDebug() << "Error loading:" << url; });
+    conn = connect(webview, &QWebEngineView::loadFinished, [url](bool ok) { if (!ok) qDebug() << "Error loading:" << url; });
     webview->load(QUrl::fromUserInput(url));
     webview->show();
 
@@ -187,7 +183,7 @@ void MainWindow::findInPage()
 // process keystrokes
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    qreal zoom = webview->zoomFactor();
+    auto zoom = webview->zoomFactor();
     if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_F3)
         search();
     else if (event->key() == Qt::Key_Plus)
