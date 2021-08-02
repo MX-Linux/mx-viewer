@@ -1,0 +1,46 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Date: Sun, 01 Aug 2021 21:39:18 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 21.8
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (21.8) mx; urgency=medium
+ .
+   * Save .conf file in ~/.config/MX-Linux
+Checksums-Sha1:
+ d6a0d63120cd333e4fd925427bfde235b16947dd 1173 mx-viewer_21.8.dsc
+ 0ce4cafd6204e156fade83cd83f736767d1001f2 245492 mx-viewer_21.8.tar.xz
+ a08bef8204c1efd8f5fae39f636c79c721f5ccd0 10585 mx-viewer_21.8_amd64.buildinfo
+ 95f403bc6dcddece0c1312d6e3286198c8c2d7fb 23172 mx-viewer_21.8_amd64.deb
+Checksums-Sha256:
+ 612cbe18e75c73123c655648cf9bb494edde4641a47aeabaca692e73d7a0f445 1173 mx-viewer_21.8.dsc
+ 3c62b20afe6c39bd151467705188e4d1c94cc022ac4191251ec7f9c0011fd8a0 245492 mx-viewer_21.8.tar.xz
+ 54fefd7494168ba4b9e166d35703b396ff2a4c12f02b537974dfe295fa152dbc 10585 mx-viewer_21.8_amd64.buildinfo
+ 82ca6ccc073381d9c3b69836f7f9c5832a6173ce4a67582937e363b9223ffaea 23172 mx-viewer_21.8_amd64.deb
+Files:
+ 59386057ea78ff5088b8ae3be91fb66e 1173 system optional mx-viewer_21.8.dsc
+ 710f70c3b5aa03bc951f55a4106a6f4e 245492 system optional mx-viewer_21.8.tar.xz
+ 62572bffde10006607eab2d0f4921e1a 10585 system optional mx-viewer_21.8_amd64.buildinfo
+ 08ce6d4e8797407c875f6328c62d2d36 23172 system optional mx-viewer_21.8_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmEHThMTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumJuuB/sH/xX4kdB1za/QQVgzkT36J3eQhww/
+e2OI6LfXvVyFJFke0JMCoM9Bn7dXbG5wem4hN4Ik9NbhaSFobT++1WfRo9Mh8hyj
+esrd9KVd9MIUOMxLur8qEj0ffqZ5RwXv6l9DBzSimwrtIuj6Eqht1kfn21Hizjoz
+MPaKJdrFyYgd5gy58s2Gtnogl2OAOFockfSejKM9sJgZ2H+ju4SQbXzwDKP49n/E
+BOy/Q6Ii8rfxuJXheTX3gvYDmpps/KibX8zVFJL3brqyF/dIXc9zHPlbpl/2XgxM
+pGF2mKX7IORytWr+C8Xk3jDHgktJ+iZU9CTJvB6l+6gZ38O9r1M2mY1f
+=GQIz
+-----END PGP SIGNATURE-----
