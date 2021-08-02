@@ -1,0 +1,40 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Date: Sun, 01 Aug 2021 21:39:18 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: i386
+Version: 21.8
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (21.8) mx; urgency=medium
+ .
+   * Save .conf file in ~/.config/MX-Linux
+Checksums-Sha1:
+ 1e0e9b8eb8e31e68beae557690ba7b553cbbdd06 10297 mx-viewer_21.8_i386.buildinfo
+ a8655963a16923d3bff42eb6cc41d2315230b80a 24780 mx-viewer_21.8_i386.deb
+Checksums-Sha256:
+ 32a1610b112b6cc9d6525e55ba040ecd64ca81751716291e402b533c125a6c85 10297 mx-viewer_21.8_i386.buildinfo
+ 409c9150f599d08c6d9011da41b6a7487c57822952f59cfce37fcf45cbc2de4e 24780 mx-viewer_21.8_i386.deb
+Files:
+ 503b5d9b0d39edb3c52755066c2f148f 10297 system optional mx-viewer_21.8_i386.buildinfo
+ 4af41bf365c30346619fd8f9ea585683 24780 system optional mx-viewer_21.8_i386.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmEHThMTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumBdXCACze94oPyTBRDEVa6hNBhoS6ek+ObeN
+JLH0pxAnIGalt7DvRGZuUfpmPp3CvnXCpdTmurYwpsevu1SPGLRZstgCr2ovZYpc
+yUL/bHvLOJqeEfa86O/A+y4Ma68iwy7skjRILNV0YJk1lX8KzUtlwoERTK5xG3IJ
+gzafMMfHtMcucXJ37M70ryYuu0UlyIDCzkCBOGekxrbm2GDYilhAxY6GGaZpFDX5
+u1fFAwJaw3xKmoHs9ephpS9JgtvzxnbRt4jnrEy0k937K8sMrMq7OT//O5w3oa60
+WambMpkSqm51gbnu+v83HfQgfxe1M/Fba1cH8wN85aKTBdfwMKBq3+yD
+=Kq5B
+-----END PGP SIGNATURE-----

@@ -25,7 +25,6 @@
 #include "version.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QDesktopWidget>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -114,7 +113,8 @@ void MainWindow::addToolbar()
 
 void MainWindow::openBrowseDialog()
 {
-    QString file = QFileDialog::getOpenFileName(this, tr("Select file to open"), QDir::homePath(), tr("Hypertext Files (*.htm *.html);;All Files (*.*)"));
+    QString file = QFileDialog::getOpenFileName(this, tr("Select file to open"),
+                                                QDir::homePath(), tr("Hypertext Files (*.htm *.html);;All Files (*.*)"));
     if (QFileInfo::exists(file)) displaySite(file, file);
 }
 
@@ -123,7 +123,6 @@ void MainWindow::displaySite(QString url, QString title)
 {
     QSize size {800, 500};
     this->resize(size);
-
     if (settings.contains("geometry")) {
         restoreGeometry(settings.value("geometry").toByteArray());
         if (this->isMaximized()) { // add option to resize if maximized
@@ -147,8 +146,8 @@ void MainWindow::displaySite(QString url, QString title)
 void MainWindow::centerWindow()
 {
     QRect screenGeometry = QApplication::desktop()->screenGeometry();
-    int x = (screenGeometry.width()-this->width()) / 2;
-    int y = (screenGeometry.height()-this->height()) / 2;
+    int x = (screenGeometry.width() - this->width()) / 2;
+    int y = (screenGeometry.height() - this->height()) / 2;
     this->move(x, y);
 }
 
@@ -207,7 +206,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 // resize event
 void MainWindow::resizeEvent(QResizeEvent*)
 {
-    progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
+    progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - 40);
 }
 
 // for colour scheme changes
@@ -233,7 +232,7 @@ void MainWindow::loading()
 {
     progressBar->setFixedHeight(20);
     progressBar->setTextVisible(false);
-    progressBar->move(this->geometry().width()/2 - progressBar->width()/2, this->geometry().height() - 40);
+    progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - 40);
     progressBar->setFocus();
     progressBar->show();
     timer->start(100);
