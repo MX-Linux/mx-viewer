@@ -91,7 +91,7 @@ void MainWindow::addToolbar()
     toolBar->addAction(reload = webview->pageAction(QWebPage::Reload));
     reload->setShortcuts(QList<QKeySequence>({QKeySequence::Refresh, QKeySequence(tr("Ctrl+R"))}));
     toolBar->addAction(stop = webview->pageAction(QWebPage::Stop));
-    reload->setShortcut(Qt::Key_Escape);
+    stop->setShortcut(Qt::Key_Escape);
 
     searchBox->setPlaceholderText(tr("search"));
     searchBox->setClearButtonEnabled(true);
