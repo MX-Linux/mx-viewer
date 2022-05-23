@@ -38,8 +38,8 @@ static bool dropElevatedPrivileges()
     // ref:  https://www.safaribooksonline.com/library/view/secure-programming-cookbook/0596003943/ch01s03.html#secureprgckbk-CHP-1-SECT-3.3
 
     // change guid + uid   ~~  nobody (uid 65534), nogroup (gid 65534), users (gid 100)
-    setgid(65534);
-    setuid(65534);
+    if (setgid(65534) != 0) EXIT_FAILURE;
+    if (setuid(65534) != 0) EXIT_FAILURE;
 
     // On systems with defined _POSIX_SAVED_IDS in the unistd.h file, it should be
     // impossible to regain elevated privs after the setuid() call, above.  Test, try to regain elev priv:
