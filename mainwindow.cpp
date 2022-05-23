@@ -207,22 +207,20 @@ void MainWindow::resizeEvent(QResizeEvent*)
 }
 
 // for colour scheme changes
-void MainWindow::changeEvent(QEvent *event)
-{
-    const QEvent::Type etype = event->type();
-    if (etype == QEvent::ApplicationPaletteChange
-        || etype == QEvent::PaletteChange || etype == QEvent::StyleChange)
-    {
-        const QPalette &pal = webview->style()->standardPalette();
-        QString css("body{background-color:" + pal.color(QPalette::Base).name()
-                    + ";color:" + pal.color(QPalette::WindowText).name() + "}"
-                    "a{color:" + pal.color(QPalette::Link).name() + "}"
-                    "a:visited{color:" + pal.color(QPalette::LinkVisited).name() + "}");
-        QUrl cssdata("data:text/css;charset=utf-8;base64,"
-                     + css.toUtf8().toBase64(), QUrl::StrictMode);
-        //webview->settings()->setUserStyleSheetUrl(cssdata);
-    }
-}
+//void MainWindow::changeEvent(QEvent *event)
+//{
+//    const QEvent::Type etype = event->type();
+//    if (etype == QEvent::ApplicationPaletteChange || etype == QEvent::PaletteChange || etype == QEvent::StyleChange) {
+//        const QPalette &pal = webview->style()->standardPalette();
+//        QString css("body{background-color:" + pal.color(QPalette::Base).name()
+//                    + ";color:" + pal.color(QPalette::WindowText).name() + "}"
+//                    "a{color:" + pal.color(QPalette::Link).name() + "}"
+//                    "a:visited{color:" + pal.color(QPalette::LinkVisited).name() + "}");
+//        QUrl cssdata("data:text/css;charset=utf-8;base64,"
+//                     + css.toUtf8().toBase64(), QUrl::StrictMode);
+//        webview->settings()->setUserStyleSheetUrl(cssdata);
+//    }
+//}
 
 // display progressbar while loading page
 void MainWindow::loading()

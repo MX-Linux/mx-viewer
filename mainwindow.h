@@ -39,7 +39,7 @@ protected:
     QTimer *timer;
     void keyPressEvent(QKeyEvent *event);
     void resizeEvent(QResizeEvent *event);
-    void changeEvent(QEvent *event);
+//    void changeEvent(QEvent *event);
 
 public:
     MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
