@@ -22,6 +22,8 @@
 
 QT       += core gui webenginewidgets
 
+CONFIG   += c++17
+
 TARGET = mx-viewer
 TEMPLATE = app
 
