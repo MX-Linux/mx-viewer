@@ -29,7 +29,7 @@
 #include <QProgressBar>
 #include <QSettings>
 #include <QTimer>
-#include <QWebView>
+#include <QtWebEngineWidgets/QWebEngineView>
 
 class MainWindow : public QMainWindow
 {
@@ -39,7 +39,7 @@ protected:
     QTimer *timer;
     void keyPressEvent(QKeyEvent *event);
     void resizeEvent(QResizeEvent *event);
-    void changeEvent(QEvent *event);
+//    void changeEvent(QEvent *event);
 
 public:
     MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
@@ -64,7 +64,7 @@ private:
     QSettings settings;
     QString word;
     QToolBar *toolBar;
-    QWebView *webview;
+    QWebEngineView *webview;
     QMetaObject::Connection conn;
 
 };

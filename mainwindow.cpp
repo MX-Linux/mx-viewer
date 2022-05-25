@@ -25,34 +25,31 @@
 #include "version.h"
 
 #include <QApplication>
-#include <QDesktopWidget>
+#include <QDebug>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QScreen>
 #include <QStyle>
 #include <QToolBar>
+#include <QtWebEngineWidgets/QWebEngineSettings>
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     : QMainWindow(parent)
 {
     timer = new QTimer(this);
     toolBar = new QToolBar(this);
-    webview = new QWebView(this);
+    webview = new QWebEngineView(this);
     progressBar = new QProgressBar(this);
     searchBox = new QLineEdit(this);
 
     addToolbar();
 
-    QWebSettings *websettings = webview->settings();
-    websettings->setAttribute(QWebSettings::SiteSpecificQuirksEnabled, !arg_parser.isSet("disable-quirks"));
-    websettings->setAttribute(QWebSettings::JavascriptEnabled, !arg_parser.isSet("disable-js"));
-    websettings->setAttribute(QWebSettings::SpatialNavigationEnabled, arg_parser.isSet("enable-spatial-navigation"));
-    websettings->setAttribute(QWebSettings::PrivateBrowsingEnabled, true);
-    websettings->setAttribute(QWebSettings::CSSRegionsEnabled, false);
+    QWebEngineSettings *websettings = webview->settings();
+    websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !arg_parser.isSet("disable-js"));
+    websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, arg_parser.isSet("enable-spatial-navigation"));
 
-    if (!arg_parser.isSet("enable-cookies"))
-        websettings->setThirdPartyCookiePolicy(QWebSettings::AlwaysBlockThirdPartyCookies);
 
     QEvent palevent(QEvent::PaletteChange);
     qApp->sendEvent(this, &palevent);
@@ -84,13 +81,13 @@ void MainWindow::addToolbar()
     QAction *reload;
     QAction *stop;
 
-    toolBar->addAction(back = webview->pageAction(QWebPage::Back));
+    toolBar->addAction(back = webview->pageAction(QWebEnginePage::Back));
     back->setShortcut(QKeySequence::Back);
-    toolBar->addAction(forward = webview->pageAction(QWebPage::Forward));
+    toolBar->addAction(forward = webview->pageAction(QWebEnginePage::Forward));
     forward->setShortcut(QKeySequence::Forward);
-    toolBar->addAction(reload = webview->pageAction(QWebPage::Reload));
+    toolBar->addAction(reload = webview->pageAction(QWebEnginePage::Reload));
     reload->setShortcuts(QList<QKeySequence>({QKeySequence::Refresh, QKeySequence(tr("Ctrl+R"))}));
-    toolBar->addAction(stop = webview->pageAction(QWebPage::Stop));
+    toolBar->addAction(stop = webview->pageAction(QWebEnginePage::Stop));
     stop->setShortcut(Qt::Key_Escape);
 
     searchBox->setPlaceholderText(tr("search"));
@@ -106,9 +103,9 @@ void MainWindow::addToolbar()
     toolBar->show();
 
     // show toolbar when new page is loaded
-    connect(webview, &QWebView::loadStarted, toolBar, &QToolBar::show);
-    connect(webview, &QWebView::loadStarted, this, &MainWindow::loading);
-    connect(webview, &QWebView::loadFinished, this, &MainWindow::done);
+    connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
+    connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
+    connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
 }
 
 void MainWindow::openBrowseDialog()
@@ -123,6 +120,7 @@ void MainWindow::displaySite(QString url, QString title)
 {
     QSize size {800, 500};
     this->resize(size);
+
     if (settings.contains("geometry")) {
         restoreGeometry(settings.value("geometry").toByteArray());
         if (this->isMaximized()) { // add option to resize if maximized
@@ -134,7 +132,7 @@ void MainWindow::displaySite(QString url, QString title)
     }
 
     disconnect(conn);
-    conn = connect(webview, &QWebView::loadFinished, [url](bool ok) { if (!ok) qDebug() << "Error loading:" << url; });
+    conn = connect(webview, &QWebEngineView::loadFinished, [url](bool ok) { if (!ok) qDebug() << "Error loading:" << url; });
     webview->load(QUrl::fromUserInput(url));
     webview->show();
 
@@ -145,7 +143,7 @@ void MainWindow::displaySite(QString url, QString title)
 // center main window
 void MainWindow::centerWindow()
 {
-    QRect screenGeometry = QApplication::desktop()->screenGeometry();
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int x = (screenGeometry.width() - this->width()) / 2;
     int y = (screenGeometry.height() - this->height()) / 2;
     this->move(x, y);
@@ -210,22 +208,20 @@ void MainWindow::resizeEvent(QResizeEvent*)
 }
 
 // for colour scheme changes
-void MainWindow::changeEvent(QEvent *event)
-{
-    const QEvent::Type etype = event->type();
-    if (etype == QEvent::ApplicationPaletteChange
-        || etype == QEvent::PaletteChange || etype == QEvent::StyleChange)
-    {
-        const QPalette &pal = webview->style()->standardPalette();
-        QString css("body{background-color:" + pal.color(QPalette::Base).name()
-                    + ";color:" + pal.color(QPalette::WindowText).name() + "}"
-                    "a{color:" + pal.color(QPalette::Link).name() + "}"
-                    "a:visited{color:" + pal.color(QPalette::LinkVisited).name() + "}");
-        QUrl cssdata("data:text/css;charset=utf-8;base64,"
-                     + css.toUtf8().toBase64(), QUrl::StrictMode);
-        webview->settings()->setUserStyleSheetUrl(cssdata);
-    }
-}
+//void MainWindow::changeEvent(QEvent *event)
+//{
+//    const QEvent::Type etype = event->type();
+//    if (etype == QEvent::ApplicationPaletteChange || etype == QEvent::PaletteChange || etype == QEvent::StyleChange) {
+//        const QPalette &pal = webview->style()->standardPalette();
+//        QString css("body{background-color:" + pal.color(QPalette::Base).name()
+//                    + ";color:" + pal.color(QPalette::WindowText).name() + "}"
+//                    "a{color:" + pal.color(QPalette::Link).name() + "}"
+//                    "a:visited{color:" + pal.color(QPalette::LinkVisited).name() + "}");
+//        QUrl cssdata("data:text/css;charset=utf-8;base64,"
+//                     + css.toUtf8().toBase64(), QUrl::StrictMode);
+//        webview->settings()->setUserStyleSheetUrl(cssdata);
+//    }
+//}
 
 // display progressbar while loading page
 void MainWindow::loading()
@@ -248,6 +244,7 @@ void MainWindow::done(bool)
     webview->setFocus();
     searchBox->clear();
     progressBar->hide();
+    this->setWindowTitle(webview->title());
 }
 
 // advance progressbar

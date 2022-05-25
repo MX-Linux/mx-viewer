@@ -2,7 +2,7 @@
 Hash: SHA512
 
 Format: 1.8
-Date: Sun, 01 Aug 2021 21:39:18 -0400
+Date: Sun, 01 Aug 2021 13:28:55 -0400
 Source: mx-viewer
 Binary: mx-viewer
 Architecture: source amd64
@@ -16,31 +16,32 @@ Description:
 Changes:
  mx-viewer (21.8) mx; urgency=medium
  .
-   * Save .conf file in ~/.config/MX-Linux
+   * Use webenginewidgets instead of webkitwidgets
+   * Save .conf file in ~/.conf/MX-Linux
 Checksums-Sha1:
- d6a0d63120cd333e4fd925427bfde235b16947dd 1173 mx-viewer_21.8.dsc
- 0ce4cafd6204e156fade83cd83f736767d1001f2 245492 mx-viewer_21.8.tar.xz
- a08bef8204c1efd8f5fae39f636c79c721f5ccd0 10585 mx-viewer_21.8_amd64.buildinfo
- 95f403bc6dcddece0c1312d6e3286198c8c2d7fb 23172 mx-viewer_21.8_amd64.deb
+ 5b333c2994659f584cd8ace608b12ed23ca23d8f 1172 mx-viewer_21.8.dsc
+ 33b2f45f10e85e1bec3fab74f21d58adef42b188 245864 mx-viewer_21.8.tar.xz
+ 68c9d335362b0120493a7702104cff610ce6ec27 12417 mx-viewer_21.8_amd64.buildinfo
+ 8ac064b44c76f27da6ded52e6f372bb4105b759f 23062 mx-viewer_21.8_amd64.deb
 Checksums-Sha256:
- 612cbe18e75c73123c655648cf9bb494edde4641a47aeabaca692e73d7a0f445 1173 mx-viewer_21.8.dsc
- 3c62b20afe6c39bd151467705188e4d1c94cc022ac4191251ec7f9c0011fd8a0 245492 mx-viewer_21.8.tar.xz
- 54fefd7494168ba4b9e166d35703b396ff2a4c12f02b537974dfe295fa152dbc 10585 mx-viewer_21.8_amd64.buildinfo
- 82ca6ccc073381d9c3b69836f7f9c5832a6173ce4a67582937e363b9223ffaea 23172 mx-viewer_21.8_amd64.deb
+ 44f227294d5d0fc9d65087def2bc935f85b559333972d216a22ee27b767010cd 1172 mx-viewer_21.8.dsc
+ 2f133fdefd097c8ef00d9a5cf0e4ba0faed1efc9b91e5c2608426231b45e8453 245864 mx-viewer_21.8.tar.xz
+ 982b77f898b64932b236e2b38dabba90e3c0c07cd2d5ed451c2fdfd1e2dbfc6f 12417 mx-viewer_21.8_amd64.buildinfo
+ 097bf841f6486eaa6930df54e5b9cd0f836addd4f82868b823ad46b8f239948c 23062 mx-viewer_21.8_amd64.deb
 Files:
- 59386057ea78ff5088b8ae3be91fb66e 1173 system optional mx-viewer_21.8.dsc
- 710f70c3b5aa03bc951f55a4106a6f4e 245492 system optional mx-viewer_21.8.tar.xz
- 62572bffde10006607eab2d0f4921e1a 10585 system optional mx-viewer_21.8_amd64.buildinfo
- 08ce6d4e8797407c875f6328c62d2d36 23172 system optional mx-viewer_21.8_amd64.deb
+ a071c2d00aafa4c817136bfbdf9f749c 1172 system optional mx-viewer_21.8.dsc
+ 1a22131002136ca7342c182ac1b7804e 245864 system optional mx-viewer_21.8.tar.xz
+ f3672788f0dc29eceb0e0ece9d974713 12417 system optional mx-viewer_21.8_amd64.buildinfo
+ 38355393b5e954b0261b22847d47badb 23062 system optional mx-viewer_21.8_amd64.deb
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmEHThMTHGFkcmlhbkBt
-eGxpbnV4Lm9yZwAKCRBwk4x4BnnumJuuB/sH/xX4kdB1za/QQVgzkT36J3eQhww/
-e2OI6LfXvVyFJFke0JMCoM9Bn7dXbG5wem4hN4Ik9NbhaSFobT++1WfRo9Mh8hyj
-esrd9KVd9MIUOMxLur8qEj0ffqZ5RwXv6l9DBzSimwrtIuj6Eqht1kfn21Hizjoz
-MPaKJdrFyYgd5gy58s2Gtnogl2OAOFockfSejKM9sJgZ2H+ju4SQbXzwDKP49n/E
-BOy/Q6Ii8rfxuJXheTX3gvYDmpps/KibX8zVFJL3brqyF/dIXc9zHPlbpl/2XgxM
-pGF2mKX7IORytWr+C8Xk3jDHgktJ+iZU9CTJvB6l+6gZ38O9r1M2mY1f
-=GQIz
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmEHMUcTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumLMqB/4va2vEKVvXWH/7l30Rnyu0Ugg7LwEK
+JvWQRzq0XTIdS9XiBQndgW/uc/lkUc8CZBvY5KcLUVa4NZL7b+VzkMrDqgCJ80dL
+bkRQeW8mpW7AOzT+ZDTvMFn+MXrQNP9dp96aHRqE+FSx71aWhG1b5qaNtcxkxHaL
+RIKmT9OsAP8SNCffQgWe4HpkYENqYoAeFpwMfl9qtCl1Fc14ISd/mJJnaSc2F7uA
+TBI7oZw+p6U2BOVyfZttKqsjdwipY2Ni/VukQMoAU6UgNlI+U0ywB79q93DJoE+1
+/d8EUyItfwZXs9rSrdn+SM3MLdJi69+KReG5IRQYrigj7Z5Szx7fzu3L
+=7pvu
 -----END PGP SIGNATURE-----

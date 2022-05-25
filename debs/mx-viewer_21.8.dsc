@@ -9,24 +9,24 @@ Version: 21.8
 Maintainer: Adrian <adrian@mxlinux.org>
 Homepage: https://github.com/AdrianTM/mx-viewer
 Standards-Version: 3.9.8
-Build-Depends: debhelper (>= 10), libqt5webkit5-dev, qtbase5-dev, qttools5-dev-tools
+Build-Depends: debhelper (>= 10), qtwebengine5-dev, qtbase5-dev, qttools5-dev-tools
 Package-List:
  mx-viewer deb system optional arch=any
 Checksums-Sha1:
- 0ce4cafd6204e156fade83cd83f736767d1001f2 245492 mx-viewer_21.8.tar.xz
+ 33b2f45f10e85e1bec3fab74f21d58adef42b188 245864 mx-viewer_21.8.tar.xz
 Checksums-Sha256:
- 3c62b20afe6c39bd151467705188e4d1c94cc022ac4191251ec7f9c0011fd8a0 245492 mx-viewer_21.8.tar.xz
+ 2f133fdefd097c8ef00d9a5cf0e4ba0faed1efc9b91e5c2608426231b45e8453 245864 mx-viewer_21.8.tar.xz
 Files:
- 710f70c3b5aa03bc951f55a4106a6f4e 245492 mx-viewer_21.8.tar.xz
+ 1a22131002136ca7342c182ac1b7804e 245864 mx-viewer_21.8.tar.xz
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmEHTf0THGFkcmlhbkBt
-eGxpbnV4Lm9yZwAKCRBwk4x4BnnumDexCACJUIs3sQUtXqNPKjBjE6CJP+/oaVQE
-Apr3OLRAionqsDEnaoDhEbc2bxWzJP3eyL9Ye4OrNqZOW6Ak6C2C90C1gY4Ju/f/
-YSPZl8MHy8/KObAGvJFU0RsC0aZZiYnYbGEWyTiiwnTTpSDbkjTZdgoj4qhWvfGI
-hXCrP0fnYSB4U9Ke09QbfN5xiMa6wcIfmDl/whjG/MGDqc9tsajDBcKJb1IN4E1b
-2NOnyFewR08UcL6QeVBMn4ia6X7OeD1kdrxOoYOfOfEcQm7Duar1J6gAJjgPCqni
-DvUH6iuY5I8BSXMr+p4WewODB0RGaHxevlVJ8nboOz4FM/ji0xauiygr
-=jUMH
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmEHMUATHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumHlxCACT6evRrScuAX48vX60f3HB2w0ehR7d
+1rPfWbf6drx0XeJ6AyDBqWJCTOtBuYDipSAPhwxFqy9QqEMvk+yJB4k7qBVdc85j
+Q3MX3cUW0dt6BUgYuhMy49dM/uy3RpH8ESR17cPq602jUrjufwaWhCG60dun085r
+IwYPFkxEJcErikDqRo8IeGA6qC9JpDfo3O2N9/1lOQbXkurYAVvZ6D2rlhqpE5wv
+T3YD/meNWWwR5f73ArgsWfFeVIFuqw2BQ+6weCeSiflPOZnqly6K5rRVVXfi3N/z
+uIz8iFYYHT11WAggJatO0e9XtkWmZUaf9fQY7ZaupLPyyFZ2Xrner05J
+=qYX0
 -----END PGP SIGNATURE-----

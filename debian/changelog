@@ -1,15 +1,9 @@
 mx-viewer (21.8) mx; urgency=medium
 
-  * Save .conf file in ~/.config/MX-Linux
+  * Use webenginewidgets instead of webkitwidgets
+  * Save .conf file in ~/.conf/MX-Linux
 
- -- Adrian <adrian@mxlinux.org>  Sun, 01 Aug 2021 21:39:18 -0400
-
-mx-viewer (21.1) mx; urgency=medium
-
-  * show which URL failed to load
-  * various fixes
-
- -- Adrian <adrian@mxlinux.org>  Wed, 27 Jan 2021 11:44:36 -0500
+ -- Adrian <adrian@mxlinux.org>  Sun, 01 Aug 2021 13:28:55 -0400
 
 mx-viewer (20.12.01) mx; urgency=medium
 

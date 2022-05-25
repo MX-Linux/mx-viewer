@@ -20,7 +20,7 @@
 # * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
 # **********************************************************************/
 
-QT       += core gui webkitwidgets
+QT       += core gui webenginewidgets
 CONFIG   += c++17
 
 # The following define makes your compiler warn you if you use any
