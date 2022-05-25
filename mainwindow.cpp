@@ -142,7 +142,7 @@ void MainWindow::displaySite(QString url, QString title)
 // center main window
 void MainWindow::centerWindow()
 {
-    QRect screenGeometry = QApplication::screens().constFirst()->geometry();
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int x = (screenGeometry.width() - this->width()) / 2;
     int y = (screenGeometry.height() - this->height()) / 2;
     this->move(x, y);
