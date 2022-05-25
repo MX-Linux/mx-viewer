@@ -1,0 +1,32 @@
+Format: 1.8
+Date: Tue, 24 May 2022 22:37:53 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 22.5
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (22.5) mx; urgency=medium
+ .
+   * Use webenginewidgets instead of webkitwidgets
+   * Save .conf file in ~/.conf/MX-Linux
+Checksums-Sha1:
+ 3aad326a05057e44b4574efdcbb87928f390da54 610 mx-viewer_22.5.dsc
+ 6414567863cf086887d32ba6ee4ae4a778381c8d 245868 mx-viewer_22.5.tar.xz
+ aadbc11383d11e6d461fa79a070873778b9ebd24 12516 mx-viewer_22.5_amd64.buildinfo
+ e9454775fb0ca7d9f9f031ff5eebaddb31c692ed 21076 mx-viewer_22.5_amd64.deb
+Checksums-Sha256:
+ 89a6e1507059eda91ef34218729532ee016777d9b4b9a97fe4c10b9298c16e24 610 mx-viewer_22.5.dsc
+ ea8dd363bf64f8b3104879e6ea513147e8aabe7347632859bd7457543b89d40c 245868 mx-viewer_22.5.tar.xz
+ 9754615dbb61f5d8c7306bf683bd5fa6c613c77a3938f800a77d7da94bd7e356 12516 mx-viewer_22.5_amd64.buildinfo
+ 6ef70f01f1e79054796e9f9e66e12c783f9c2c3a2e4f8aa914ac37932b4ebcbe 21076 mx-viewer_22.5_amd64.deb
+Files:
+ 3c8c324d35750ebdd5034c0cad215173 610 system optional mx-viewer_22.5.dsc
+ 60bfff00be48110f1dd1a84dc031d344 245868 system optional mx-viewer_22.5.tar.xz
+ 0b871d4cf2d94000cee5750b382a6486 12516 system optional mx-viewer_22.5_amd64.buildinfo
+ 2de839ea9e1158f85bc5d2d10c7e5eeb 21076 system optional mx-viewer_22.5_amd64.deb

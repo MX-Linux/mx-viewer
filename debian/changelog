@@ -1,9 +1,9 @@
-mx-viewer (21.8) mx; urgency=medium
+mx-viewer (22.5) mx; urgency=medium
 
   * Use webenginewidgets instead of webkitwidgets
   * Save .conf file in ~/.conf/MX-Linux
 
- -- Adrian <adrian@mxlinux.org>  Sun, 01 Aug 2021 13:28:55 -0400
+ -- Adrian <adrian@mxlinux.org>  Tue, 24 May 2022 22:37:53 -0400
 
 mx-viewer (20.12.01) mx; urgency=medium
 

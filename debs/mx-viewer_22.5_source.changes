@@ -1,0 +1,26 @@
+Format: 1.8
+Date: Tue, 24 May 2022 22:37:53 -0400
+Source: mx-viewer
+Architecture: source
+Version: 22.5
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Changes:
+ mx-viewer (22.5) mx; urgency=medium
+ .
+   * Use webenginewidgets instead of webkitwidgets
+   * Save .conf file in ~/.conf/MX-Linux
+Checksums-Sha1:
+ f35b88f015148e172b978097e3a5bce282ca2d30 610 mx-viewer_22.5.dsc
+ 71c5f0adb0b485e4bbb1523c86354ba166646e62 245468 mx-viewer_22.5.tar.xz
+ f1deb87b2e75023f63fe46ca9f325381fa799e8a 12217 mx-viewer_22.5_i386.buildinfo
+Checksums-Sha256:
+ 3fcc26b8a0be83b344f3fc0982ca9ece34effc4280135be1cd88356bea896b6f 610 mx-viewer_22.5.dsc
+ 5fef1f37faceca9fe0a99dd9125907a96dfd8cf698b5db911ecf386a75e95f0c 245468 mx-viewer_22.5.tar.xz
+ c313b314929c67855f118dce3ee9f8080b6647d4101b9f54d6108514719057e4 12217 mx-viewer_22.5_i386.buildinfo
+Files:
+ 9b5f50f450f7a6f0d4717f3148e95399 610 system optional mx-viewer_22.5.dsc
+ 9eeb7faf97e6199ce7227bce75fcd437 245468 system optional mx-viewer_22.5.tar.xz
+ 3da17ef9851e1b420d535dd3e67339b8 12217 system optional mx-viewer_22.5_i386.buildinfo
