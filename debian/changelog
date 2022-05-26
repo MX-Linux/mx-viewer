@@ -1,3 +1,13 @@
+mx-viewer (22.5.01) mx; urgency=medium
+
+  * Improve search behavior: 
+  *     - focus search by default
+  *     - Shift-F3 searches backwards
+  *     - Esc clears the search field, second Esc focuses the document
+  * Fix reload shortcut
+
+ -- Adrian <adrian@mxlinux.org>  Thu, 26 May 2022 02:10:44 -0400
+
 mx-viewer (22.5) mx; urgency=medium
 
   * Use webenginewidgets instead of webkitwidgets
