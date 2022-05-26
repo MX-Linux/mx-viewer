@@ -46,7 +46,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
 
     addToolbar();
 
-    QWebEngineSettings *websettings = webview->settings();
+    auto websettings = webview->settings();
     websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !arg_parser.isSet("disable-js"));
     websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, arg_parser.isSet("enable-spatial-navigation"));
 
@@ -97,8 +97,8 @@ void MainWindow::addToolbar()
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findInPage);
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findInPage);
 
-    QWidget* spacer = new QWidget(this);
-    spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    auto spacer = new QWidget(this);
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     toolBar->addWidget(spacer);
     toolBar->addWidget(searchBox);
     toolBar->show();
@@ -113,7 +113,8 @@ void MainWindow::openBrowseDialog()
 {
     QString file = QFileDialog::getOpenFileName(this, tr("Select file to open"),
                                                 QDir::homePath(), tr("Hypertext Files (*.htm *.html);;All Files (*.*)"));
-    if (QFileInfo::exists(file)) displaySite(file, file);
+    if (QFileInfo::exists(file))
+        displaySite(file, file);
 }
 
 // pop up a window and display website
@@ -155,7 +156,8 @@ void MainWindow::openDialog()
     bool ok;
     QString url  = QInputDialog::getText(this, tr("Open"),
                                          tr("Enter site or file URL:"), QLineEdit::Normal, QString(), &ok);
-    if (ok && !url.isEmpty()) displaySite(url, url);
+    if (ok && !url.isEmpty())
+        displaySite(url, url);
 }
 
 void MainWindow::openQuickInfo()
@@ -207,22 +209,6 @@ void MainWindow::resizeEvent(QResizeEvent*)
 {
     progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - 40);
 }
-
-// for colour scheme changes
-//void MainWindow::changeEvent(QEvent *event)
-//{
-//    const QEvent::Type etype = event->type();
-//    if (etype == QEvent::ApplicationPaletteChange || etype == QEvent::PaletteChange || etype == QEvent::StyleChange) {
-//        const QPalette &pal = webview->style()->standardPalette();
-//        QString css("body{background-color:" + pal.color(QPalette::Base).name()
-//                    + ";color:" + pal.color(QPalette::WindowText).name() + "}"
-//                    "a{color:" + pal.color(QPalette::Link).name() + "}"
-//                    "a:visited{color:" + pal.color(QPalette::LinkVisited).name() + "}");
-//        QUrl cssdata("data:text/css;charset=utf-8;base64,"
-//                     + css.toUtf8().toBase64(), QUrl::StrictMode);
-//        webview->settings()->setUserStyleSheetUrl(cssdata);
-//    }
-//}
 
 // display progressbar while loading page
 void MainWindow::loading()
