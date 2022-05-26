@@ -32,30 +32,34 @@
 
 static bool dropElevatedPrivileges()
 {
-    if (getuid() != 0 && geteuid() != 0) return true;
+    if (getuid() != 0 && geteuid() != 0)
+        return true;
 
-    //    initgroups()
+    // initgroups()
     // ref:  https://www.safaribooksonline.com/library/view/secure-programming-cookbook/0596003943/ch01s03.html#secureprgckbk-CHP-1-SECT-3.3
 
     // change guid + uid   ~~  nobody (uid 65534), nogroup (gid 65534), users (gid 100)
-    if (setgid(65534) != 0) EXIT_FAILURE;
-    if (setuid(65534) != 0) EXIT_FAILURE;
+    if (setgid(65534) != 0)
+        return false;
+    if (setuid(65534) != 0)
+        return false;
 
     // On systems with defined _POSIX_SAVED_IDS in the unistd.h file, it should be
     // impossible to regain elevated privs after the setuid() call, above.  Test, try to regain elev priv:
-    if (setuid(0) != -1) return false;   // and the calling fn should EXIT/abort the program
-    // COULD also confirm that setregid() fails
+    if (setuid(0) != -1 || seteuid(0) != -1)
+        return false;   // and the calling fn should EXIT/abort the program
 
     // change cwd, for good measure (if unable to, treat as overall failure)
-    if (chdir("/tmp") != 0) return false;  // consider fprint()ing or logging the failure reason
-
+    if (chdir("/tmp") != 0) {
+        qDebug() << "Can't change working directory to /tmp";
+        return false;
+    }
     return true;
 }
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    //app.setWindowIcon(QIcon("/usr/share/pixmaps/mx-viewer.png"));
     app.setWindowIcon(QIcon::fromTheme(app.applicationName()));
     app.setApplicationVersion(VERSION);
     app.setOrganizationName("MX-Linux");

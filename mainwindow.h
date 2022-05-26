@@ -50,21 +50,20 @@ public:
     void openDialog();
     void openQuickInfo();
 
-public slots:
-    void search();
-    void findInPage();
+public slots:;
+    void findBackward();
+    void findForward();
     void loading();
     void done(bool);
     void procTime();
 
 private:
     QLineEdit *searchBox;
+    QMetaObject::Connection conn;
     QProgressBar *progressBar;
     QSettings settings;
-    QString word;
     QToolBar *toolBar;
     QWebEngineView *webview;
-    QMetaObject::Connection conn;
 
 };
 

@@ -20,7 +20,6 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
 
-
 #include "mainwindow.h"
 #include "version.h"
 
@@ -31,7 +30,6 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QScreen>
-#include <QStyle>
 #include <QToolBar>
 #include <QtWebEngineWidgets/QWebEngineSettings>
 
@@ -49,10 +47,6 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     auto websettings = webview->settings();
     websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !arg_parser.isSet("disable-js"));
     websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, arg_parser.isSet("enable-spatial-navigation"));
-
-
-    QEvent palevent(QEvent::PaletteChange);
-    qApp->sendEvent(this, &palevent);
 
     QString url, title;
     if (!arg_parser.positionalArguments().isEmpty()) {
@@ -82,20 +76,20 @@ void MainWindow::addToolbar()
     QAction *stop;
 
     toolBar->addAction(back = webview->pageAction(QWebEnginePage::Back));
-    back->setShortcut(QKeySequence::Back);
     toolBar->addAction(forward = webview->pageAction(QWebEnginePage::Forward));
-    forward->setShortcut(QKeySequence::Forward);
     toolBar->addAction(reload = webview->pageAction(QWebEnginePage::Reload));
-    reload->setShortcuts(QList<QKeySequence>({QKeySequence::Refresh, QKeySequence(tr("Ctrl+R"))}));
     toolBar->addAction(stop = webview->pageAction(QWebEnginePage::Stop));
+    back->setShortcut(QKeySequence::Back);
+    forward->setShortcut(QKeySequence::Forward);
+    reload->setShortcuts(QKeySequence::Refresh);
     stop->setShortcut(QKeySequence::Cancel);
     connect(stop, &QAction::triggered, this, &MainWindow::done);
 
     searchBox->setPlaceholderText(tr("search"));
     searchBox->setClearButtonEnabled(true);
     searchBox->setMaximumWidth(150);
-    connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findInPage);
-    connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findInPage);
+    connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
+    connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
 
     auto spacer = new QWidget(this);
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -163,33 +157,36 @@ void MainWindow::openDialog()
 void MainWindow::openQuickInfo()
 {
     QMessageBox::about(this, tr("Keyboard Shortcuts"),
-                       tr("Ctrl-F, or F3") + " - " + tr("Find") + "\n" +
-                       tr("Ctrl-R, or F5") + " - " + tr("Reload") + "\n" +
-                       tr("Ctrl-O") + " - " + tr("Open URL") + "\n" +
-                       tr("Ctrl-B") + " - " + tr("Browse file to open") + "\n" +
-                       tr("Esc - Stop loading/clear Find field") + "\n" +
+                       tr("Ctrl-F, or F3") + "\t - " + tr("Find") + "\n" +
+                       tr("Shift-F3") + "\t - " + tr("Find previous") + "\n" +
+                       tr("Ctrl-R, or F5") + "\t - " + tr("Reload") + "\n" +
+                       tr("Ctrl-O") + "\t - " + tr("Open URL") + "\n" +
+                       tr("Ctrl-B") + "\t - " + tr("Browse file to open") + "\n" +
+                       tr("Esc") + "\t - " + tr("Stop loading/clear Find field") + "\n" +
                        tr("Alt-LeftArrow, Alt-RightArrow") + " - " + tr("Back/Forward") + "\n" +
-                       tr("F1, or ?") + " - " + tr("Open this help dialog"));
+                       tr("F1, or ?") + "\t - " + tr("Open this help dialog"));
 }
 
-void MainWindow::search()
+void MainWindow::findBackward()
 {
     searchBox->setFocus();
-    findInPage();
+    webview->findText(searchBox->text(), QWebEnginePage::FindBackward);
 }
 
-void MainWindow::findInPage()
+void MainWindow::findForward()
 {
-    word = searchBox->text();
-    webview->findText(word);
+    searchBox->setFocus();
+    webview->findText(searchBox->text());
 }
 
 // process keystrokes
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     auto zoom = webview->zoomFactor();
-    if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_F3)
-        search();
+    if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash)
+        findForward();
+    if (event->matches(QKeySequence::FindPrevious))
+        findBackward();
     else if (event->key() == Qt::Key_Plus)
         webview->setZoomFactor(zoom + 0.1);
     else if (event->key() == Qt::Key_Minus)
@@ -202,6 +199,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         openBrowseDialog();
     else if (event->key() == Qt::Key_Question || event->matches(QKeySequence::HelpContents))
         openQuickInfo();
+    else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus())
+        searchBox->clear();
+    else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty())
+        webview->setFocus();
 }
 
 // resize event
