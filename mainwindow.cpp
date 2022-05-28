@@ -20,8 +20,6 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
 
-#include "mainwindow.h"
-#include "version.h"
 
 #include <QApplication>
 #include <QDebug>
@@ -32,7 +30,9 @@
 #include <QScreen>
 #include <QToolBar>
 
-#include <addressbar.h>
+#include "mainwindow.h"
+#include "version.h"
+#include "addressbar.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
