@@ -55,6 +55,7 @@ public:
     void openDialog();
     void openQuickInfo();
     void setConnections();
+    void setMenu();
     void toggleFullScreen();
     void updateUrl();
 
@@ -66,23 +67,24 @@ public slots:
     void procTime();
 
 private:
-    QLineEdit *searchBox;
+    AddressBar *addressBar {};
+    QAction *menuButton {};
+    QLineEdit *searchBox {};
     QMetaObject::Connection conn;
-    QProgressBar *progressBar;
+    QProgressBar *progressBar {};
     QSettings settings;
     QString homeAddress;
-    QToolBar *toolBar;
-    QWebEngineSettings *websettings;
-    QWebEngineView *webview;
-    bool browserMode;
-    bool showProgress;
-    bool wasMaximized;
+    QToolBar *toolBar {};
+    QWebEngineSettings *websettings {};
+    QWebEngineView *webview {};
+    bool browserMode {};
+    bool showProgress {};
     const QCommandLineParser &args;
-    const int defaultHeight = 600;
-    const int defaultWidth = 800;
-    const int progBarVerticalAdj = 40;
-    const int progBarWidth = 20;
-    const int searchWidth = 150;
+    const int defaultHeight {600};
+    const int defaultWidth {800};
+    const int progBarVerticalAdj {40};
+    const int progBarWidth {20};
+    const int searchWidth {150};
 };
 
 

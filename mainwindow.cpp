@@ -115,12 +115,15 @@ void MainWindow::addToolbar()
         spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         toolBar->addWidget(spacer);
     } else {
-        auto *addressBar = new AddressBar(this);
+        addressBar = new AddressBar(this);
         addressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        connect(addressBar, &QLineEdit::returnPressed, [this, addressBar]() { displaySite(addressBar->text()); });
+        connect(addressBar, &QLineEdit::returnPressed, [this]() { displaySite(addressBar->text()); });
         toolBar->addWidget(addressBar);
     }
     toolBar->addWidget(searchBox);
+    toolBar->addAction(menuButton = new QAction(QIcon::fromTheme(QStringLiteral("open-menu")), tr("Settings")));
+    menuButton->setShortcut(Qt::Key_F10);
+    setMenu();
     toolBar->show();
 }
 
@@ -217,10 +220,82 @@ void MainWindow::setConnections()
 {
     connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show); // show toolbar when loading a new page
     connect(webview, &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
-    if (showProgress) {
+    if (showProgress)
         connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
-    }
     connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
+    connect(webview->page(), &QWebEnginePage::linkHovered, [this](const QString &url) {
+        if (url.isEmpty()) {
+            this->statusBar()->hide();
+        } else {
+            this->statusBar()->show();
+            this->statusBar()->showMessage(url);
+        }
+    });
+}
+
+void MainWindow::setMenu()
+{
+    auto *menu = new QMenu(this);
+    QAction *browsermode = nullptr;
+    QAction *readermode = nullptr;
+    QAction *fullscreen = nullptr;
+    QAction *about = nullptr;
+    QAction *quit = nullptr;
+
+    menuButton->setMenu(menu);
+    menu->addAction(readermode = new QAction(QIcon::fromTheme(QStringLiteral("text-editor-symbolic")), tr("&Reader mode")));
+    menu->addAction(browsermode = new QAction(QIcon::fromTheme(QStringLiteral("web-browser")), tr("&Browser mode")));
+    menu->addAction(fullscreen = new QAction(QIcon::fromTheme(QStringLiteral("view-fullscreen")), tr("&Full screen")));
+    browsermode->setVisible(!browserMode);
+    readermode->setVisible(browserMode);
+    fullscreen->setVisible(!this->isFullScreen());
+    menu->addSeparator();
+    menu->addAction(about = new QAction(QIcon::fromTheme(QStringLiteral("help-about")), tr("&About...")));
+    menu->addSeparator();
+    menu->addAction(quit  = new QAction(QIcon::fromTheme(QStringLiteral("window-close")), tr("&Exit")));
+
+    connect(menuButton, &QAction::triggered, [this, menu]() {
+        QPoint pos = mapToParent(toolBar->widgetForAction(menuButton)->pos());
+        pos.setY(pos.y() + toolBar->widgetForAction(menuButton)->size().height());
+        menu->popup(pos);
+    });
+
+    connect(fullscreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
+    connect(browsermode, &QAction::triggered, [this, browsermode, readermode]() {
+        toolBar->findChild<QWidget *>()->hide();
+        browserMode = !browserMode;
+        browsermode->setVisible(!browserMode);
+        readermode->setVisible(browserMode);
+    });
+    connect(readermode, &QAction::triggered, [this, browsermode, readermode]() {
+        toolBar->findChild<QWidget *>()->hide();
+        browserMode = !browserMode;
+        browsermode->setVisible(!browserMode);
+        readermode->setVisible(browserMode);
+    });
+
+    connect(quit, &QAction::triggered, this, &MainWindow::close);
+    connect(about, &QAction::triggered, [this]() {
+        QMessageBox::about(this, tr("About MX Viewer"), tr(
+"This is a VERY basic browser based on Qt WebEngine.\n\n"
+
+"The main purpose is to provide a basic document viewer for MX documentation. "
+"It could be used for basic internet browsing, but it's not recommended to be "
+"used for anything important or secure because it's not a fully featured browser "
+"and its security/privacy features are not tested.\n\n"
+
+"This program is free software: you can redistribute it and/or modify "
+"it under the terms of the GNU General Public License as published by "
+"the Free Software Foundation, either version 3 of the License, or "
+"(at your option) any later version.\n\n"
+
+"MX Viewer is distributed in the hope that it will be useful, "
+"but WITHOUT ANY WARRANTY; without even the implied warranty of "
+"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
+"GNU General Public License for more details.\n\n"
+
+"You should have received a copy of the GNU General Public License "
+"along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.")); });
 }
 
 void MainWindow::toggleFullScreen()
@@ -237,7 +312,6 @@ void MainWindow::toggleFullScreen()
 void MainWindow::updateUrl()
 {
     if (browserMode) {
-        auto *addressBar = toolBar->findChild<QLineEdit *>();
         addressBar->show();
         addressBar->setText(webview->url().toDisplayString());
     }
