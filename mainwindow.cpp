@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mxview.cpp
  *****************************************************************************
- * Copyright (C) 2014 MX Authors
+ * Copyright (C) 2022 MX Authors
  *
  * Authors: Adrian
  *          MX Linux <http://mxlinux.org>
@@ -31,38 +31,48 @@
 #include <QMessageBox>
 #include <QScreen>
 #include <QToolBar>
-#include <QtWebEngineWidgets/QWebEngineSettings>
+
+#include <addressbar.h>
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), args{arg_parser}
 {
     timer = new QTimer(this);
     toolBar = new QToolBar(this);
     webview = new QWebEngineView(this);
     progressBar = new QProgressBar(this);
     searchBox = new QLineEdit(this);
+    websettings = webview->settings();
 
+    loadSettings();
     addToolbar();
+    addActions();
+    setConnections();
 
-    auto websettings = webview->settings();
-    websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !arg_parser.isSet("disable-js"));
-    websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, arg_parser.isSet("enable-spatial-navigation"));
-
-    QString url, title;
-    if (!arg_parser.positionalArguments().isEmpty()) {
-        url = arg_parser.positionalArguments().at(0);
-        title = (arg_parser.positionalArguments().size() > 1) ? arg_parser.positionalArguments().at(1) : url;
-    } else {
-       url = "https://duckduckgo.com";
-       title = "DuckDuckGo";
+    if (arg_parser.isSet(QStringLiteral("full-screen"))) {
+        this->showFullScreen();
+        toolBar->hide();
     }
-
+    QString url;
+    QString title;
+    if (!args.positionalArguments().isEmpty()) {
+        url = args.positionalArguments().at(0);
+        title = (args.positionalArguments().size() > 1) ? args.positionalArguments().at(1) : url;
+    }
     displaySite(url, title);
 }
 
 MainWindow::~MainWindow()
 {
-    settings.setValue("geometry", saveGeometry());
+    settings.setValue(QStringLiteral("geometry"), saveGeometry());
+}
+
+void MainWindow::addActions()
+{
+    auto *full = new QAction(tr("Full screen"));
+    full->setShortcut(Qt::Key_F11);
+    this->addAction(full);
+    connect(full, &QAction::triggered, this, &MainWindow::toggleFullScreen);
 }
 
 void MainWindow::addToolbar()
@@ -70,55 +80,103 @@ void MainWindow::addToolbar()
     this->addToolBar(toolBar);
     this->setCentralWidget(webview);
 
-    QAction *back;
-    QAction *forward;
-    QAction *reload;
-    QAction *stop;
+    QAction *back = nullptr;
+    QAction *forward = nullptr;
+    QAction *reload = nullptr;
+    QAction *stop = nullptr;
+    QAction *tab = nullptr;
+    QAction *home = nullptr;
 
     toolBar->addAction(back = webview->pageAction(QWebEnginePage::Back));
     toolBar->addAction(forward = webview->pageAction(QWebEnginePage::Forward));
     toolBar->addAction(reload = webview->pageAction(QWebEnginePage::Reload));
     toolBar->addAction(stop = webview->pageAction(QWebEnginePage::Stop));
+    toolBar->addAction(home = new QAction(QIcon::fromTheme(QStringLiteral("go-home")), tr("Home")));
     back->setShortcut(QKeySequence::Back);
     forward->setShortcut(QKeySequence::Forward);
+    home->setShortcut(Qt::CTRL + Qt::Key_H);
     reload->setShortcuts(QKeySequence::Refresh);
     stop->setShortcut(QKeySequence::Cancel);
+    tab = webview->pageAction(QWebEnginePage::OpenLinkInNewTab);
+    tab->setShortcut(Qt::CTRL + Qt::Key_T);
     connect(stop, &QAction::triggered, this, &MainWindow::done);
+    connect(home, &QAction::triggered, [this]() {displaySite();});
 
-    searchBox->setPlaceholderText(tr("search"));
+    searchBox->setPlaceholderText(tr("search in page"));
     searchBox->setClearButtonEnabled(true);
     searchBox->setMaximumWidth(150);
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
-
-    auto spacer = new QWidget(this);
-    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    toolBar->addWidget(spacer);
+    if (!browserMode) {
+        auto *spacer = new QWidget(this);
+        spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        toolBar->addWidget(spacer);
+    } else {
+        auto *addressBar = new AddressBar(this);
+        addressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        connect(addressBar, &QLineEdit::returnPressed, [this, addressBar]() { displaySite(addressBar->text()); });
+        toolBar->addWidget(addressBar);
+    }
     toolBar->addWidget(searchBox);
     toolBar->show();
-
-    // show toolbar when new page is loaded
-    connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
-    connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
-    connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
 }
 
 void MainWindow::openBrowseDialog()
 {
     QString file = QFileDialog::getOpenFileName(this, tr("Select file to open"),
                                                 QDir::homePath(), tr("Hypertext Files (*.htm *.html);;All Files (*.*)"));
-    if (QFileInfo::exists(file))
+    if (QFileInfo::exists(file)) {
         displaySite(file, file);
+    }
 }
 
 // pop up a window and display website
-void MainWindow::displaySite(QString url, QString title)
+void MainWindow::displaySite(QString url, const QString &title)
 {
+    if (url.isEmpty()) {
+        url = homeAddress;
+    }
+    disconnect(conn);
+    conn = connect(webview, &QWebEngineView::loadFinished, [url](bool ok) { if (!ok) { qDebug() << "Error :" << url;
+        }});
+    QUrl qurl = QUrl::fromUserInput(url);
+    webview->setUrl(qurl);
+    webview->load(qurl);
+    webview->show();
+    showProgress ? loading() : progressBar->hide();
+    this->setWindowTitle(title);
+}
+
+void MainWindow::loadSettings()
+{
+    // Load first from system .conf file and then overwrite with CLI switches where available
+    websettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
+
+    homeAddress = settings.value(QStringLiteral("Home"), "https://duckduckgo.com").toString();
+    browserMode = settings.value(QStringLiteral("BrowserMode"), false).toBool();
+    showProgress = settings.value(QStringLiteral("ShowProgressBar"), false).toBool();
+
+    websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, settings.value(QStringLiteral("SpatialNavigation"), false).toBool());
+    websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !settings.value(QStringLiteral("DisableJava"), false).toBool());
+    websettings->setAttribute(QWebEngineSettings::AutoLoadImages, settings.value(QStringLiteral("LoadImages"), true).toBool());
+
+    if (args.isSet(QStringLiteral("enable-spatial-navigation"))) {
+        websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, true);
+    }
+    if (args.isSet(QStringLiteral("disable-js"))) {
+        websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, false);
+    }
+    if (args.isSet(QStringLiteral("disable-images"))) {
+        websettings->setAttribute(QWebEngineSettings::AutoLoadImages, false);
+    }
+    if (args.isSet(QStringLiteral("browser-mode"))) {
+        browserMode = true;
+    }
+
     QSize size {800, 500};
     this->resize(size);
-
-    if (settings.contains("geometry")) {
-        restoreGeometry(settings.value("geometry").toByteArray());
+    if (settings.contains(QStringLiteral("geometry")) && !args.isSet(QStringLiteral("full-screen"))) {
+        restoreGeometry(settings.value(QStringLiteral("geometry")).toByteArray());
         if (this->isMaximized()) { // add option to resize if maximized
             this->resize(size);
             centerWindow();
@@ -126,14 +184,6 @@ void MainWindow::displaySite(QString url, QString title)
     } else {
         centerWindow();
     }
-
-    disconnect(conn);
-    conn = connect(webview, &QWebEngineView::loadFinished, [url](bool ok) { if (!ok) qDebug() << "Error loading:" << url; });
-    webview->load(QUrl::fromUserInput(url));
-    webview->show();
-
-    loading(); // display loading progressBar
-    this->setWindowTitle(title);
 }
 
 // center main window
@@ -147,11 +197,12 @@ void MainWindow::centerWindow()
 
 void MainWindow::openDialog()
 {
-    bool ok;
+    bool ok = false;
     QString url  = QInputDialog::getText(this, tr("Open"),
                                          tr("Enter site or file URL:"), QLineEdit::Normal, QString(), &ok);
-    if (ok && !url.isEmpty())
+    if (ok && !url.isEmpty()) {
         displaySite(url, url);
+    }
 }
 
 void MainWindow::openQuickInfo()
@@ -165,6 +216,36 @@ void MainWindow::openQuickInfo()
                        tr("Esc") + "\t - " + tr("Stop loading/clear Find field") + "\n" +
                        tr("Alt-LeftArrow, Alt-RightArrow") + " - " + tr("Back/Forward") + "\n" +
                        tr("F1, or ?") + "\t - " + tr("Open this help dialog"));
+}
+
+void MainWindow::setConnections()
+{
+    connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show); // show toolbar when loading a new page
+    connect(webview, &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
+    if (showProgress) {
+        connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
+    }
+    connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
+}
+
+void MainWindow::toggleFullScreen()
+{
+    if (this->isFullScreen()) {
+        this->showNormal();
+        toolBar->show();
+    } else {
+        this->showFullScreen();
+        toolBar->hide();
+    }
+}
+
+void MainWindow::updateUrl()
+{
+    if (browserMode) {
+        auto *addressBar = toolBar->findChild<QLineEdit *>();
+        addressBar->show();
+        addressBar->setText(webview->url().toDisplayString());
+    }
 }
 
 void MainWindow::findBackward()
@@ -182,33 +263,40 @@ void MainWindow::findForward()
 // process keystrokes
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
+    const auto step = 0.1;
     auto zoom = webview->zoomFactor();
-    if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash)
+    if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash) {
         findForward();
-    if (event->matches(QKeySequence::FindPrevious))
+    }
+    if (event->matches(QKeySequence::FindPrevious)) {
         findBackward();
-    else if (event->key() == Qt::Key_Plus)
-        webview->setZoomFactor(zoom + 0.1);
-    else if (event->key() == Qt::Key_Minus)
-        webview->setZoomFactor(zoom - 0.1);
-    else if (event->key() == Qt::Key_0)
+    } else if (event->key() == Qt::Key_Plus) {
+        webview->setZoomFactor(zoom + step);
+    } else if (event->key() == Qt::Key_Minus) {
+        webview->setZoomFactor(zoom - step);
+    } else if (event->key() == Qt::Key_0) {
         webview->setZoomFactor(1);
-    else if (event->matches(QKeySequence::Open))
+    } else if (event->matches(QKeySequence::Open)) {
         openDialog();
-    else if (event->key() == Qt::Key_B && (QApplication::keyboardModifiers() & Qt::ControlModifier))
+    } else if (event->key() == Qt::Key_B && QApplication::keyboardModifiers() & Qt::ControlModifier) {
         openBrowseDialog();
-    else if (event->key() == Qt::Key_Question || event->matches(QKeySequence::HelpContents))
+    } else if (event->key() == Qt::Key_Question || event->matches(QKeySequence::HelpContents)) {
         openQuickInfo();
-    else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus())
+    } else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
         searchBox->clear();
-    else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty())
+    } else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
         webview->setFocus();
+    } else if (event->key() == Qt::Key_L && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+        toolBar->findChild<QLineEdit *>()->setFocus();
+    }
 }
 
 // resize event
-void MainWindow::resizeEvent(QResizeEvent*)
+void MainWindow::resizeEvent(QResizeEvent* /*event*/)
 {
-    progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - 40);
+    if (showProgress) {
+        progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - 40);
+    }
 }
 
 // display progressbar while loading page
@@ -219,12 +307,12 @@ void MainWindow::loading()
     progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - 40);
     progressBar->setFocus();
     progressBar->show();
-    timer->start(100);
+    timer->start(progressBar->maximum());
     connect(timer, &QTimer::timeout, this, &MainWindow::procTime);
 }
 
 // done loading
-void MainWindow::done(bool)
+void MainWindow::done()
 {
     timer->stop();
     timer->disconnect();
@@ -238,6 +326,7 @@ void MainWindow::done(bool)
 // advance progressbar
 void MainWindow::procTime()
 {
-    progressBar->setValue((progressBar->value() + 5) % 100);
+    const int step = 5;
+    progressBar->setValue((progressBar->value() + step) % progressBar->maximum());
 }
 

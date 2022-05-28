@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mxview.h
  *****************************************************************************
- * Copyright (C) 2014 MX Authors
+ * Copyright (C) 2022 MX Authors
  *
  * Authors: Adrian
  *          MX Linux <http://mxlinux.org>
@@ -29,6 +29,7 @@
 #include <QProgressBar>
 #include <QSettings>
 #include <QTimer>
+#include <QtWebEngineWidgets/QWebEngineSettings>
 #include <QtWebEngineWidgets/QWebEngineView>
 
 class MainWindow : public QMainWindow
@@ -43,18 +44,23 @@ protected:
 public:
     MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
     ~MainWindow();
+    void addActions();
     void addToolbar();
     void centerWindow();
-    void displaySite(QString url, QString title);
+    void displaySite(QString url = {}, const QString &title = {});
+    void loadSettings();
     void openBrowseDialog();
     void openDialog();
     void openQuickInfo();
+    void setConnections();
+    void toggleFullScreen();
+    void updateUrl();
 
-public slots:;
+public slots:
     void findBackward();
     void findForward();
     void loading();
-    void done(bool);
+    void done();
     void procTime();
 
 private:
@@ -62,9 +68,13 @@ private:
     QMetaObject::Connection conn;
     QProgressBar *progressBar;
     QSettings settings;
+    QString homeAddress;
     QToolBar *toolBar;
+    QWebEngineSettings *websettings;
     QWebEngineView *webview;
-
+    bool browserMode{};
+    bool showProgress{};
+    const QCommandLineParser &args;
 };
 
 

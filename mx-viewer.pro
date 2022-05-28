@@ -1,7 +1,7 @@
 #/*****************************************************************************
 #* mx-viewer.pro
 # *****************************************************************************
-# * Copyright (C) 2014 MX Authors
+# * Copyright (C) 2022 MX Authors
 # *
 # * Authors: Adrian
 # *          MX Linux <http://mxlinux.org>
@@ -20,7 +20,7 @@
 # * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
 # **********************************************************************/
 
-QT       += core gui webenginewidgets
+QT       += webenginewidgets
 CONFIG   += c++17
 
 # The following define makes your compiler warn you if you use any
@@ -33,9 +33,11 @@ TARGET = mx-viewer
 TEMPLATE = app
 
 SOURCES += main.cpp \
+    addressbar.cpp \
     mainwindow.cpp
 
 HEADERS  += \
+    addressbar.h \
     version.h \
     mainwindow.h
 
