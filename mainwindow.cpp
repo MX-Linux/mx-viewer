@@ -33,6 +33,9 @@
 #include <QToolBar>
 
 #include <addressbar.h>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     : QMainWindow(parent), args{arg_parser}
@@ -84,7 +87,7 @@ void MainWindow::addToolbar()
     QAction *forward = nullptr;
     QAction *reload = nullptr;
     QAction *stop = nullptr;
-    QAction *tab = nullptr;
+//    QAction *tab = nullptr;
     QAction *home = nullptr;
 
     toolBar->addAction(back = webview->pageAction(QWebEnginePage::Back));
@@ -97,8 +100,8 @@ void MainWindow::addToolbar()
     home->setShortcut(Qt::CTRL + Qt::Key_H);
     reload->setShortcuts(QKeySequence::Refresh);
     stop->setShortcut(QKeySequence::Cancel);
-    tab = webview->pageAction(QWebEnginePage::OpenLinkInNewTab);
-    tab->setShortcut(Qt::CTRL + Qt::Key_T);
+//    tab = webview->pageAction(QWebEnginePage::OpenLinkInNewTab);
+//    tab->setShortcut(Qt::CTRL + Qt::Key_T);
     connect(stop, &QAction::triggered, this, &MainWindow::done);
     connect(home, &QAction::triggered, [this]() {displaySite();});
 
@@ -307,7 +310,7 @@ void MainWindow::loading()
     progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - 40);
     progressBar->setFocus();
     progressBar->show();
-    timer->start(progressBar->maximum());
+    timer->start(100ms);
     connect(timer, &QTimer::timeout, this, &MainWindow::procTime);
 }
 
