@@ -32,6 +32,8 @@
 #include <QtWebEngineWidgets/QWebEngineSettings>
 #include <QtWebEngineWidgets/QWebEngineView>
 
+#include "addressbar.h"
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

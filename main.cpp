@@ -27,31 +27,28 @@
 #include <QTranslator>
 
 #include "mainwindow.h"
+#include "version.h"
 #include <unistd.h>
-#include <version.h>
 
 static bool dropElevatedPrivileges()
 {
-    if (getuid() != 0 && geteuid() != 0) {
+    if (getuid() != 0 && geteuid() != 0)
         return true;
-    }
 
     // initgroups()
     // ref:  https://www.safaribooksonline.com/library/view/secure-programming-cookbook/0596003943/ch01s03.html#secureprgckbk-CHP-1-SECT-3.3
 
     // change guid + uid   ~~  nobody (uid 65534), nogroup (gid 65534), users (gid 100)
     const int nobody = 65534;
-    if (setgid(nobody) != 0) {
+    if (setgid(nobody) != 0)
         return false;
-    }
-    if (setuid(nobody) != 0) {
+    if (setuid(nobody) != 0)
         return false;
-    }
 
     // On systems with defined _POSIX_SAVED_IDS in the unistd.h file, it should be
     // impossible to regain elevated privs after the setuid() call, above.  Test, try to regain elev priv:
-    if (setuid(0) != -1 || seteuid(0) != -1) { return false;   // and the calling fn should EXIT/abort the program
-}
+    if (setuid(0) != -1 || seteuid(0) != -1)
+        return false;   // and the calling fn should EXIT/abort the program
 
     // change cwd, for good measure (if unable to, treat as overall failure)
     if (chdir("/tmp") != 0) {
@@ -87,19 +84,16 @@ int main(int argc, char *argv[])
     }
 
     QTranslator qtTran;
-    if (qtTran.load(QLocale::system(), QStringLiteral("qt"), QStringLiteral("_"), QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
+    if (qtTran.load(QLocale::system(), QStringLiteral("qt"), QStringLiteral("_"), QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
         app.installTranslator(&qtTran);
-    }
 
     QTranslator qtBaseTran;
-    if (qtBaseTran.load("qtbase_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
+    if (qtBaseTran.load("qtbase_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
         app.installTranslator(&qtBaseTran);
-    }
 
     QTranslator appTran;
-    if (appTran.load(app.applicationName() + "_" + QLocale::system().name(), "/usr/share/" + app.applicationName() + "/locale")) {
+    if (appTran.load(app.applicationName() + "_" + QLocale::system().name(), "/usr/share/" + app.applicationName() + "/locale"))
         app.installTranslator(&appTran);
-    }
 
     MainWindow w(parser);
     w.show();

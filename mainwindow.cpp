@@ -25,14 +25,15 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QMessageBox>
 #include <QScreen>
+#include <QStatusBar>
 #include <QToolBar>
 
+#include <chrono>
 #include "mainwindow.h"
 #include "version.h"
-#include "addressbar.h"
-#include <chrono>
 
 using namespace std::chrono_literals;
 
@@ -127,20 +128,17 @@ void MainWindow::openBrowseDialog()
 {
     QString file = QFileDialog::getOpenFileName(this, tr("Select file to open"),
                                                 QDir::homePath(), tr("Hypertext Files (*.htm *.html);;All Files (*.*)"));
-    if (QFileInfo::exists(file)) {
+    if (QFileInfo::exists(file))
         displaySite(file, file);
-    }
 }
 
 // pop up a window and display website
 void MainWindow::displaySite(QString url, const QString &title)
 {
-    if (url.isEmpty()) {
+    if (url.isEmpty())
         url = homeAddress;
-    }
     disconnect(conn);
-    conn = connect(webview, &QWebEngineView::loadFinished, [url](bool ok) { if (!ok) { qDebug() << "Error :" << url;
-        }});
+    conn = connect(webview, &QWebEngineView::loadFinished, [url](bool ok) { if (!ok) qDebug() << "Error :" << url; });
     QUrl qurl = QUrl::fromUserInput(url);
     webview->setUrl(qurl);
     webview->load(qurl);
@@ -162,18 +160,14 @@ void MainWindow::loadSettings()
     websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !settings.value(QStringLiteral("DisableJava"), false).toBool());
     websettings->setAttribute(QWebEngineSettings::AutoLoadImages, settings.value(QStringLiteral("LoadImages"), true).toBool());
 
-    if (args.isSet(QStringLiteral("enable-spatial-navigation"))) {
+    if (args.isSet(QStringLiteral("enable-spatial-navigation")))
         websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, true);
-    }
-    if (args.isSet(QStringLiteral("disable-js"))) {
+    if (args.isSet(QStringLiteral("disable-js")))
         websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, false);
-    }
-    if (args.isSet(QStringLiteral("disable-images"))) {
+    if (args.isSet(QStringLiteral("disable-images")))
         websettings->setAttribute(QWebEngineSettings::AutoLoadImages, false);
-    }
-    if (args.isSet(QStringLiteral("browser-mode"))) {
+    if (args.isSet(QStringLiteral("browser-mode")))
         browserMode = true;
-    }
 
     QSize size {defaultWidth, defaultHeight};
     this->resize(size);
@@ -202,9 +196,8 @@ void MainWindow::openDialog()
     bool ok = false;
     QString url  = QInputDialog::getText(this, tr("Open"),
                                          tr("Enter site or file URL:"), QLineEdit::Normal, QString(), &ok);
-    if (ok && !url.isEmpty()) {
+    if (ok && !url.isEmpty())
         displaySite(url, url);
-    }
 }
 
 void MainWindow::openQuickInfo()
@@ -267,38 +260,35 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     const auto step = 0.1;
     auto zoom = webview->zoomFactor();
-    if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash) {
+    if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash)
         findForward();
-    }
-    if (event->matches(QKeySequence::FindPrevious)) {
+    if (event->matches(QKeySequence::FindPrevious))
         findBackward();
-    } else if (event->matches(QKeySequence::ZoomIn)) {
+    else if (event->matches(QKeySequence::ZoomIn) || (event->key() == Qt::Key_Equal && event->modifiers() == Qt::ControlModifier)) {
         webview->setZoomFactor(zoom + step);
-    } else if (event->matches(QKeySequence::ZoomOut)) {
+    } else if (event->matches(QKeySequence::ZoomOut))
         webview->setZoomFactor(zoom - step);
-    } else if (event->key() == Qt::Key_0) {
+    else if (event->key() == Qt::Key_0)
         webview->setZoomFactor(1);
-    } else if (event->matches(QKeySequence::Open)) {
+    else if (event->matches(QKeySequence::Open))
         openDialog();
-    } else if (event->key() == Qt::Key_B && event->modifiers() == Qt::ControlModifier) {
+    else if (event->key() == Qt::Key_B && event->modifiers() == Qt::ControlModifier)
         openBrowseDialog();
-    } else if (event->matches(QKeySequence::HelpContents) || event->key() == Qt::Key_Question) {
+    else if (event->matches(QKeySequence::HelpContents) || event->key() == Qt::Key_Question)
         openQuickInfo();
-    } else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
+    else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus())
         searchBox->clear();
-    } else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
+    else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty())
         webview->setFocus();
-    } else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
-        toolBar->findChild<QLineEdit *>()->setFocus();
-    }
+    else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier)
+        addressBar->setFocus();
 }
 
 // resize event
 void MainWindow::resizeEvent(QResizeEvent* /*event*/)
 {
-    if (showProgress) {
+    if (showProgress)
         progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - progBarVerticalAdj);
-    }
 }
 
 // display progressbar while loading page

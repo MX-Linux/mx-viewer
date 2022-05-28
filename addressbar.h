@@ -23,7 +23,6 @@
 #define ADDRESSBAR_H
 
 #include <QLineEdit>
-#include <QObject>
 
 class AddressBar : public QLineEdit
 {
@@ -32,7 +31,7 @@ class AddressBar : public QLineEdit
 public:
     AddressBar(QWidget *parent = nullptr);
 
-private Q_SLOTS:
+private slots:
     void focusInEvent(QFocusEvent *event) override;
 
 };
