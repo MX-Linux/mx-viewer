@@ -20,7 +20,6 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
 
-
 #include <QApplication>
 #include <QDebug>
 #include <QFileDialog>
@@ -107,7 +106,7 @@ void MainWindow::addToolbar()
 
     searchBox->setPlaceholderText(tr("search in page"));
     searchBox->setClearButtonEnabled(true);
-    searchBox->setMaximumWidth(150);
+    searchBox->setMaximumWidth(searchWidth);
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
     if (!browserMode) {
@@ -176,7 +175,7 @@ void MainWindow::loadSettings()
         browserMode = true;
     }
 
-    QSize size {800, 500};
+    QSize size {defaultWidth, defaultHeight};
     this->resize(size);
     if (settings.contains(QStringLiteral("geometry")) && !args.isSet(QStringLiteral("full-screen"))) {
         restoreGeometry(settings.value(QStringLiteral("geometry")).toByteArray());
@@ -273,23 +272,23 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     }
     if (event->matches(QKeySequence::FindPrevious)) {
         findBackward();
-    } else if (event->key() == Qt::Key_Plus) {
+    } else if (event->matches(QKeySequence::ZoomIn)) {
         webview->setZoomFactor(zoom + step);
-    } else if (event->key() == Qt::Key_Minus) {
+    } else if (event->matches(QKeySequence::ZoomOut)) {
         webview->setZoomFactor(zoom - step);
     } else if (event->key() == Qt::Key_0) {
         webview->setZoomFactor(1);
     } else if (event->matches(QKeySequence::Open)) {
         openDialog();
-    } else if (event->key() == Qt::Key_B && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+    } else if (event->key() == Qt::Key_B && event->modifiers() == Qt::ControlModifier) {
         openBrowseDialog();
-    } else if (event->key() == Qt::Key_Question || event->matches(QKeySequence::HelpContents)) {
+    } else if (event->matches(QKeySequence::HelpContents) || event->key() == Qt::Key_Question) {
         openQuickInfo();
     } else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
         searchBox->clear();
     } else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
         webview->setFocus();
-    } else if (event->key() == Qt::Key_L && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+    } else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
         toolBar->findChild<QLineEdit *>()->setFocus();
     }
 }
@@ -298,16 +297,16 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 void MainWindow::resizeEvent(QResizeEvent* /*event*/)
 {
     if (showProgress) {
-        progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - 40);
+        progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - progBarVerticalAdj);
     }
 }
 
 // display progressbar while loading page
 void MainWindow::loading()
 {
-    progressBar->setFixedHeight(20);
+    progressBar->setFixedHeight(progBarWidth);
     progressBar->setTextVisible(false);
-    progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - 40);
+    progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - progBarVerticalAdj);
     progressBar->setFocus();
     progressBar->show();
     timer->start(100ms);

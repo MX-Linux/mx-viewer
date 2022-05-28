@@ -75,6 +75,11 @@ private:
     bool browserMode{};
     bool showProgress{};
     const QCommandLineParser &args;
+    const int defaultHeight = 600;
+    const int defaultWidth = 800;
+    const int progBarVerticalAdj = 40;
+    const int progBarWidth = 20;
+    const int searchWidth = 150;
 };
 
 
