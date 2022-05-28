@@ -154,7 +154,7 @@ void MainWindow::loadSettings()
     // Load first from system .conf file and then overwrite with CLI switches where available
     websettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
 
-    homeAddress = settings.value(QStringLiteral("Home"), "https://duckduckgo.com").toString();
+    homeAddress = settings.value(QStringLiteral("Home"), QStringLiteral("https://duckduckgo.com")).toString();
     browserMode = settings.value(QStringLiteral("BrowserMode"), false).toBool();
     showProgress = settings.value(QStringLiteral("ShowProgressBar"), false).toBool();
 

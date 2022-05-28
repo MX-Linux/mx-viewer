@@ -72,8 +72,9 @@ private:
     QToolBar *toolBar;
     QWebEngineSettings *websettings;
     QWebEngineView *webview;
-    bool browserMode{};
-    bool showProgress{};
+    bool browserMode;
+    bool showProgress;
+    bool wasMaximized;
     const QCommandLineParser &args;
     const int defaultHeight = 600;
     const int defaultWidth = 800;
