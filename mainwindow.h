@@ -40,6 +40,7 @@ class MainWindow : public QMainWindow
 
 protected:
     QTimer *timer;
+    QTimer *timerHist;
     void keyPressEvent(QKeyEvent *event);
     void resizeEvent(QResizeEvent *event);
 
@@ -48,6 +49,7 @@ public:
     ~MainWindow();
     void addActions();
     void addToolbar();
+    void buildMenu();
     void centerWindow();
     void displaySite(QString url = {}, const QString &title = {});
     void loadSettings();
@@ -55,11 +57,11 @@ public:
     void openDialog();
     void openQuickInfo();
     void setConnections();
-    void setMenu();
     void toggleFullScreen();
     void updateUrl();
 
 public slots:
+    void listHistory();
     void findBackward();
     void findForward();
     void loading();
@@ -70,6 +72,7 @@ private:
     AddressBar *addressBar {};
     QAction *menuButton {};
     QLineEdit *searchBox {};
+    QMenu *history {};
     QMetaObject::Connection conn;
     QProgressBar *progressBar {};
     QSettings settings;
@@ -85,6 +88,7 @@ private:
     const int progBarVerticalAdj {40};
     const int progBarWidth {20};
     const int searchWidth {150};
+    const int histMaxSize {15};
 };
 
 

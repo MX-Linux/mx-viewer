@@ -30,6 +30,8 @@
 #include <QScreen>
 #include <QStatusBar>
 #include <QToolBar>
+#include <QWebEngineHistory>
+
 
 #include <chrono>
 #include "mainwindow.h"
@@ -41,6 +43,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     : QMainWindow(parent), args{arg_parser}
 {
     timer = new QTimer(this);
+    timerHist = new QTimer(this);
     toolBar = new QToolBar(this);
     webview = new QWebEngineView(this);
     progressBar = new QProgressBar(this);
@@ -78,17 +81,48 @@ void MainWindow::addActions()
     connect(full, &QAction::triggered, this, &MainWindow::toggleFullScreen);
 }
 
+void MainWindow::listHistory()
+{
+    history->clear();
+    QAction *histItem {nullptr};
+    auto *hist = webview->history();
+
+    int start = (hist->items().size() > histMaxSize) ? hist->items().size() - histMaxSize : 0;
+    for (int i = start; i < hist->items().size(); ++i) {
+        auto item = hist->itemAt(i);
+        history->addAction(histItem = new QAction(item.title()));
+        histItem->setProperty("url", item.url());
+        connect(histItem, &QAction::hovered, [this, histItem]() {
+            timerHist->stop();
+            disconnect(timerHist);
+            QString url = histItem->property("url").toString();
+            if (url.isEmpty()) {
+                this->statusBar()->hide();
+            } else {
+                timerHist->start(3s);
+                this->statusBar()->show();
+                this->statusBar()->showMessage(url);
+                connect(timerHist, &QTimer::timeout, [this]() {this->statusBar()->hide();});
+            }
+        });
+        connect(histItem, &QAction::triggered, [this, histItem]() {
+            QString url = histItem->property("url").toString();
+            displaySite(url);
+        });
+    }
+}
+
 void MainWindow::addToolbar()
 {
     this->addToolBar(toolBar);
     this->setCentralWidget(webview);
 
-    QAction *back = nullptr;
-    QAction *forward = nullptr;
-    QAction *reload = nullptr;
-    QAction *stop = nullptr;
-//    QAction *tab = nullptr;
-    QAction *home = nullptr;
+    QAction *back {nullptr};
+    QAction *forward {nullptr};
+    QAction *reload {nullptr};
+    QAction *stop {nullptr};
+//    QAction *tab {nullptr};
+    QAction *home {nullptr};
 
     toolBar->addAction(back = webview->pageAction(QWebEnginePage::Back));
     toolBar->addAction(forward = webview->pageAction(QWebEnginePage::Forward));
@@ -123,7 +157,7 @@ void MainWindow::addToolbar()
     toolBar->addWidget(searchBox);
     toolBar->addAction(menuButton = new QAction(QIcon::fromTheme(QStringLiteral("open-menu")), tr("Settings")));
     menuButton->setShortcut(Qt::Key_F10);
-    setMenu();
+    buildMenu();
     toolBar->show();
 }
 
@@ -233,14 +267,17 @@ void MainWindow::setConnections()
     });
 }
 
-void MainWindow::setMenu()
+void MainWindow::buildMenu()
 {
     auto *menu = new QMenu(this);
-    QAction *browsermode = nullptr;
-    QAction *readermode = nullptr;
-    QAction *fullscreen = nullptr;
-    QAction *about = nullptr;
-    QAction *quit = nullptr;
+    QAction *browsermode {nullptr};
+    QAction *readermode {nullptr};
+    QAction *fullscreen {nullptr};
+    QAction *about {nullptr};
+    QAction *quit {nullptr};
+    QAction *help {nullptr};
+    QAction *historyAction {nullptr};
+    history = new QMenu(menu);
 
     menuButton->setMenu(menu);
     menu->addAction(readermode = new QAction(QIcon::fromTheme(QStringLiteral("text-editor-symbolic")), tr("&Reader mode")));
@@ -249,7 +286,10 @@ void MainWindow::setMenu()
     browsermode->setVisible(!browserMode);
     readermode->setVisible(browserMode);
     fullscreen->setVisible(!this->isFullScreen());
+    menu->addAction(historyAction = new QAction(QIcon::fromTheme(QStringLiteral("history")), tr("H&istory")));
+    historyAction->setMenu(history);
     menu->addSeparator();
+    menu->addAction(help = new QAction(QIcon::fromTheme(QStringLiteral("help-contents")), tr("&Help")));
     menu->addAction(about = new QAction(QIcon::fromTheme(QStringLiteral("help-about")), tr("&About...")));
     menu->addSeparator();
     menu->addAction(quit  = new QAction(QIcon::fromTheme(QStringLiteral("window-close")), tr("&Exit")));
@@ -258,6 +298,7 @@ void MainWindow::setMenu()
         QPoint pos = mapToParent(toolBar->widgetForAction(menuButton)->pos());
         pos.setY(pos.y() + toolBar->widgetForAction(menuButton)->size().height());
         menu->popup(pos);
+        listHistory();
     });
 
     connect(fullscreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
@@ -274,6 +315,8 @@ void MainWindow::setMenu()
         readermode->setVisible(browserMode);
     });
 
+
+    connect(help, &QAction::triggered, this, &MainWindow::openQuickInfo);
     connect(quit, &QAction::triggered, this, &MainWindow::close);
     connect(about, &QAction::triggered, [this]() {
         QMessageBox::about(this, tr("About MX Viewer"), tr(
