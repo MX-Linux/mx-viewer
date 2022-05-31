@@ -40,7 +40,6 @@ class MainWindow : public QMainWindow
 
 protected:
     QTimer *timer;
-    QTimer *timerHist;
     void keyPressEvent(QKeyEvent *event);
     void resizeEvent(QResizeEvent *event);
 
@@ -56,6 +55,7 @@ public:
     void openBrowseDialog();
     void openQuickInfo();
     void setConnections();
+    void showFullScreenNotification();
     void toggleFullScreen();
     void updateUrl();
 

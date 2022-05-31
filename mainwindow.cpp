@@ -22,11 +22,15 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QEasingCurve>
 #include <QFileDialog>
+#include <QGraphicsOpacityEffect>
 #include <QInputDialog>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPropertyAnimation>
 #include <QScreen>
 #include <QShortcut>
 #include <QStatusBar>
@@ -44,7 +48,6 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     : QMainWindow(parent), args{arg_parser}
 {
     timer = new QTimer(this);
-    timerHist = new QTimer(this);
     toolBar = new QToolBar(this);
     webview = new QWebEngineView(this);
     progressBar = new QProgressBar(this);
@@ -94,22 +97,24 @@ void MainWindow::listHistory()
         history->addAction(histItem = new QAction(item.title()));
         histItem->setProperty("url", item.url());
         connect(histItem, &QAction::hovered, [this, histItem]() {
-            timerHist->stop();
-            disconnect(timerHist);
+            static QTimer timer;
+            timer.stop();
+            timer.disconnect();
             QString url = histItem->property("url").toString();
             if (url.isEmpty()) {
                 this->statusBar()->hide();
             } else {
-                timerHist->start(3s);
+                timer.start(3s);
                 this->statusBar()->show();
                 this->statusBar()->showMessage(url);
-                connect(timerHist, &QTimer::timeout, [this]() {this->statusBar()->hide();});
+                connect(&timer, &QTimer::timeout, this->statusBar(), &QStatusBar::hide);
             }
         });
         connect(histItem, &QAction::triggered, [this, histItem]() {
             QString url = histItem->property("url").toString();
             displaySite(url);
         });
+        connect(history, &QMenu::aboutToHide, this->statusBar(), &QStatusBar::hide);
     }
 }
 
@@ -269,6 +274,37 @@ void MainWindow::setConnections()
     });
 }
 
+void MainWindow::showFullScreenNotification()
+{
+    const int distance_top = 100;
+    const int duration_ms = 800;
+    const double start = 0;
+    const double end = 0.85;
+    auto *label = new QLabel(this);
+    auto *effect = new QGraphicsOpacityEffect;
+    label->setGraphicsEffect(effect);
+    label->setStyleSheet(QStringLiteral("padding: 15px; background-color:#787878; color:white"));
+    label->setText(tr("Press [F11] to exit full screen"));
+    label->adjustSize();
+    label->move(QApplication::primaryScreen()->geometry().width() / 2 - label->width() / 2, distance_top);
+    auto *a = new QPropertyAnimation(effect, "opacity");
+    a->setDuration(duration_ms);
+    a->setStartValue(start);
+    a->setEndValue(end);
+    a->setEasingCurve(QEasingCurve::InBack);
+    a->start(QPropertyAnimation::DeleteWhenStopped);
+    label->show();
+    QTimer::singleShot(4s, this, [label, effect, end, start]() {
+        auto *a = new QPropertyAnimation(effect, "opacity");
+        a->setDuration(duration_ms);
+        a->setStartValue(end);
+        a->setEndValue(start);
+        a->setEasingCurve(QEasingCurve::OutBack);
+        a->start(QPropertyAnimation::DeleteWhenStopped);
+        connect(a, &QPropertyAnimation::finished, label, &QLabel::deleteLater);
+    });
+}
+
 void MainWindow::buildMenu()
 {
     auto *menu = new QMenu(this);
@@ -334,6 +370,7 @@ void MainWindow::toggleFullScreen()
     } else {
         this->showFullScreen();
         toolBar->hide();
+        showFullScreenNotification();
     }
 }
 
