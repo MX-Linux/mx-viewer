@@ -80,12 +80,12 @@ bool dropElevatedPrivileges(bool force_nobody)
 
 int main(int argc, char *argv[])
 {
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon::fromTheme(app.applicationName()));
     app.setApplicationVersion(VERSION);
     app.setOrganizationName(QStringLiteral("MX-Linux"));
-    app.setAttribute(Qt::AA_EnableHighDpiScaling);
-    app.setAttribute(Qt::AA_UseHighDpiPixmaps);
 
     QCommandLineParser parser;
     parser.setApplicationDescription(QObject::tr("This tool will display the URL content in a window, window title is optional"));
