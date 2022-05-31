@@ -35,6 +35,7 @@
 #include <QStatusBar>
 #include <QToolBar>
 #include <QWebEngineHistory>
+#include <QWebEngineProfile>
 
 #include <chrono>
 #include "mainwindow.h"
@@ -187,13 +188,30 @@ void MainWindow::displaySite(QString url, const QString &title)
     this->setWindowTitle(title);
 }
 
+void MainWindow::loadBookmarks()
+{
+    QAction *bookmark {nullptr};
+    int size = settings.beginReadArray(QStringLiteral("Bookmarks"));
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        bookmarks->addAction(bookmark = new QAction(settings.value(QStringLiteral("icon")).value<QIcon>(),
+                                                    settings.value(QStringLiteral("title")).toString()));
+        bookmark->setProperty("url", settings.value(QStringLiteral("url")));
+        connectAddress(bookmark, bookmarks);
+    }
+    settings.endArray();
+}
+
 void MainWindow::loadSettings()
 {
     // Load first from system .conf file and then overwrite with CLI switches where available
     websettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
+    websettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
+    QWebEngineProfile::defaultProfile()->setUseForGlobalCertificateVerification();
 
     homeAddress = settings.value(QStringLiteral("Home"), QStringLiteral("https://duckduckgo.com")).toString();
     showProgress = settings.value(QStringLiteral("ShowProgressBar"), false).toBool();
+
 
     websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, settings.value(QStringLiteral("SpatialNavigation"), false).toBool());
     websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !settings.value(QStringLiteral("DisableJava"), false).toBool());
