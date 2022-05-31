@@ -52,6 +52,7 @@ public:
     void centerWindow();
     void connectAddress(const QAction *action, const QMenu *menu);
     void displaySite(QString url = {}, const QString &title = {});
+    void loadBookmarks();
     void loadSettings();
     void openBrowseDialog();
     void openQuickInfo();

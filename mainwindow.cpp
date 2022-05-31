@@ -367,6 +367,8 @@ void MainWindow::buildMenu()
     menu->addSeparator();
     menu->addAction(quit  = new QAction(QIcon::fromTheme(QStringLiteral("window-close")), tr("&Exit")));
 
+    loadBookmarks();
+
     connect(addBookmark, &QAction::triggered, [this]() {
         QAction *bookmark {nullptr};
         bookmarks->addAction(bookmark = new QAction(webview->icon(), webview->title()));
