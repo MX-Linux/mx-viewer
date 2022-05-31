@@ -32,11 +32,9 @@
 #include <QMessageBox>
 #include <QPropertyAnimation>
 #include <QScreen>
-#include <QShortcut>
 #include <QStatusBar>
 #include <QToolBar>
 #include <QWebEngineHistory>
-
 
 #include <chrono>
 #include "mainwindow.h"
@@ -163,11 +161,9 @@ void MainWindow::addToolbar()
     toolBar->addAction(zoomin = new QAction(QIcon::fromTheme(QStringLiteral("zoom-in")), tr("Zoom In")));
     toolBar->addAction(menuButton = new QAction(QIcon::fromTheme(QStringLiteral("open-menu")), tr("Settings")));
     const auto step = 0.1;
-    zoomin->setShortcut(QKeySequence::ZoomIn);
+    zoomin->setShortcuts({QKeySequence::ZoomIn, Qt::CTRL + Qt::Key_Equal});
     zoomout->setShortcut(QKeySequence::ZoomOut);
     zoompercent->setShortcut(Qt::CTRL + Qt::Key_0);
-    auto *zoomin_alt =  new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Equal), this); // alternative shortcut
-    connect(zoomin_alt, &QShortcut::activated, zoomin, &QAction::trigger);
     connect(zoomout, &QAction::triggered, [this, step, zoompercent]() {
         webview->setZoomFactor(webview->zoomFactor() - step);
         zoompercent->setText(QString::number(webview->zoomFactor() * 100) + "%");});
