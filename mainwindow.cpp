@@ -323,9 +323,9 @@ void MainWindow::buildMenu()
 "This is a VERY basic browser based on Qt WebEngine.\n\n"
 
 "The main purpose is to provide a basic document viewer for MX documentation. "
-"It could be used for basic internet browsing, but it's not recommended to be "
+"It could be used for LIMITED internet browsing, but it's not recommended to be "
 "used for anything important or secure because it's not a fully featured browser "
-"and its security/privacy features are not tested.\n\n"
+"and its security/privacy features were not tested.\n\n"
 
 "This program is free software: you can redistribute it and/or modify "
 "it under the terms of the GNU General Public License as published by "

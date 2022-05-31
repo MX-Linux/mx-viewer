@@ -24,25 +24,45 @@
 #include <QCommandLineParser>
 #include <QLibraryInfo>
 #include <QMessageBox>
+#include <QProcess>
 #include <QTranslator>
 
 #include "mainwindow.h"
 #include "version.h"
 #include <unistd.h>
 
-static bool dropElevatedPrivileges()
+QPair<int, int> getUserIDs()
+{
+    QPair<int, int> id;
+    QProcess proc;
+    proc.start("logname", {}, QIODevice::ReadOnly);
+    proc.waitForFinished();
+    QString logname = QString::fromLatin1(proc.readAllStandardOutput().trimmed());
+    proc.start("id", {"-u", logname}, QIODevice::ReadOnly);
+    proc.waitForFinished();
+    id.first = proc.readAllStandardOutput().trimmed().toInt();
+    proc.start("id", {"-g", logname}, QIODevice::ReadOnly);
+    proc.waitForFinished();
+    id.second = proc.readAllStandardOutput().trimmed().toInt();
+    return id;
+}
+
+// Drop rights of the program to regular user or 'nobody' if logname return root id or gid
+// Used to drop rights to 'nobody', but normal user rights might be needed to write cache and cookies.
+bool dropElevatedPrivileges()
 {
     if (getuid() != 0 && geteuid() != 0)
         return true;
 
-    // initgroups()
     // ref:  https://www.safaribooksonline.com/library/view/secure-programming-cookbook/0596003943/ch01s03.html#secureprgckbk-CHP-1-SECT-3.3
+    auto [id, gid] = getUserIDs();
+    const int nobody = 65534; // nobody (uid 65534), nogroup (gid 65534)
+    if (id == 0 || gid == 0)
+        id = gid = nobody;
 
-    // change guid + uid   ~~  nobody (uid 65534), nogroup (gid 65534), users (gid 100)
-    const int nobody = 65534;
-    if (setgid(nobody) != 0)
+    if (setgid(id) != 0)
         return false;
-    if (setuid(nobody) != 0)
+    if (setuid(gid) != 0)
         return false;
 
     // On systems with defined _POSIX_SAVED_IDS in the unistd.h file, it should be
