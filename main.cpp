@@ -89,8 +89,6 @@ int main(int argc, char *argv[])
     parser.setApplicationDescription(QObject::tr("This tool will display the URL content in a window, window title is optional"));
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.addOption({{QStringLiteral("b"), QStringLiteral("browser-mode")},
-                      QObject::tr("Start program in browser mode. Default mode is 'reader mode'")});
     parser.addOption({{QStringLiteral("f"), QStringLiteral("full-screen")}, QObject::tr("Start program in full-screen mode")});
     parser.addOption({{QStringLiteral("i"), QStringLiteral("disable-images")},
                       QObject::tr("Disable load images automatically from websites")});

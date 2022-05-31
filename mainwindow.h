@@ -54,7 +54,6 @@ public:
     void displaySite(QString url = {}, const QString &title = {});
     void loadSettings();
     void openBrowseDialog();
-    void openDialog();
     void openQuickInfo();
     void setConnections();
     void toggleFullScreen();
@@ -80,7 +79,6 @@ private:
     QToolBar *toolBar {};
     QWebEngineSettings *websettings {};
     QWebEngineView *webview {};
-    bool browserMode {};
     bool showProgress {};
     const QCommandLineParser &args;
     const int defaultHeight {600};

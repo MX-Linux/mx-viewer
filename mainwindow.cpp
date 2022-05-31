@@ -144,16 +144,10 @@ void MainWindow::addToolbar()
     searchBox->setMaximumWidth(searchWidth);
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
-    if (!browserMode) {
-        auto *spacer = new QWidget(this);
-        spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        toolBar->addWidget(spacer);
-    } else {
-        addressBar = new AddressBar(this);
-        addressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        connect(addressBar, &QLineEdit::returnPressed, [this]() { displaySite(addressBar->text()); });
-        toolBar->addWidget(addressBar);
-    }
+    addressBar = new AddressBar(this);
+    addressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    connect(addressBar, &QLineEdit::returnPressed, [this]() { displaySite(addressBar->text()); });
+    toolBar->addWidget(addressBar);
     toolBar->addWidget(searchBox);
     toolBar->addAction(menuButton = new QAction(QIcon::fromTheme(QStringLiteral("open-menu")), tr("Settings")));
     menuButton->setShortcut(Qt::Key_F10);
@@ -190,7 +184,6 @@ void MainWindow::loadSettings()
     websettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
 
     homeAddress = settings.value(QStringLiteral("Home"), QStringLiteral("https://duckduckgo.com")).toString();
-    browserMode = settings.value(QStringLiteral("BrowserMode"), false).toBool();
     showProgress = settings.value(QStringLiteral("ShowProgressBar"), false).toBool();
 
     websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, settings.value(QStringLiteral("SpatialNavigation"), false).toBool());
@@ -203,8 +196,6 @@ void MainWindow::loadSettings()
         websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, false);
     if (args.isSet(QStringLiteral("disable-images")))
         websettings->setAttribute(QWebEngineSettings::AutoLoadImages, false);
-    if (args.isSet(QStringLiteral("browser-mode")))
-        browserMode = true;
 
     QSize size {defaultWidth, defaultHeight};
     this->resize(size);
@@ -228,25 +219,15 @@ void MainWindow::centerWindow()
     this->move(x, y);
 }
 
-void MainWindow::openDialog()
-{
-    bool ok = false;
-    QString url  = QInputDialog::getText(this, tr("Open"),
-                                         tr("Enter site or file URL:"), QLineEdit::Normal, QString(), &ok);
-    if (ok && !url.isEmpty())
-        displaySite(url, url);
-}
-
 void MainWindow::openQuickInfo()
 {
     QMessageBox::about(this, tr("Keyboard Shortcuts"),
                        tr("Ctrl-F, or F3") + "\t - " + tr("Find") + "\n" +
                        tr("Shift-F3") + "\t - " + tr("Find previous") + "\n" +
                        tr("Ctrl-R, or F5") + "\t - " + tr("Reload") + "\n" +
-                       tr("Ctrl-O") + "\t - " + tr("Open URL") + "\n" +
-                       tr("Ctrl-B") + "\t - " + tr("Browse file to open") + "\n" +
+                       tr("Ctrl-O") + "\t - " + tr("Browse file to open") + "\n" +
                        tr("Esc") + "\t - " + tr("Stop loading/clear Find field") + "\n" +
-                       tr("Alt-LeftArrow, Alt-RightArrow") + " - " + tr("Back/Forward") + "\n" +
+                       tr("Alt→, Alt←") + "\t - " + tr("Back/Forward") + "\n" +
                        tr("F1, or ?") + "\t - " + tr("Open this help dialog"));
 }
 
@@ -270,8 +251,6 @@ void MainWindow::setConnections()
 void MainWindow::buildMenu()
 {
     auto *menu = new QMenu(this);
-    QAction *browsermode {nullptr};
-    QAction *readermode {nullptr};
     QAction *fullscreen {nullptr};
     QAction *about {nullptr};
     QAction *quit {nullptr};
@@ -280,11 +259,7 @@ void MainWindow::buildMenu()
     history = new QMenu(menu);
 
     menuButton->setMenu(menu);
-    menu->addAction(readermode = new QAction(QIcon::fromTheme(QStringLiteral("text-editor-symbolic")), tr("&Reader mode")));
-    menu->addAction(browsermode = new QAction(QIcon::fromTheme(QStringLiteral("web-browser")), tr("&Browser mode")));
     menu->addAction(fullscreen = new QAction(QIcon::fromTheme(QStringLiteral("view-fullscreen")), tr("&Full screen")));
-    browsermode->setVisible(!browserMode);
-    readermode->setVisible(browserMode);
     fullscreen->setVisible(!this->isFullScreen());
     menu->addAction(historyAction = new QAction(QIcon::fromTheme(QStringLiteral("history")), tr("H&istory")));
     historyAction->setMenu(history);
@@ -302,18 +277,7 @@ void MainWindow::buildMenu()
     });
 
     connect(fullscreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
-    connect(browsermode, &QAction::triggered, [this, browsermode, readermode]() {
-        toolBar->findChild<QWidget *>()->hide();
-        browserMode = !browserMode;
-        browsermode->setVisible(!browserMode);
-        readermode->setVisible(browserMode);
-    });
-    connect(readermode, &QAction::triggered, [this, browsermode, readermode]() {
-        toolBar->findChild<QWidget *>()->hide();
-        browserMode = !browserMode;
-        browsermode->setVisible(!browserMode);
-        readermode->setVisible(browserMode);
-    });
+    QApplication::processEvents();
 
 
     connect(help, &QAction::triggered, this, &MainWindow::openQuickInfo);
@@ -354,10 +318,8 @@ void MainWindow::toggleFullScreen()
 
 void MainWindow::updateUrl()
 {
-    if (browserMode) {
-        addressBar->show();
-        addressBar->setText(webview->url().toDisplayString());
-    }
+    addressBar->show();
+    addressBar->setText(webview->url().toDisplayString());
 }
 
 void MainWindow::findBackward()
@@ -388,8 +350,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     else if (event->key() == Qt::Key_0)
         webview->setZoomFactor(1);
     else if (event->matches(QKeySequence::Open))
-        openDialog();
-    else if (event->key() == Qt::Key_B && event->modifiers() == Qt::ControlModifier)
         openBrowseDialog();
     else if (event->matches(QKeySequence::HelpContents) || event->key() == Qt::Key_Question)
         openQuickInfo();
