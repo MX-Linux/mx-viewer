@@ -28,6 +28,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QScreen>
+#include <QShortcut>
 #include <QStatusBar>
 #include <QToolBar>
 #include <QWebEngineHistory>
@@ -123,6 +124,9 @@ void MainWindow::addToolbar()
     QAction *stop {nullptr};
 //    QAction *tab {nullptr};
     QAction *home {nullptr};
+    QAction *zoomin {nullptr};
+    QAction *zoompercent {nullptr};
+    QAction *zoomout {nullptr};
 
     toolBar->addAction(back = webview->pageAction(QWebEnginePage::Back));
     toolBar->addAction(forward = webview->pageAction(QWebEnginePage::Forward));
@@ -149,7 +153,24 @@ void MainWindow::addToolbar()
     connect(addressBar, &QLineEdit::returnPressed, [this]() { displaySite(addressBar->text()); });
     toolBar->addWidget(addressBar);
     toolBar->addWidget(searchBox);
+    toolBar->addAction(zoomout = new QAction(QIcon::fromTheme(QStringLiteral("zoom-out")), tr("Zoom out")));
+    toolBar->addAction(zoompercent = new QAction(QStringLiteral("100%")));
+    toolBar->addAction(zoomin = new QAction(QIcon::fromTheme(QStringLiteral("zoom-in")), tr("Zoom In")));
     toolBar->addAction(menuButton = new QAction(QIcon::fromTheme(QStringLiteral("open-menu")), tr("Settings")));
+    const auto step = 0.1;
+    zoomin->setShortcut(QKeySequence::ZoomIn);
+    zoomout->setShortcut(QKeySequence::ZoomOut);
+    zoompercent->setShortcut(Qt::CTRL + Qt::Key_0);
+    auto *zoomin_alt =  new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Equal), this); // alternative shortcut
+    connect(zoomin_alt, &QShortcut::activated, zoomin, &QAction::trigger);
+    connect(zoomout, &QAction::triggered, [this, step, zoompercent]() {
+        webview->setZoomFactor(webview->zoomFactor() - step);
+        zoompercent->setText(QString::number(webview->zoomFactor() * 100) + "%");});
+    connect(zoomin, &QAction::triggered, [this, step, zoompercent]() {
+        webview->setZoomFactor(webview->zoomFactor()  + step);
+        zoompercent->setText(QString::number(webview->zoomFactor() * 100) + "%");});
+    connect(zoompercent, &QAction::triggered, [this, zoompercent]() {webview->setZoomFactor(1);
+        zoompercent->setText(QStringLiteral("100%"));});
     menuButton->setShortcut(Qt::Key_F10);
     buildMenu();
     toolBar->show();
@@ -337,18 +358,10 @@ void MainWindow::findForward()
 // process keystrokes
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    const auto step = 0.1;
-    auto zoom = webview->zoomFactor();
     if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash)
         findForward();
     if (event->matches(QKeySequence::FindPrevious))
         findBackward();
-    else if (event->matches(QKeySequence::ZoomIn) || (event->key() == Qt::Key_Equal && event->modifiers() == Qt::ControlModifier)) {
-        webview->setZoomFactor(zoom + step);
-    } else if (event->matches(QKeySequence::ZoomOut))
-        webview->setZoomFactor(zoom - step);
-    else if (event->key() == Qt::Key_0)
-        webview->setZoomFactor(1);
     else if (event->matches(QKeySequence::Open))
         openBrowseDialog();
     else if (event->matches(QKeySequence::HelpContents) || event->key() == Qt::Key_Question)
