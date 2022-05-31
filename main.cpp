@@ -49,7 +49,7 @@ QPair<int, int> getUserIDs()
 
 // Drop rights of the program to regular user or 'nobody' if logname return root id or gid
 // Used to drop rights to 'nobody', but normal user rights might be needed to write cache and cookies.
-bool dropElevatedPrivileges()
+bool dropElevatedPrivileges(bool force_nobody)
 {
     if (getuid() != 0 && geteuid() != 0)
         return true;
@@ -57,7 +57,7 @@ bool dropElevatedPrivileges()
     // ref:  https://www.safaribooksonline.com/library/view/secure-programming-cookbook/0596003943/ch01s03.html#secureprgckbk-CHP-1-SECT-3.3
     auto [id, gid] = getUserIDs();
     const int nobody = 65534; // nobody (uid 65534), nogroup (gid 65534)
-    if (id == 0 || gid == 0)
+    if (id == 0 || gid == 0 || force_nobody)
         id = gid = nobody;
 
     if (setgid(id) != 0)
@@ -89,16 +89,27 @@ int main(int argc, char *argv[])
     parser.setApplicationDescription(QObject::tr("This tool will display the URL content in a window, window title is optional"));
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.addOption({{QStringLiteral("b"), QStringLiteral("browser-mode")}, QObject::tr("Start program in browser mode. Default mode is 'reader mode'")});
+    parser.addOption({{QStringLiteral("b"), QStringLiteral("browser-mode")},
+                      QObject::tr("Start program in browser mode. Default mode is 'reader mode'")});
     parser.addOption({{QStringLiteral("f"), QStringLiteral("full-screen")}, QObject::tr("Start program in full-screen mode")});
-    parser.addOption({{QStringLiteral("i"), QStringLiteral("disable-images")}, QObject::tr("Disable load images automatically from websites")});
+    parser.addOption({{QStringLiteral("i"), QStringLiteral("disable-images")},
+                      QObject::tr("Disable load images automatically from websites")});
     parser.addOption({{QStringLiteral("j"), QStringLiteral("disable-js")}, QObject::tr("Disable JavaScript")});
-    parser.addOption({{QStringLiteral("s"), QStringLiteral("enable-spatial-navigation")}, QObject::tr("Enable spatial navigation with keyboard")});
-    parser.addPositionalArgument(QObject::tr("URL"), QObject::tr("URL of the page you want to load") + "\ne.g., https://google.com, google.com, file:///home/user/file.html");
+    if (getuid() == 0 || geteuid() == 0)
+        parser.addOption({{QStringLiteral("n"), QStringLiteral("force-nobody")},
+                          QObject::tr("Drop program's rights to 'nobody'. By default, if run as root, the rights are "
+                          "dropped to normal user. This option might provide additional protection, but the program "
+                          "would not be able to write its cache and cookies to the user directory, so it might break "
+                          "some functionality.")});
+    parser.addOption({{QStringLiteral("s"), QStringLiteral("enable-spatial-navigation")},
+                      QObject::tr("Enable spatial navigation with keyboard")});
+    parser.addPositionalArgument(QObject::tr("URL"), QObject::tr("URL of the page you want to load") +
+                                 "\ne.g., https://google.com, google.com, file:///home/user/file.html");
     parser.addPositionalArgument(QObject::tr("Title"), QObject::tr("Window title for the viewer"), QStringLiteral("[title]"));
     parser.process(app);
 
-    if (!dropElevatedPrivileges()) {
+    bool force_nobody = (getuid() == 0 || geteuid() == 0) ? parser.isSet("force-nobody") : false;
+    if (!dropElevatedPrivileges(force_nobody)) {
         qDebug() << "Could not drop elevated privileges";
         exit(EXIT_FAILURE);
     }
