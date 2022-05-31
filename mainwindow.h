@@ -50,10 +50,12 @@ public:
     void addToolbar();
     void buildMenu();
     void centerWindow();
+    void connectAddress(const QAction *action, const QMenu *menu);
     void displaySite(QString url = {}, const QString &title = {});
     void loadSettings();
     void openBrowseDialog();
     void openQuickInfo();
+    void saveBookmarks(int count);
     void setConnections();
     void showFullScreenNotification();
     void toggleFullScreen();
@@ -69,8 +71,11 @@ public slots:
 
 private:
     AddressBar *addressBar {};
+    QAction *addBookmark {};
     QAction *menuButton {};
+    QAction *manageBookmarks {};
     QLineEdit *searchBox {};
+    QMenu *bookmarks {};
     QMenu *history {};
     QMetaObject::Connection conn;
     QProgressBar *progressBar {};

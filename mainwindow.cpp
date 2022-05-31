@@ -94,25 +94,7 @@ void MainWindow::listHistory()
         auto item = hist->itemAt(i);
         history->addAction(histItem = new QAction(item.title()));
         histItem->setProperty("url", item.url());
-        connect(histItem, &QAction::hovered, [this, histItem]() {
-            static QTimer timer;
-            timer.stop();
-            timer.disconnect();
-            QString url = histItem->property("url").toString();
-            if (url.isEmpty()) {
-                this->statusBar()->hide();
-            } else {
-                timer.start(3s);
-                this->statusBar()->show();
-                this->statusBar()->showMessage(url);
-                connect(&timer, &QTimer::timeout, this->statusBar(), &QStatusBar::hide);
-            }
-        });
-        connect(histItem, &QAction::triggered, [this, histItem]() {
-            QString url = histItem->property("url").toString();
-            displaySite(url);
-        });
-        connect(history, &QMenu::aboutToHide, this->statusBar(), &QStatusBar::hide);
+        connectAddress(histItem, history);
     }
 }
 
@@ -149,10 +131,15 @@ void MainWindow::addToolbar()
     searchBox->setPlaceholderText(tr("search in page"));
     searchBox->setClearButtonEnabled(true);
     searchBox->setMaximumWidth(searchWidth);
+    searchBox->setClearButtonEnabled(true);
+    searchBox->addAction(QIcon::fromTheme(QStringLiteral("search")), QLineEdit::LeadingPosition);
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
     addressBar = new AddressBar(this);
     addressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    addressBar->setClearButtonEnabled(true);
+    addBookmark = addressBar->addAction(QIcon::fromTheme(QStringLiteral("emblem-favorite")), QLineEdit::TrailingPosition);
+    addBookmark->setToolTip(tr("Add bookmark"));
     connect(addressBar, &QLineEdit::returnPressed, [this]() { displaySite(addressBar->text()); });
     toolBar->addWidget(addressBar);
     toolBar->addWidget(searchBox);
@@ -253,6 +240,16 @@ void MainWindow::openQuickInfo()
                        tr("F1, or ?") + "\t - " + tr("Open this help dialog"));
 }
 
+void MainWindow::saveBookmarks(int count)
+{
+    settings.beginWriteArray(QStringLiteral("Bookmarks"));
+    settings.setArrayIndex(count - 1); // if one item, starts array from 0
+    settings.setValue(QStringLiteral("title"), webview->title());
+    settings.setValue(QStringLiteral("url"), webview->url());
+    settings.setValue(QStringLiteral("icon"), webview->icon());
+    settings.endArray();
+}
+
 void MainWindow::setConnections()
 {
     connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show); // show toolbar when loading a new page
@@ -301,26 +298,64 @@ void MainWindow::showFullScreenNotification()
     });
 }
 
+// Show the address in the toolbar and also connect it to launch it
+void MainWindow::connectAddress(const QAction *action, const QMenu *menu)
+{
+    connect(action, &QAction::hovered, [this, action]() {
+        QString url = action->property("url").toString();
+        if (url.isEmpty()) {
+            this->statusBar()->hide();
+        } else {
+            this->statusBar()->show();
+            this->statusBar()->showMessage(url);
+        }
+    });
+    connect(action, &QAction::triggered, [this, action]() {
+        QString url = action->property("url").toString();
+        displaySite(url);
+    });
+    connect(menu, &QMenu::aboutToHide, this->statusBar(), &QStatusBar::hide);
+}
+
 void MainWindow::buildMenu()
 {
     auto *menu = new QMenu(this);
+    history = new QMenu(menu);
+    bookmarks = new QMenu(menu);
     QAction *fullscreen {nullptr};
     QAction *about {nullptr};
     QAction *quit {nullptr};
     QAction *help {nullptr};
+    QAction *bookmarkAction {nullptr};
     QAction *historyAction {nullptr};
-    history = new QMenu(menu);
-
     menuButton->setMenu(menu);
+
     menu->addAction(fullscreen = new QAction(QIcon::fromTheme(QStringLiteral("view-fullscreen")), tr("&Full screen")));
     fullscreen->setVisible(!this->isFullScreen());
     menu->addAction(historyAction = new QAction(QIcon::fromTheme(QStringLiteral("history")), tr("H&istory")));
     historyAction->setMenu(history);
     menu->addSeparator();
+    menu->addAction(bookmarkAction = new QAction(QIcon::fromTheme(QStringLiteral("emblem-favorite")), tr("&Bookmarks")));
+    bookmarkAction->setMenu(bookmarks);
+    bookmarks->addAction(addBookmark);
+    addBookmark->setText(tr("Bookmark current address"));
+    addBookmark->setShortcut(Qt::CTRL + Qt::Key_D);
+    bookmarks->addAction(manageBookmarks = new QAction(tr("Manage bookmarks")));
+    bookmarks->addSeparator();
+    manageBookmarks->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_O);
+    menu->addSeparator();
     menu->addAction(help = new QAction(QIcon::fromTheme(QStringLiteral("help-contents")), tr("&Help")));
-    menu->addAction(about = new QAction(QIcon::fromTheme(QStringLiteral("help-about")), tr("&About...")));
+    menu->addAction(about = new QAction(QIcon::fromTheme(QStringLiteral("help-about")), tr("&About")));
     menu->addSeparator();
     menu->addAction(quit  = new QAction(QIcon::fromTheme(QStringLiteral("window-close")), tr("&Exit")));
+
+    connect(addBookmark, &QAction::triggered, [this]() {
+        QAction *bookmark {nullptr};
+        bookmarks->addAction(bookmark = new QAction(webview->icon(), webview->title()));
+        bookmark->setProperty("url", webview->url());
+        connectAddress(bookmark, bookmarks);
+        saveBookmarks(bookmarks->actions().count() - 3); // subtract number of actions reserved for other functions (manage, add, separator, etc)
+    });
 
     connect(menuButton, &QAction::triggered, [this, menu]() {
         QPoint pos = mapToParent(toolBar->widgetForAction(menuButton)->pos());
