@@ -358,9 +358,6 @@ void MainWindow::buildMenu()
     bookmarks->addAction(addBookmark);
     addBookmark->setText(tr("Bookmark current address"));
     addBookmark->setShortcut(Qt::CTRL + Qt::Key_D);
-    bookmarks->addAction(manageBookmarks = new QAction(tr("Manage bookmarks")));
-    bookmarks->addSeparator();
-    manageBookmarks->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_O);
     menu->addSeparator();
     menu->addAction(help = new QAction(QIcon::fromTheme(QStringLiteral("help-contents")), tr("&Help")));
     menu->addAction(about = new QAction(QIcon::fromTheme(QStringLiteral("help-about")), tr("&About")));
@@ -369,12 +366,25 @@ void MainWindow::buildMenu()
 
     loadBookmarks();
 
+    bookmarks->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(bookmarks, &QMenu::customContextMenuRequested, [this](QPoint pos) {
+        QPoint globalPos = bookmarks->mapToGlobal(pos);
+        QMenu submenu;
+//        submenu.addAction("Move up", bookmarks, ));
+//        submenu.addAction("Move down", bookmarks, ));
+        submenu.addAction(tr("Delete"), bookmarks, [this, pos]() {
+            bookmarks->removeAction(bookmarks->actionAt(pos));
+            saveBookmarks(bookmarks->actions().count() - 2);
+        });
+        submenu.exec(globalPos);
+    });
+
     connect(addBookmark, &QAction::triggered, [this]() {
         QAction *bookmark {nullptr};
         bookmarks->addAction(bookmark = new QAction(webview->icon(), webview->title()));
         bookmark->setProperty("url", webview->url());
         connectAddress(bookmark, bookmarks);
-        saveBookmarks(bookmarks->actions().count() - 3); // subtract number of actions reserved for other functions (manage, add, separator, etc)
+        saveBookmarks(bookmarks->actions().count() - 2); // subtract number of actions reserved for other functions (manage, add, separator, etc)
     });
 
     connect(menuButton, &QAction::triggered, [this, menu]() {
