@@ -368,11 +368,13 @@ void MainWindow::buildMenu()
 
     bookmarks->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(bookmarks, &QMenu::customContextMenuRequested, [this](QPoint pos) {
+        if (bookmarks->actionAt(pos)->text() == tr("Bookmark current address"))
+            return;
         QPoint globalPos = bookmarks->mapToGlobal(pos);
         QMenu submenu;
-//        submenu.addAction("Move up", bookmarks, ));
-//        submenu.addAction("Move down", bookmarks, ));
-        submenu.addAction(tr("Delete"), bookmarks, [this, pos]() {
+        submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-up")),"Move up", bookmarks, [](){});
+        submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-down")),"Move down", bookmarks, [](){});
+        submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), bookmarks, [this, pos]() {
             bookmarks->removeAction(bookmarks->actionAt(pos));
             saveBookmarks(bookmarks->actions().count() - 2);
         });
