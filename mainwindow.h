@@ -74,8 +74,9 @@ public slots:
 private:
     AddressBar *addressBar {};
     QAction *addBookmark {};
-    QAction *menuButton {};
     QAction *manageBookmarks {};
+    QAction *menuButton {};
+    QHash<QUrl, QIcon> histIcons;
     QLineEdit *searchBox {};
     QMenu *bookmarks {};
     QMenu *history {};

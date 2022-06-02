@@ -125,7 +125,7 @@ void MainWindow::listHistory()
     int start = (hist->items().size() > histMaxSize) ? hist->items().size() - histMaxSize : 0;
     for (int i = start; i < hist->items().size(); ++i) {
         auto item = hist->itemAt(i);
-        history->addAction(histItem = new QAction(item.title()));
+        history->addAction(histItem = new QAction(histIcons.value(item.url()), item.title()));
         histItem->setProperty("url", item.url());
         connectAddress(histItem, history);
     }
@@ -304,6 +304,7 @@ void MainWindow::setConnections()
 {
     connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show); // show toolbar when loading a new page
     connect(webview, &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
+    connect(webview, &QWebEngineView::iconChanged, [this]() { histIcons.insert(webview->url(), webview->icon()); });
     if (showProgress)
         connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
     connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
