@@ -1,3 +1,15 @@
+mx-viewer (22.6) mx; urgency=medium
+
+  * Make it look and work more like a browser. Added:
+  * 	- address bar by default
+  * 	- menu
+  * 	- favorites (basic function to add, move, remove and save and reload)
+  *	- full-size mode
+  *	- zoom in/out buttons
+  *	- home button: configurable in ~/.config/MX-Linux/mx-viewer.conf Home="url"
+
+ -- Adrian <adrian@mxlinux.org>  Thu, 02 Jun 2022 00:11:26 -0400
+
 mx-viewer (22.5.01) mx; urgency=medium
 
   * Improve search behavior: 

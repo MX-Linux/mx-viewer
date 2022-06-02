@@ -15,4 +15,5 @@ Depends: ${misc:Depends}, ${shlibs:Depends}
 Provides: x-www-browser
 Description: Displays a URL in a window
  MX Viewer displays a URL in a new window. It's an utility program used for
- displaying help information by various MX Linux utilities
+ displaying help information by various MX Linux utilities. It can also be used
+ as a very basic internet browser.

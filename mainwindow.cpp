@@ -150,7 +150,7 @@ void MainWindow::addToolbar()
     toolBar->addAction(forward = webview->pageAction(QWebEnginePage::Forward));
     toolBar->addAction(reload = webview->pageAction(QWebEnginePage::Reload));
     toolBar->addAction(stop = webview->pageAction(QWebEnginePage::Stop));
-    toolBar->addAction(home = new QAction(QIcon::fromTheme(QStringLiteral("go-home")), tr("Home")));
+    toolBar->addAction(home = new QAction(QIcon::fromTheme(QStringLiteral("go-home"), QIcon(":/icons/go-home.svg")), tr("Home")));
     back->setShortcut(QKeySequence::Back);
     forward->setShortcut(QKeySequence::Forward);
     home->setShortcut(Qt::CTRL + Qt::Key_H);
@@ -165,21 +165,26 @@ void MainWindow::addToolbar()
     searchBox->setClearButtonEnabled(true);
     searchBox->setMaximumWidth(searchWidth);
     searchBox->setClearButtonEnabled(true);
-    searchBox->addAction(QIcon::fromTheme(QStringLiteral("search")), QLineEdit::LeadingPosition);
+    searchBox->addAction(QIcon::fromTheme(QStringLiteral("search"), QIcon(QStringLiteral(":/icons/system-search.png"))),
+                         QLineEdit::LeadingPosition);
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
     addressBar = new AddressBar(this);
     addressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     addressBar->setClearButtonEnabled(true);
-    addBookmark = addressBar->addAction(QIcon::fromTheme(QStringLiteral("emblem-favorite")), QLineEdit::TrailingPosition);
+    addBookmark = addressBar->addAction(QIcon::fromTheme(QStringLiteral("emblem-favorite"),
+                                                         QIcon(QStringLiteral(":/icons/emblem-favorite.png"))), QLineEdit::TrailingPosition);
     addBookmark->setToolTip(tr("Add bookmark"));
     connect(addressBar, &QLineEdit::returnPressed, [this]() { displaySite(addressBar->text()); });
     toolBar->addWidget(addressBar);
     toolBar->addWidget(searchBox);
-    toolBar->addAction(zoomout = new QAction(QIcon::fromTheme(QStringLiteral("zoom-out")), tr("Zoom out")));
+    toolBar->addAction(zoomout = new QAction(QIcon::fromTheme(QStringLiteral("zoom-out"),
+                                                              QIcon(QStringLiteral(":/icons/zoom-out.svg"))), tr("Zoom out")));
     toolBar->addAction(zoompercent = new QAction(QStringLiteral("100%")));
-    toolBar->addAction(zoomin = new QAction(QIcon::fromTheme(QStringLiteral("zoom-in")), tr("Zoom In")));
-    toolBar->addAction(menuButton = new QAction(QIcon::fromTheme(QStringLiteral("open-menu")), tr("Settings")));
+    toolBar->addAction(zoomin = new QAction(QIcon::fromTheme(QStringLiteral("zoom-in"),
+                                                             QIcon(QStringLiteral(":/icons/zoom-in.svg"))), tr("Zoom In")));
+    toolBar->addAction(menuButton = new QAction(QIcon::fromTheme(QStringLiteral("open-menu"),
+                                                                 QIcon(QStringLiteral(":/icons/open-menu.png"))), tr("Settings")));
     const auto step = 0.1;
     zoomin->setShortcuts({QKeySequence::ZoomIn, Qt::CTRL + Qt::Key_Equal});
     zoomout->setShortcut(QKeySequence::ZoomOut);

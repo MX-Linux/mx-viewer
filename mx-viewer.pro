@@ -42,3 +42,6 @@ HEADERS  += \
     mainwindow.h
 
 TRANSLATIONS += translations/mx-viewer_fr.ts
+
+RESOURCES += \
+    images.qrc
