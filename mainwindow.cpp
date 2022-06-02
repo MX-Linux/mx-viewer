@@ -84,6 +84,38 @@ void MainWindow::addActions()
     connect(full, &QAction::triggered, this, &MainWindow::toggleFullScreen);
 }
 
+void MainWindow::addBookmarksSubmenu()
+{
+    bookmarks->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(bookmarks, &QMenu::customContextMenuRequested, [this](QPoint pos) {
+        if (bookmarks->actionAt(pos) == bookmarks->actions().at(0)) // skip first "Add bookmark" action.
+            return;
+        QPoint globalPos = bookmarks->mapToGlobal(pos);
+        QMenu submenu;
+        if (bookmarks->actionAt(pos) != bookmarks->actions().at(1)) {
+            submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-up")), tr("Move up"), bookmarks, [this, pos]() {
+                for (int i = 2; i < bookmarks->actions().count(); ++i) { // starting from third action (ignoring "Add bookmark" and first bookmark we cannot move up)
+                    if (bookmarks->actions().at(i) == bookmarks->actionAt(pos))
+                        bookmarks->insertAction(bookmarks->actions().at(i - 1), bookmarks->actions().at(i));
+                }
+            });
+        }
+        if (bookmarks->actionAt(pos) != bookmarks->actions().at(bookmarks->actions().count() - 1)) {
+            submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-down")), tr("Move down"), bookmarks, [this, pos]() {
+                for (int i = 1; i < bookmarks->actions().count(); ++i) { // starting from second action (ignoring "Add bookmark")
+                    if (bookmarks->actions().at(i) == bookmarks->actionAt(pos))
+                        bookmarks->insertAction(bookmarks->actions().at(i + 2), bookmarks->actions().at(i));
+                }
+            });
+        }
+        submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), bookmarks, [this, pos]() {
+            bookmarks->removeAction(bookmarks->actionAt(pos));
+            saveBookmarks(bookmarks->actions().count() - 2);
+        });
+        submenu.exec(globalPos);
+    });
+}
+
 void MainWindow::listHistory()
 {
     history->clear();
@@ -365,31 +397,7 @@ void MainWindow::buildMenu()
     menu->addAction(quit  = new QAction(QIcon::fromTheme(QStringLiteral("window-close")), tr("&Exit")));
 
     loadBookmarks();
-
-    bookmarks->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(bookmarks, &QMenu::customContextMenuRequested, [this](QPoint pos) {
-        if (bookmarks->actionAt(pos) == bookmarks->actions().at(0)) // skip first "Add bookmark" action.
-            return;
-        QPoint globalPos = bookmarks->mapToGlobal(pos);
-        QMenu submenu;
-        submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-up")), tr("Move up"), bookmarks, [this, pos]() {
-            for (int i = 2; i < bookmarks->actions().count(); ++i) { // starting from third action (ignoring "Add bookmark" and first bookmark we cannot move up)
-                if (bookmarks->actions().at(i) == bookmarks->actionAt(pos))
-                    bookmarks->insertAction(bookmarks->actions().at(i - 1), bookmarks->actions().at(i));
-            }
-        });
-        submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-down")), tr("Move down"), bookmarks, [this, pos]() {
-            for (int i = 1; i < bookmarks->actions().count(); ++i) { // starting from second action (ignoring "Add bookmark")
-                if (bookmarks->actions().at(i) == bookmarks->actionAt(pos))
-                    bookmarks->insertAction(bookmarks->actions().at(i + 2), bookmarks->actions().at(i));
-            }
-        });
-        submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), bookmarks, [this, pos]() {
-            bookmarks->removeAction(bookmarks->actionAt(pos));
-            saveBookmarks(bookmarks->actions().count() - 2);
-        });
-        submenu.exec(globalPos);
-    });
+    addBookmarksSubmenu();
 
     connect(addBookmark, &QAction::triggered, [this]() {
         QAction *bookmark {nullptr};

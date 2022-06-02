@@ -47,6 +47,7 @@ public:
     MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
     ~MainWindow();
     void addActions();
+    void addBookmarksSubmenu();
     void addToolbar();
     void buildMenu();
     void centerWindow();
