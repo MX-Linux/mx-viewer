@@ -310,6 +310,7 @@ void MainWindow::setConnections()
     connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show); // show toolbar when loading a new page
     connect(webview, &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
     connect(webview, &QWebEngineView::iconChanged, [this]() { histIcons.insert(webview->url(), webview->icon()); });
+    connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested, this, &MainWindow::downloadRequested);
     if (showProgress)
         connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
     connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
@@ -534,5 +535,16 @@ void MainWindow::procTime()
 {
     const int step = 5;
     progressBar->setValue((progressBar->value() + step) % progressBar->maximum());
+}
+
+void MainWindow::downloadRequested(QWebEngineDownloadItem *download)
+{
+    QString path = QFileDialog::getSaveFileName(this, tr("Save as"), QDir(download->downloadDirectory()).filePath(download->downloadFileName()));
+    if (path.isEmpty())
+        return;
+    download->setDownloadDirectory(QFileInfo(path).path());
+    QWebEngineProfile::defaultProfile()->setDownloadPath(download->downloadDirectory());
+    download->setDownloadFileName(QFileInfo(path).fileName());
+    download->accept();
 }
 

@@ -70,6 +70,7 @@ public slots:
     void loading();
     void done();
     void procTime();
+    void downloadRequested(QWebEngineDownloadItem *download);
 
 private:
     AddressBar *addressBar {};
