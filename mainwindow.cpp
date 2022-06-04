@@ -29,6 +29,7 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QMenu>
+#include <QPushButton>
 #include <QMessageBox>
 #include <QPropertyAnimation>
 #include <QScreen>
@@ -49,6 +50,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     timer = new QTimer(this);
     toolBar = new QToolBar(this);
     webview = new QWebEngineView(this);
+    downloadWidget = new DownloadWidget;
     progressBar = new QProgressBar(this);
     searchBox = new QLineEdit(this);
     websettings = webview->settings();
@@ -73,7 +75,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    settings.setValue(QStringLiteral("geometry"), saveGeometry());
+    settings.setValue(QStringLiteral("Geometry"), saveGeometry());
 }
 
 void MainWindow::addActions()
@@ -150,7 +152,8 @@ void MainWindow::addToolbar()
     toolBar->addAction(forward = webview->pageAction(QWebEnginePage::Forward));
     toolBar->addAction(reload = webview->pageAction(QWebEnginePage::Reload));
     toolBar->addAction(stop = webview->pageAction(QWebEnginePage::Stop));
-    toolBar->addAction(home = new QAction(QIcon::fromTheme(QStringLiteral("go-home"), QIcon(":/icons/go-home.svg")), tr("Home")));
+    toolBar->addAction(home = new QAction(QIcon::fromTheme(QStringLiteral("go-home"),
+                                                           QIcon(QStringLiteral(":/icons/go-home.svg"))), tr("Home")));
     back->setShortcut(QKeySequence::Back);
     forward->setShortcut(QKeySequence::Forward);
     home->setShortcut(Qt::CTRL + Qt::Key_H);
@@ -263,8 +266,8 @@ void MainWindow::loadSettings()
 
     QSize size {defaultWidth, defaultHeight};
     this->resize(size);
-    if (settings.contains(QStringLiteral("geometry")) && !args.isSet(QStringLiteral("full-screen"))) {
-        restoreGeometry(settings.value(QStringLiteral("geometry")).toByteArray());
+    if (settings.contains(QStringLiteral("Geometry")) && !args.isSet(QStringLiteral("full-screen"))) {
+        restoreGeometry(settings.value(QStringLiteral("Geometry")).toByteArray());
         if (this->isMaximized()) { // add option to resize if maximized
             this->resize(size);
             centerWindow();
@@ -310,7 +313,8 @@ void MainWindow::setConnections()
     connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show); // show toolbar when loading a new page
     connect(webview, &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
     connect(webview, &QWebEngineView::iconChanged, [this]() { histIcons.insert(webview->url(), webview->icon()); });
-    connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested, this, &MainWindow::downloadRequested);
+    connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested,
+            downloadWidget, &DownloadWidget::downloadRequested);
     if (showProgress)
         connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
     connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
@@ -383,15 +387,17 @@ void MainWindow::buildMenu()
     QAction *about {nullptr};
     QAction *quit {nullptr};
     QAction *help {nullptr};
+    QAction *downloadAction {nullptr};
     QAction *bookmarkAction {nullptr};
     QAction *historyAction {nullptr};
     menuButton->setMenu(menu);
 
     menu->addAction(fullscreen = new QAction(QIcon::fromTheme(QStringLiteral("view-fullscreen")), tr("&Full screen")));
-    fullscreen->setVisible(!this->isFullScreen());
+    menu->addSeparator();
     menu->addAction(historyAction = new QAction(QIcon::fromTheme(QStringLiteral("history")), tr("H&istory")));
     historyAction->setMenu(history);
-    menu->addSeparator();
+    menu->addAction(downloadAction = new QAction(QIcon::fromTheme(QStringLiteral("folder-download")),tr("&Downloads")));
+    downloadAction->setShortcut(Qt::CTRL + Qt::Key_J);
     menu->addAction(bookmarkAction = new QAction(QIcon::fromTheme(QStringLiteral("emblem-favorite")), tr("&Bookmarks")));
     bookmarkAction->setMenu(bookmarks);
     bookmarks->addAction(addBookmark);
@@ -425,6 +431,7 @@ void MainWindow::buildMenu()
     QApplication::processEvents();
 
 
+    connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
     connect(help, &QAction::triggered, this, &MainWindow::openQuickInfo);
     connect(quit, &QAction::triggered, this, &MainWindow::close);
     connect(about, &QAction::triggered, [this]() {
@@ -506,6 +513,11 @@ void MainWindow::resizeEvent(QResizeEvent* /*event*/)
         progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - progBarVerticalAdj);
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    downloadWidget->close();
+}
+
 // display progressbar while loading page
 void MainWindow::loading()
 {
@@ -537,14 +549,4 @@ void MainWindow::procTime()
     progressBar->setValue((progressBar->value() + step) % progressBar->maximum());
 }
 
-void MainWindow::downloadRequested(QWebEngineDownloadItem *download)
-{
-    QString path = QFileDialog::getSaveFileName(this, tr("Save as"), QDir(download->downloadDirectory()).filePath(download->downloadFileName()));
-    if (path.isEmpty())
-        return;
-    download->setDownloadDirectory(QFileInfo(path).path());
-    QWebEngineProfile::defaultProfile()->setDownloadPath(download->downloadDirectory());
-    download->setDownloadFileName(QFileInfo(path).fileName());
-    download->accept();
-}
 

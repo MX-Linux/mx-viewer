@@ -27,22 +27,19 @@
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QProgressBar>
+#include <QPushButton>
+#include <QScrollArea>
 #include <QSettings>
 #include <QTimer>
 #include <QtWebEngineWidgets/QWebEngineSettings>
 #include <QtWebEngineWidgets/QWebEngineView>
 
 #include "addressbar.h"
+#include "downloadwidget.h"
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
-protected:
-    QTimer *timer;
-    void keyPressEvent(QKeyEvent *event);
-    void resizeEvent(QResizeEvent *event);
-
 public:
     MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
     ~MainWindow();
@@ -70,7 +67,12 @@ public slots:
     void loading();
     void done();
     void procTime();
-    void downloadRequested(QWebEngineDownloadItem *download);
+
+protected:
+    QTimer *timer {nullptr};
+    void keyPressEvent(QKeyEvent *event);
+    void resizeEvent(QResizeEvent *event);
+    void closeEvent(QCloseEvent *event);
 
 private:
     AddressBar *addressBar {};
@@ -88,14 +90,15 @@ private:
     QToolBar *toolBar {};
     QWebEngineSettings *websettings {};
     QWebEngineView *webview {};
+    DownloadWidget *downloadWidget {};
     bool showProgress {};
     const QCommandLineParser &args;
     const int defaultHeight {600};
     const int defaultWidth {800};
+    const int histMaxSize {15};
     const int progBarVerticalAdj {40};
     const int progBarWidth {20};
     const int searchWidth {150};
-    const int histMaxSize {15};
 };
 
 

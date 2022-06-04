@@ -20,7 +20,7 @@
 # * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
 # **********************************************************************/
 
-QT       += webenginewidgets
+QT       += webenginewidgets widgets
 CONFIG   += c++17
 
 # The following define makes your compiler warn you if you use any
@@ -32,12 +32,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 TARGET = mx-viewer
 TEMPLATE = app
 
-SOURCES += main.cpp \
+SOURCES += \
+    main.cpp \
     addressbar.cpp \
+    downloadwidget.cpp \
     mainwindow.cpp
 
 HEADERS  += \
     addressbar.h \
+    downloadwidget.h \
     version.h \
     mainwindow.h
 
