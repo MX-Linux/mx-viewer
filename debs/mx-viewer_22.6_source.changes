@@ -1,0 +1,32 @@
+Format: 1.8
+Date: Thu, 02 Jun 2022 00:11:26 -0400
+Source: mx-viewer
+Architecture: source
+Version: 22.6
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Changes:
+ mx-viewer (22.6) mx; urgency=medium
+ .
+   * Make it look and work more like a browser. Added:
+   * 	- address bar by default
+   *	- downlod capability and a basic download manager
+   *	- menu
+   * 	- favorites (basic function to add, move, remove and save and reload)
+   *	- full-size mode
+   *	- zoom in/out buttons
+   *	- home button: configurable in ~/.config/MX-Linux/mx-viewer.conf Home="url"
+Checksums-Sha1:
+ 890816c4d945f85dc0027b05b6ae2318222bbc72 607 mx-viewer_22.6.dsc
+ 0e79dceda561de2cba330e839ba5c2d6452a10cd 26184 mx-viewer_22.6.tar.xz
+ f80b387d76cbaee0d7bfaa8e356c74809b7c8bfc 12217 mx-viewer_22.6_i386.buildinfo
+Checksums-Sha256:
+ 763b62db8393fcd4e841791eb7dd85abb55bce726ddf58b93483457590ea5c83 607 mx-viewer_22.6.dsc
+ a12b0f0ff2785c1e19a9e5128a1454c85a5680f3ccea3953ad61d07e741b7379 26184 mx-viewer_22.6.tar.xz
+ 53a0144d66e947e481a669f7088561409bbfccd8315a03f63f614b60afad1939 12217 mx-viewer_22.6_i386.buildinfo
+Files:
+ 6f25fd7ac1da564f66397ec0d8aca523 607 system optional mx-viewer_22.6.dsc
+ e15bde1c4f89d7456c2aec847f285e46 26184 system optional mx-viewer_22.6.tar.xz
+ a677afaf9b8964b9f18fcbfad71eb54b 12217 system optional mx-viewer_22.6_i386.buildinfo

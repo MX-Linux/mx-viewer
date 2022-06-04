@@ -1,0 +1,32 @@
+Format: 1.8
+Date: Thu, 02 Jun 2022 00:11:26 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: i386
+Version: 22.6
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (22.6) mx; urgency=medium
+ .
+   * Make it look and work more like a browser. Added:
+   * 	- address bar by default
+   *	- downlod capability and a basic download manager
+   *	- menu
+   * 	- favorites (basic function to add, move, remove and save and reload)
+   *	- full-size mode
+   *	- zoom in/out buttons
+   *	- home button: configurable in ~/.config/MX-Linux/mx-viewer.conf Home="url"
+Checksums-Sha1:
+ f80b387d76cbaee0d7bfaa8e356c74809b7c8bfc 12217 mx-viewer_22.6_i386.buildinfo
+ fc1d1bcdb44aacd14e5bf9613924447e4c478fb5 45576 mx-viewer_22.6_i386.deb
+Checksums-Sha256:
+ 53a0144d66e947e481a669f7088561409bbfccd8315a03f63f614b60afad1939 12217 mx-viewer_22.6_i386.buildinfo
+ 34b7f6f7a5789a627a03fa2b8e7cd345f36ab70120ee9d08d111294cd862ffeb 45576 mx-viewer_22.6_i386.deb
+Files:
+ a677afaf9b8964b9f18fcbfad71eb54b 12217 system optional mx-viewer_22.6_i386.buildinfo
+ 53477a947a70dff23f2c3720628e1cbf 45576 system optional mx-viewer_22.6_i386.deb

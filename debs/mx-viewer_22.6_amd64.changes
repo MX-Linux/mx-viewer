@@ -1,0 +1,53 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Date: Thu, 02 Jun 2022 00:11:26 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 22.6
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (22.6) mx; urgency=medium
+ .
+   * Make it look and work more like a browser. Added:
+   * 	- address bar by default
+   *	- downlod capability and a basic download manager
+   *	- menu
+   * 	- favorites (basic function to add, move, remove and save and reload)
+   *	- full-size mode
+   *	- zoom in/out buttons
+   *	- home button: configurable in ~/.config/MX-Linux/mx-viewer.conf Home="url"
+Checksums-Sha1:
+ c14458f48643d13c64395b41bea5115d45040558 1169 mx-viewer_22.6.dsc
+ ac710771b2d157d77f41263500f5bb5415c201ea 26156 mx-viewer_22.6.tar.xz
+ 043c0d903dfc8a3c2e498ab8330813a2e7511507 13081 mx-viewer_22.6_amd64.buildinfo
+ fffbcdd3d70c3ffae1920adbc2cc576ae2f2a486 43516 mx-viewer_22.6_amd64.deb
+Checksums-Sha256:
+ 7323cbeb6141bba471cb2642f94939c07ebd234bb3be0206736a29d84b89519a 1169 mx-viewer_22.6.dsc
+ 8f638a7af8eb7a6b6a30282f480727445b688a2792915d4d4aa851d7e646d7f1 26156 mx-viewer_22.6.tar.xz
+ 122b60e68aa0c946ea31c5e8c1e4260faa7918a5fa4472ebef9abf3e8574a664 13081 mx-viewer_22.6_amd64.buildinfo
+ de954aebd224e4815fba4797ce435b0f8cf9418d8f442348262c6d1d96017052 43516 mx-viewer_22.6_amd64.deb
+Files:
+ 0c58936422032b0bd795c528aa838b27 1169 system optional mx-viewer_22.6.dsc
+ 23d8aeaac0aa48645f179d9218e97aee 26156 system optional mx-viewer_22.6.tar.xz
+ bc456907f098c720aa33a0b4ff87e964 13081 system optional mx-viewer_22.6_amd64.buildinfo
+ d012e3578c3ee424f34f6f2a48aacc61 43516 system optional mx-viewer_22.6_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmKbiJ0THGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumKEACADCWChQQ2qVHZAXj1XEr4mobPY9P+46
+ns4lb8kC0heQ1bP08Px5T0hZBDQKQ0od9IBjsn33xiYafCNimsSFECGpPPqzjrbZ
+slVYglOPOXW9AtcE9x3iYp0uyEM3dgR7ryr79KrwghXK4CVs8uKB4VIW90XDc+K3
+FKWz3RNHdmrAWOSeVCAyidyAvLEJnNtS2dpLQjwpV7PZtqmz1sGxucv3i76NrdcP
+PS19MiMA4JaBuM7H+UR+1O/uEGwBRPamlN0ZgxSbxLf41a4Leaxi13M9PAE+qXPD
+evFUDEvB9bux8M65KkBLml5hDjl6fpEBGc53Lc5v4RpwQ7hW/JwenJe7
+=OYH9
+-----END PGP SIGNATURE-----
