@@ -513,7 +513,7 @@ void MainWindow::resizeEvent(QResizeEvent* /*event*/)
         progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2, this->geometry().height() - progBarVerticalAdj);
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
+void MainWindow::closeEvent(QCloseEvent * /*event*/)
 {
     downloadWidget->close();
 }

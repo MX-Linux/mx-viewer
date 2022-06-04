@@ -48,3 +48,6 @@ TRANSLATIONS += translations/mx-viewer_fr.ts
 
 RESOURCES += \
     images.qrc
+
+FORMS += \
+    downloadwidget.ui

@@ -27,16 +27,18 @@
 #include <QWebEngineProfile>
 
 #include "downloadwidget.h"
+#include "ui_downloadwidget.h"
 
-DownloadWidget::DownloadWidget(QWidget* parent)
-    : QWidget(parent)
+DownloadWidget::DownloadWidget(QWidget* parent) :
+    QWidget(parent),
+    ui(new Ui::DownloadWidget)
 {
-    layout = new QGridLayout;
-    this->setLayout(layout);
-    area = new QScrollArea;
-    area->setAlignment(Qt::AlignTop);
-    area->setWidget(this);
-    layout->setSizeConstraint(QLayout::SetMinimumSize);
+    ui->setupUi(this);
+}
+
+DownloadWidget::~DownloadWidget()
+{
+    delete ui;
 }
 
 void DownloadWidget::downloadRequested(QWebEngineDownloadItem* download)
@@ -52,31 +54,17 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadItem* download)
     auto* pushButton = new QPushButton(QIcon::fromTheme(QStringLiteral("cancel")), tr("cancel"));
     auto* prog = new QProgressBar(this);
     downloadLabel->setText(download->downloadFileName());
-    int row = layout->rowCount();
-    if (row == 1) {
-        layout->addWidget(downloadLabel, row, 0);
-        layout->addWidget(prog, row, 1);
-        layout->addWidget(pushButton, row, 3);
-        layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed), 2, 0, 2, 0, Qt::AlignTop);
-    } else {
-        layout->addWidget(downloadLabel, row - 2, 0);
-        layout->addWidget(prog, row - 2 , 1);
-        layout->addWidget(pushButton, row - 2, 3);
-        layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed), row - 1, 0, 2, 0, Qt::AlignTop);
-    }
-    row = layout->rowCount();
+    int row = ui->gridLayout->rowCount();
+    ui->gridLayout->removeItem(ui->verticalSpacer);
+    ui->gridLayout->addWidget(downloadLabel, row, 0);
+    ui->gridLayout->addWidget(prog, row, 1);
+    ui->gridLayout->addWidget(pushButton, row, 3);
+    ui->gridLayout->addItem(ui->verticalSpacer, row + 1, 1);
 
     if (!this->isVisible()) {
-        this->setMinimumSize(800, 400);
         this->restoreGeometry(settings.value(QStringLiteral("DownloadGeometry")).toByteArray());
-        area->show();
         this->show();
     }
-
-    const int pad = 5;
-    //area->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-    //downloadWidget->adjustSize();
-    area->resize(this->width() + pad, this->height() + pad);
     this->raise();
     download->accept();
 
@@ -84,9 +72,9 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadItem* download)
         if (download->state() == QWebEngineDownloadItem::DownloadInProgress) {
             download->cancel();
         } else {
-            layout->removeWidget(downloadLabel);
-            layout->removeWidget(pushButton);
-            layout->removeWidget(prog);
+            ui->gridLayout->removeWidget(downloadLabel);
+            ui->gridLayout->removeWidget(pushButton);
+            ui->gridLayout->removeWidget(prog);
             downloadLabel->deleteLater();
             pushButton->deleteLater();
             prog->deleteLater();
@@ -176,6 +164,5 @@ void DownloadWidget::updateDownload(QWebEngineDownloadItem* download, QPushButto
 void DownloadWidget::closeEvent(QCloseEvent* event)
 {
     event->accept();
-    area->close();
-    this->close();
+    settings.setValue(QStringLiteral("DownloadGeometry"), saveGeometry());
 }

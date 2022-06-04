@@ -24,19 +24,22 @@
 #define DOWNLOADWIDGET_H
 
 #include <QElapsedTimer>
-#include <QGridLayout>
 #include <QProgressBar>
 #include <QPushButton>
-#include <QScrollArea>
 #include <QSettings>
 #include <QWebEngineDownloadItem>
-#include <QWidget>
 #include <QtWebEngineWidgets>
+
+namespace Ui {
+class DownloadWidget;
+}
 
 class DownloadWidget : public QWidget {
     Q_OBJECT
 public:
     explicit DownloadWidget(QWidget* parent = nullptr);
+    ~DownloadWidget();
+    Ui::DownloadWidget *ui;
 
     inline static QString withUnit(qreal bytes);
     inline static QString timeUnit(int sec);
@@ -48,8 +51,6 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
 private:
-    QGridLayout* layout {};
-    QScrollArea* area {};
     QSettings settings;
 };
 
