@@ -23,11 +23,6 @@
 #ifndef DOWNLOADWIDGET_H
 #define DOWNLOADWIDGET_H
 
-#include <QElapsedTimer>
-#include <QProgressBar>
-#include <QPushButton>
-#include <QSettings>
-#include <QWebEngineDownloadItem>
 #include <QtWebEngineWidgets>
 
 namespace Ui {

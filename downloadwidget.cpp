@@ -20,12 +20,6 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-#include <QDebug>
-#include <QFileDialog>
-#include <QIcon>
-#include <QLabel>
-#include <QWebEngineProfile>
-
 #include "downloadwidget.h"
 #include "ui_downloadwidget.h"
 

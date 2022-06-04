@@ -2,7 +2,8 @@ mx-viewer (22.6) mx; urgency=medium
 
   * Make it look and work more like a browser. Added:
   * 	- address bar by default
-  * 	- menu
+  *	- downlod capability and a basic download manager
+  *	- menu
   * 	- favorites (basic function to add, move, remove and save and reload)
   *	- full-size mode
   *	- zoom in/out buttons

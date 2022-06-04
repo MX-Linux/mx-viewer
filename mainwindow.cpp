@@ -20,24 +20,6 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-#include <QApplication>
-#include <QDebug>
-#include <QEasingCurve>
-#include <QFileDialog>
-#include <QGraphicsOpacityEffect>
-#include <QInputDialog>
-#include <QKeyEvent>
-#include <QLabel>
-#include <QMenu>
-#include <QPushButton>
-#include <QMessageBox>
-#include <QPropertyAnimation>
-#include <QScreen>
-#include <QStatusBar>
-#include <QToolBar>
-#include <QWebEngineHistory>
-#include <QWebEngineProfile>
-
 #include <chrono>
 #include "mainwindow.h"
 #include "version.h"

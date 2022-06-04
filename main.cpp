@@ -20,13 +20,6 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-#include <QApplication>
-#include <QCommandLineParser>
-#include <QLibraryInfo>
-#include <QMessageBox>
-#include <QProcess>
-#include <QTranslator>
-
 #include "mainwindow.h"
 #include "version.h"
 #include <unistd.h>

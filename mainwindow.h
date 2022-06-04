@@ -23,17 +23,6 @@
 #ifndef MXVIEW_H
 #define MXVIEW_H
 
-#include <QCommandLineParser>
-#include <QLineEdit>
-#include <QMainWindow>
-#include <QProgressBar>
-#include <QPushButton>
-#include <QScrollArea>
-#include <QSettings>
-#include <QTimer>
-#include <QtWebEngineWidgets/QWebEngineSettings>
-#include <QtWebEngineWidgets/QWebEngineView>
-
 #include "addressbar.h"
 #include "downloadwidget.h"
 
