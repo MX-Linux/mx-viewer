@@ -1,5 +1,5 @@
 /*****************************************************************************
- * mxview.h
+ * mainwindow.h
  *****************************************************************************
  * Copyright (C) 2022 MX Authors
  *
@@ -18,7 +18,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
- **********************************************************************/
+ ****************************************************************************/
 
 #ifndef MXVIEW_H
 #define MXVIEW_H
