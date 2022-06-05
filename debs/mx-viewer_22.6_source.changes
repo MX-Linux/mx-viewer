@@ -19,14 +19,14 @@ Changes:
    *	- zoom in/out buttons
    *	- home button: configurable in ~/.config/MX-Linux/mx-viewer.conf Home="url"
 Checksums-Sha1:
- 890816c4d945f85dc0027b05b6ae2318222bbc72 607 mx-viewer_22.6.dsc
- 0e79dceda561de2cba330e839ba5c2d6452a10cd 26184 mx-viewer_22.6.tar.xz
- f80b387d76cbaee0d7bfaa8e356c74809b7c8bfc 12217 mx-viewer_22.6_i386.buildinfo
+ 5f3ba8d5df68249ae4285d7b94cf24ae093c2b8e 607 mx-viewer_22.6.dsc
+ dd887ab3ebd45a3de90c6e3a28637adf228b67fd 26184 mx-viewer_22.6.tar.xz
+ e8a01457273a94a2556d14cede91ff7a25aa455c 12217 mx-viewer_22.6_i386.buildinfo
 Checksums-Sha256:
- 763b62db8393fcd4e841791eb7dd85abb55bce726ddf58b93483457590ea5c83 607 mx-viewer_22.6.dsc
- a12b0f0ff2785c1e19a9e5128a1454c85a5680f3ccea3953ad61d07e741b7379 26184 mx-viewer_22.6.tar.xz
- 53a0144d66e947e481a669f7088561409bbfccd8315a03f63f614b60afad1939 12217 mx-viewer_22.6_i386.buildinfo
+ 04a9f1b1916ec7d21513e044f67c72ad200f3cbc7892811b5e2fd00978441205 607 mx-viewer_22.6.dsc
+ 55a08e8d8cf456657027897982245e6dac31ee51e0db5a96f63a139a8dbc0957 26184 mx-viewer_22.6.tar.xz
+ 16bb975b36ae1f9971a76d823a1178fef2ea3ffc7872db99351749059878f294 12217 mx-viewer_22.6_i386.buildinfo
 Files:
- 6f25fd7ac1da564f66397ec0d8aca523 607 system optional mx-viewer_22.6.dsc
- e15bde1c4f89d7456c2aec847f285e46 26184 system optional mx-viewer_22.6.tar.xz
- a677afaf9b8964b9f18fcbfad71eb54b 12217 system optional mx-viewer_22.6_i386.buildinfo
+ 589ba58d43070a052a391e6781051485 607 system optional mx-viewer_22.6.dsc
+ 6012aad146fdf4fde797f060f86ca121 26184 system optional mx-viewer_22.6.tar.xz
+ 010660f62624c35950d1e5d07c3630ba 12217 system optional mx-viewer_22.6_i386.buildinfo

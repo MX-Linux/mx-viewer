@@ -22,11 +22,11 @@ Changes:
    *	- zoom in/out buttons
    *	- home button: configurable in ~/.config/MX-Linux/mx-viewer.conf Home="url"
 Checksums-Sha1:
- f80b387d76cbaee0d7bfaa8e356c74809b7c8bfc 12217 mx-viewer_22.6_i386.buildinfo
- fc1d1bcdb44aacd14e5bf9613924447e4c478fb5 45576 mx-viewer_22.6_i386.deb
+ e8a01457273a94a2556d14cede91ff7a25aa455c 12217 mx-viewer_22.6_i386.buildinfo
+ 314a74db86884649f2360443e023698e5ab4f0f5 45752 mx-viewer_22.6_i386.deb
 Checksums-Sha256:
- 53a0144d66e947e481a669f7088561409bbfccd8315a03f63f614b60afad1939 12217 mx-viewer_22.6_i386.buildinfo
- 34b7f6f7a5789a627a03fa2b8e7cd345f36ab70120ee9d08d111294cd862ffeb 45576 mx-viewer_22.6_i386.deb
+ 16bb975b36ae1f9971a76d823a1178fef2ea3ffc7872db99351749059878f294 12217 mx-viewer_22.6_i386.buildinfo
+ 8a5ab2638f1055e18ffc14274418b756dcb5c859d06c757bbd15f81dc7997bba 45752 mx-viewer_22.6_i386.deb
 Files:
- a677afaf9b8964b9f18fcbfad71eb54b 12217 system optional mx-viewer_22.6_i386.buildinfo
- 53477a947a70dff23f2c3720628e1cbf 45576 system optional mx-viewer_22.6_i386.deb
+ 010660f62624c35950d1e5d07c3630ba 12217 system optional mx-viewer_22.6_i386.buildinfo
+ d15a3ccd27c5aff9ac60e68ce2bc3347 45752 system optional mx-viewer_22.6_i386.deb

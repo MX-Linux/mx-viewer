@@ -25,29 +25,29 @@ Changes:
    *	- zoom in/out buttons
    *	- home button: configurable in ~/.config/MX-Linux/mx-viewer.conf Home="url"
 Checksums-Sha1:
- c14458f48643d13c64395b41bea5115d45040558 1169 mx-viewer_22.6.dsc
- ac710771b2d157d77f41263500f5bb5415c201ea 26156 mx-viewer_22.6.tar.xz
- 043c0d903dfc8a3c2e498ab8330813a2e7511507 13081 mx-viewer_22.6_amd64.buildinfo
- fffbcdd3d70c3ffae1920adbc2cc576ae2f2a486 43516 mx-viewer_22.6_amd64.deb
+ 60ac5d7182888a3ad533f923a241516b30540305 1169 mx-viewer_22.6.dsc
+ 8d24837bc1b5bff6ca71aae2f7df9e98f601704f 26164 mx-viewer_22.6.tar.xz
+ af1a39e18751b70aed37c034d3933ea3ef350ca1 13081 mx-viewer_22.6_amd64.buildinfo
+ ff6c4d9ff99d945c1f507f04046aa6eb40b1c0dc 43596 mx-viewer_22.6_amd64.deb
 Checksums-Sha256:
- 7323cbeb6141bba471cb2642f94939c07ebd234bb3be0206736a29d84b89519a 1169 mx-viewer_22.6.dsc
- 8f638a7af8eb7a6b6a30282f480727445b688a2792915d4d4aa851d7e646d7f1 26156 mx-viewer_22.6.tar.xz
- 122b60e68aa0c946ea31c5e8c1e4260faa7918a5fa4472ebef9abf3e8574a664 13081 mx-viewer_22.6_amd64.buildinfo
- de954aebd224e4815fba4797ce435b0f8cf9418d8f442348262c6d1d96017052 43516 mx-viewer_22.6_amd64.deb
+ 2f3c0d97937a0554ab8a70e931a662d7b2d838562b31b6af69b834d9a1bbd29c 1169 mx-viewer_22.6.dsc
+ 0c9e37b5c0815b3d3b673a6ff056e75f88daecc216ff5eb6d3e975d9ee9869aa 26164 mx-viewer_22.6.tar.xz
+ 20b92c4420b8ef47cbcdd30c907131adb4120e428afd1915ec2f8d507877925e 13081 mx-viewer_22.6_amd64.buildinfo
+ b80ac547246257108662ae14261f573e1a886a4126e61ce888c877c119e2a223 43596 mx-viewer_22.6_amd64.deb
 Files:
- 0c58936422032b0bd795c528aa838b27 1169 system optional mx-viewer_22.6.dsc
- 23d8aeaac0aa48645f179d9218e97aee 26156 system optional mx-viewer_22.6.tar.xz
- bc456907f098c720aa33a0b4ff87e964 13081 system optional mx-viewer_22.6_amd64.buildinfo
- d012e3578c3ee424f34f6f2a48aacc61 43516 system optional mx-viewer_22.6_amd64.deb
+ ba238f7705cef2b825aaa65f0bc2a469 1169 system optional mx-viewer_22.6.dsc
+ 10943dc9b86fa6253f42000ae4567d45 26164 system optional mx-viewer_22.6.tar.xz
+ a9ac1450964aba8d081e22f76fe176b3 13081 system optional mx-viewer_22.6_amd64.buildinfo
+ d09f1d776c3a7ef6b36534168a48b4e6 43596 system optional mx-viewer_22.6_amd64.deb
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmKbiJ0THGFkcmlhbkBt
-eGxpbnV4Lm9yZwAKCRBwk4x4BnnumKEACADCWChQQ2qVHZAXj1XEr4mobPY9P+46
-ns4lb8kC0heQ1bP08Px5T0hZBDQKQ0od9IBjsn33xiYafCNimsSFECGpPPqzjrbZ
-slVYglOPOXW9AtcE9x3iYp0uyEM3dgR7ryr79KrwghXK4CVs8uKB4VIW90XDc+K3
-FKWz3RNHdmrAWOSeVCAyidyAvLEJnNtS2dpLQjwpV7PZtqmz1sGxucv3i76NrdcP
-PS19MiMA4JaBuM7H+UR+1O/uEGwBRPamlN0ZgxSbxLf41a4Leaxi13M9PAE+qXPD
-evFUDEvB9bux8M65KkBLml5hDjl6fpEBGc53Lc5v4RpwQ7hW/JwenJe7
-=OYH9
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmKcB0sTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumEU5CACt+ygy/Y7VZMK7POC/sDw0xYv0DHuj
+sIEagOCTVa63M5uzH4gJq8wZkxJUfNLUxoMy3cKCnB5hBTHp5b2zsxqbNJXQUJVt
+uySijSWi9WWDHF99KCoZXutsQnev1CdsHBOBarMBvm2vGgyPYmsO5UNfX2IoSmke
+2M9VMLobpoUSCKwRCV94cpUxxxKmvX87EZ5TTHe1DEQFrcWw01O2Z55XKQBh/NrU
+P4e1dUF3yMwmgJXCi7h1dCScbU5T8sscMTtNF5Fo6Na3vvJM7vkLrkbkuaIOnh84
+GcvyyVvEPGEMjy6luoM9L+4dhjr4FF8w3/TOfPRBE9xDINLQ13yLG5dX
+=zm2c
 -----END PGP SIGNATURE-----

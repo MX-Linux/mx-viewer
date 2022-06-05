@@ -13,20 +13,20 @@ Build-Depends: debhelper (>= 10), qtwebengine5-dev, qtbase5-dev, qttools5-dev-to
 Package-List:
  mx-viewer deb system optional arch=any
 Checksums-Sha1:
- ac710771b2d157d77f41263500f5bb5415c201ea 26156 mx-viewer_22.6.tar.xz
+ 8d24837bc1b5bff6ca71aae2f7df9e98f601704f 26164 mx-viewer_22.6.tar.xz
 Checksums-Sha256:
- 8f638a7af8eb7a6b6a30282f480727445b688a2792915d4d4aa851d7e646d7f1 26156 mx-viewer_22.6.tar.xz
+ 0c9e37b5c0815b3d3b673a6ff056e75f88daecc216ff5eb6d3e975d9ee9869aa 26164 mx-viewer_22.6.tar.xz
 Files:
- 23d8aeaac0aa48645f179d9218e97aee 26156 mx-viewer_22.6.tar.xz
+ 10943dc9b86fa6253f42000ae4567d45 26164 mx-viewer_22.6.tar.xz
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmKbiJkTHGFkcmlhbkBt
-eGxpbnV4Lm9yZwAKCRBwk4x4BnnumOfwB/4lfjGa4TlIsqscbgsCq4BjngkPg0i4
-f5tIskFpRbLCqY8S55NZKjVzU4jY22WNg3wlqBMbEX78plVNEJJBmN5WnZ4dkYlP
-zZOPYw0fB0+1s+l2pAiy/zPQ7zYvXPVd4UeCTKLSqBl03vVt6aApfAhNP2Olge99
-ZLzCSbK+LYt+Wn1dVdz+S4T5UiWa9zuS9tkX+CZAvNoUc4qHBTSzpinHfMjaO7E1
-0Gi/wPz5pVJHrnqZQwY0mATQqkCmhM9a2Awz3sQFZU/Z1zRZNg58MDQviOMdzXJW
-JcAp98UAiyXbfPNJV6aTJhHr25vXZVY+8Ds/8BfaDTxS9HMoP4MYs1oV
-=dhlw
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmKcB0YTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumC82CADGujajQI8+tPSwVstLraxo9vFMwAE3
+QEgz6ug7xJ6tBOeoeZaZhVubfHWAjh/O1GVOzYjZDeMRTyAAxe21i5Ngkg0+FvFX
+JpoXt+pjZ7zOXTlogVt0zN8u4avJFN53YeAQ090/1WbzuH+y5WInupizc2Ig7kmG
+tghDXFPwV2WlwqpLNwL68XvRQw9vl6WOiA6kWaw5BsfpwCHJ3WfXgTVIamJVnFUq
+rUBZ2slcKfIbK1FRQraB2jfLMaJCQgmTwfc0cIhw71zCdtc90yTQMA3Rlf8mU++0
+kJjI6ptXY3lt21fXwIHczgXvHFX4wNZh4UlSFFcCBRhriV+YhpUWAQti
+=r+ky
 -----END PGP SIGNATURE-----
