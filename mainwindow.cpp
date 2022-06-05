@@ -31,6 +31,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
 {
     timer = new QTimer(this);
     toolBar = new QToolBar(this);
+    toolBar->toggleViewAction()->setVisible(false);
     webview = new QWebEngineView(this);
     downloadWidget = new DownloadWidget;
     progressBar = new QProgressBar(this);
