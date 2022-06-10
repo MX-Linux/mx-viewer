@@ -456,7 +456,7 @@ void MainWindow::buildMenu()
         bookmarks->addAction(bookmark = new QAction(webview->icon(), webview->title()));
         bookmark->setProperty("url", webview->url());
         connectAddress(bookmark, bookmarks);
-        saveBookmarks(bookmarks->actions().count() - 2); // subtract number of actions reserved for other functions (manage, add, separator, etc)
+        saveBookmarks(bookmarks->actions().count() - 1); // subtract number of actions reserved for other functions (manage, add, etc)
     });
 
     connect(menuButton, &QAction::triggered, [this, menu]() {

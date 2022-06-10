@@ -2,6 +2,7 @@ mx-viewer (22.6.01) mx; urgency=medium
 
   * Save history between sessions
   * Added option to clear history, or individual item
+  * Fix bug saving bookmarks
 
  -- Adrian <adrian@mxlinux.org>  Fri, 10 Jun 2022 08:25:21 -0400
 
