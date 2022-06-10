@@ -59,6 +59,8 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
 MainWindow::~MainWindow()
 {
     settings.setValue(QStringLiteral("Geometry"), saveGeometry());
+    listHistory();
+    saveHistory();
 }
 
 void MainWindow::addActions()
@@ -93,6 +95,10 @@ void MainWindow::addBookmarksSubmenu()
                 }
             });
         }
+//        submenu.addAction(QIcon::fromTheme(QStringLiteral("text-edit")), tr("Edit"), bookmarks, [this, pos]() {
+//            bookmarks->removeAction(bookmarks->actionAt(pos));
+//            saveBookmarks(bookmarks->actions().count() - 2);
+//        });
         submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), bookmarks, [this, pos]() {
             bookmarks->removeAction(bookmarks->actionAt(pos));
             saveBookmarks(bookmarks->actions().count() - 2);
@@ -101,19 +107,40 @@ void MainWindow::addBookmarksSubmenu()
     });
 }
 
+void MainWindow::addHistorySubmenu()
+{
+    history->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(history, &QMenu::customContextMenuRequested, [this](QPoint pos) {
+        if (history->actionAt(pos) == history->actions().at(0)) // skip first "Clear history" action.
+            return;
+        QPoint globalPos = history->mapToGlobal(pos);
+        QMenu submenu;
+        submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), history, [this, pos]() {
+            history->removeAction(history->actionAt(pos));
+            saveHistory();
+            webview->history()->clear();
+        });
+        submenu.exec(globalPos);
+    });
+}
+
 void MainWindow::listHistory()
 {
     history->clear();
+    auto *deleteHistory = new QAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("&Clear history"));
+    connect(deleteHistory, &QAction::triggered, [this]() { history->clear(); webview->history()->clear(); saveHistory(); });
+    history->addAction(deleteHistory);
+    history->addSeparator();
     QAction *histItem {nullptr};
     auto *hist = webview->history();
 
-    int start = (hist->items().size() > histMaxSize) ? hist->items().size() - histMaxSize : 0;
-    for (int i = start; i < hist->items().size(); ++i) {
+    for (int i = hist->items().size() - 1; i >= 0; --i) {
         auto item = hist->itemAt(i);
         history->addAction(histItem = new QAction(histIcons.value(item.url()), item.title()));
         histItem->setProperty("url", item.url());
         connectAddress(histItem, history);
     }
+    loadHistory();
 }
 
 void MainWindow::addToolbar()
@@ -225,6 +252,20 @@ void MainWindow::loadBookmarks()
     settings.endArray();
 }
 
+void MainWindow::loadHistory()
+{
+    QAction *histItem {nullptr};
+    int size = settings.beginReadArray(QStringLiteral("History"));
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        history->addAction(histItem = new QAction(settings.value(QStringLiteral("icon")).value<QIcon>(),
+                                                    settings.value(QStringLiteral("title")).toString()));
+        histItem->setProperty("url", settings.value(QStringLiteral("url")));
+        connectAddress(histItem, history);
+    }
+    settings.endArray();
+}
+
 void MainWindow::loadSettings()
 {
     // Load first from system .conf file and then overwrite with CLI switches where available
@@ -288,6 +329,18 @@ void MainWindow::saveBookmarks(int count)
     settings.setValue(QStringLiteral("title"), webview->title());
     settings.setValue(QStringLiteral("url"), webview->url());
     settings.setValue(QStringLiteral("icon"), webview->icon());
+    settings.endArray();
+}
+
+void MainWindow::saveHistory()
+{
+    settings.beginWriteArray(QStringLiteral("History"));
+    for (int i = 2; i < history->actions().count() - 2; ++i) { //skip "Erase all history" item, spacer
+        settings.setArrayIndex(i);
+        settings.setValue(QStringLiteral("title"), history->actions().at(i)->text());
+        settings.setValue(QStringLiteral("url"), history->actions().at(i)->property("url").toString());
+        settings.setValue(QStringLiteral("icon"), history->actions().at(i)->icon());
+    }
     settings.endArray();
 }
 
@@ -366,6 +419,8 @@ void MainWindow::buildMenu()
     auto *menu = new QMenu(this);
     history = new QMenu(menu);
     bookmarks = new QMenu(menu);
+    history->setStyleSheet(QStringLiteral("QMenu { menu-scrollable: 1; }"));
+    bookmarks->setStyleSheet(QStringLiteral("QMenu { menu-scrollable: 1; }"));
     QAction *fullscreen {nullptr};
     QAction *about {nullptr};
     QAction *quit {nullptr};
@@ -394,6 +449,7 @@ void MainWindow::buildMenu()
 
     loadBookmarks();
     addBookmarksSubmenu();
+    addHistorySubmenu();
 
     connect(addBookmark, &QAction::triggered, [this]() {
         QAction *bookmark {nullptr};

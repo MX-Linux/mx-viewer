@@ -34,16 +34,19 @@ public:
     ~MainWindow();
     void addActions();
     void addBookmarksSubmenu();
+    void addHistorySubmenu();
     void addToolbar();
     void buildMenu();
     void centerWindow();
     void connectAddress(const QAction *action, const QMenu *menu);
     void displaySite(QString url = {}, const QString &title = {});
     void loadBookmarks();
+    void loadHistory();
     void loadSettings();
     void openBrowseDialog();
     void openQuickInfo();
     void saveBookmarks(int count);
+    void saveHistory();
     void setConnections();
     void showFullScreenNotification();
     void toggleFullScreen();
@@ -84,7 +87,6 @@ private:
     const QCommandLineParser &args;
     const int defaultHeight {600};
     const int defaultWidth {800};
-    const int histMaxSize {15};
     const int progBarVerticalAdj {40};
     const int progBarWidth {20};
     const int searchWidth {150};
