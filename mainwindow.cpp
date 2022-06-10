@@ -60,7 +60,7 @@ MainWindow::~MainWindow()
 {
     settings.setValue(QStringLiteral("Geometry"), saveGeometry());
     listHistory();
-    saveHistory();
+    saveHistory(2);
 }
 
 void MainWindow::addActions()
@@ -117,8 +117,8 @@ void MainWindow::addHistorySubmenu()
         QMenu submenu;
         submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), history, [this, pos]() {
             history->removeAction(history->actionAt(pos));
-            saveHistory();
-            webview->history()->clear();
+            saveHistory(3); // skip "clear history", separator, and first item which gets added at menu refresh
+            webview->history()->clear(); // next menu refresh will load from saved file not from webview->history()
         });
         submenu.exec(globalPos);
     });
@@ -128,13 +128,13 @@ void MainWindow::listHistory()
 {
     history->clear();
     auto *deleteHistory = new QAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("&Clear history"));
-    connect(deleteHistory, &QAction::triggered, [this]() { history->clear(); webview->history()->clear(); saveHistory(); });
+    connect(deleteHistory, &QAction::triggered, [this]() { history->clear(); webview->history()->clear(); saveHistory(2); });
     history->addAction(deleteHistory);
     history->addSeparator();
     QAction *histItem {nullptr};
     auto *hist = webview->history();
 
-    for (int i = hist->items().size() - 1; i >= 0; --i) {
+    for (int i = hist->items().count() - 1; i >= 0; --i) {
         auto item = hist->itemAt(i);
         history->addAction(histItem = new QAction(histIcons.value(item.url()), item.title()));
         histItem->setProperty("url", item.url());
@@ -332,11 +332,12 @@ void MainWindow::saveBookmarks(int count)
     settings.endArray();
 }
 
-void MainWindow::saveHistory()
+void MainWindow::saveHistory(int offset)
 {
+    // Offset is for skipping "Clear history" item, separator, etc.
     settings.beginWriteArray(QStringLiteral("History"));
-    for (int i = 2; i < history->actions().count() - 2; ++i) { //skip "Erase all history" item, spacer
-        settings.setArrayIndex(i);
+    for (int i = offset; i < history->actions().count(); ++i) {
+        settings.setArrayIndex(i - offset);
         settings.setValue(QStringLiteral("title"), history->actions().at(i)->text());
         settings.setValue(QStringLiteral("url"), history->actions().at(i)->property("url").toString());
         settings.setValue(QStringLiteral("icon"), history->actions().at(i)->icon());

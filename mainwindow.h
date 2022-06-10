@@ -46,7 +46,7 @@ public:
     void openBrowseDialog();
     void openQuickInfo();
     void saveBookmarks(int count);
-    void saveHistory();
+    void saveHistory(int offset);
     void setConnections();
     void showFullScreenNotification();
     void toggleFullScreen();
