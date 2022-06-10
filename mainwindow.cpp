@@ -60,7 +60,8 @@ MainWindow::~MainWindow()
 {
     settings.setValue(QStringLiteral("Geometry"), saveGeometry());
     listHistory();
-    saveHistory(2);
+    saveMenuItems(history, 2);
+    saveMenuItems(bookmarks, 2);
 }
 
 void MainWindow::addActions()
@@ -95,13 +96,18 @@ void MainWindow::addBookmarksSubmenu()
                 }
             });
         }
-//        submenu.addAction(QIcon::fromTheme(QStringLiteral("text-edit")), tr("Edit"), bookmarks, [this, pos]() {
-//            bookmarks->removeAction(bookmarks->actionAt(pos));
-//            saveBookmarks(bookmarks->actions().count() - 2);
-//        });
+        submenu.addAction(QIcon::fromTheme(QStringLiteral("edit-symbolic")), tr("Rename"), bookmarks, [this, pos]() {
+            auto *edit = new QInputDialog(this);
+            edit->setInputMode(QInputDialog::TextInput);
+            edit->setOkButtonText(tr("Save"));
+            edit->setTextValue(bookmarks->actionAt(pos)->text());
+            edit->setLabelText(tr("Rename bookmark:"));
+            edit->resize(300, edit->height());
+            if (edit->exec() == QDialog::Accepted)
+                bookmarks->actionAt(pos)->setText(edit->textValue());
+        });
         submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), bookmarks, [this, pos]() {
             bookmarks->removeAction(bookmarks->actionAt(pos));
-            saveBookmarks(bookmarks->actions().count() - 2);
         });
         submenu.exec(globalPos);
     });
@@ -117,7 +123,7 @@ void MainWindow::addHistorySubmenu()
         QMenu submenu;
         submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), history, [this, pos]() {
             history->removeAction(history->actionAt(pos));
-            saveHistory(3); // skip "clear history", separator, and first item which gets added at menu refresh
+            saveMenuItems(history, 3); // skip "clear history", separator, and first item which gets added at menu refresh
             webview->history()->clear(); // next menu refresh will load from saved file not from webview->history()
         });
         submenu.exec(globalPos);
@@ -128,7 +134,7 @@ void MainWindow::listHistory()
 {
     history->clear();
     auto *deleteHistory = new QAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("&Clear history"));
-    connect(deleteHistory, &QAction::triggered, [this]() { history->clear(); webview->history()->clear(); saveHistory(2); });
+    connect(deleteHistory, &QAction::triggered, [this]() { history->clear(); webview->history()->clear(); saveMenuItems(history, 2); });
     history->addAction(deleteHistory);
     history->addSeparator();
     QAction *histItem {nullptr};
@@ -322,25 +328,15 @@ void MainWindow::openQuickInfo()
                        tr("F1, or ?") + "\t - " + tr("Open this help dialog"));
 }
 
-void MainWindow::saveBookmarks(int count)
-{
-    settings.beginWriteArray(QStringLiteral("Bookmarks"));
-    settings.setArrayIndex(count - 1); // if one item, starts array from 0
-    settings.setValue(QStringLiteral("title"), webview->title());
-    settings.setValue(QStringLiteral("url"), webview->url());
-    settings.setValue(QStringLiteral("icon"), webview->icon());
-    settings.endArray();
-}
-
-void MainWindow::saveHistory(int offset)
+void MainWindow::saveMenuItems(const QMenu *menu, int offset)
 {
     // Offset is for skipping "Clear history" item, separator, etc.
-    settings.beginWriteArray(QStringLiteral("History"));
-    for (int i = offset; i < history->actions().count(); ++i) {
+    settings.beginWriteArray(menu->objectName());
+    for (int i = offset; i < menu->actions().count(); ++i) {
         settings.setArrayIndex(i - offset);
-        settings.setValue(QStringLiteral("title"), history->actions().at(i)->text());
-        settings.setValue(QStringLiteral("url"), history->actions().at(i)->property("url").toString());
-        settings.setValue(QStringLiteral("icon"), history->actions().at(i)->icon());
+        settings.setValue(QStringLiteral("title"), menu->actions().at(i)->text());
+        settings.setValue(QStringLiteral("url"), menu->actions().at(i)->property("url").toString());
+        settings.setValue(QStringLiteral("icon"), menu->actions().at(i)->icon());
     }
     settings.endArray();
 }
@@ -420,7 +416,9 @@ void MainWindow::buildMenu()
     auto *menu = new QMenu(this);
     history = new QMenu(menu);
     bookmarks = new QMenu(menu);
+    bookmarks->setObjectName("Bookmarks");
     history->setStyleSheet(QStringLiteral("QMenu { menu-scrollable: 1; }"));
+    history->setObjectName("History");
     bookmarks->setStyleSheet(QStringLiteral("QMenu { menu-scrollable: 1; }"));
     QAction *fullscreen {nullptr};
     QAction *about {nullptr};
@@ -442,6 +440,7 @@ void MainWindow::buildMenu()
     bookmarks->addAction(addBookmark);
     addBookmark->setText(tr("Bookmark current address"));
     addBookmark->setShortcut(Qt::CTRL + Qt::Key_D);
+    bookmarks->addSeparator();
     menu->addSeparator();
     menu->addAction(help = new QAction(QIcon::fromTheme(QStringLiteral("help-contents")), tr("&Help")));
     menu->addAction(about = new QAction(QIcon::fromTheme(QStringLiteral("help-about")), tr("&About")));
@@ -457,7 +456,6 @@ void MainWindow::buildMenu()
         bookmarks->addAction(bookmark = new QAction(webview->icon(), webview->title()));
         bookmark->setProperty("url", webview->url());
         connectAddress(bookmark, bookmarks);
-        saveBookmarks(bookmarks->actions().count() - 1); // subtract number of actions reserved for other functions (manage, add, etc)
     });
 
     connect(menuButton, &QAction::triggered, [this, menu]() {

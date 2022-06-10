@@ -45,8 +45,7 @@ public:
     void loadSettings();
     void openBrowseDialog();
     void openQuickInfo();
-    void saveBookmarks(int count);
-    void saveHistory(int offset);
+    void saveMenuItems(const QMenu *menu, int offset);
     void setConnections();
     void showFullScreenNotification();
     void toggleFullScreen();
