@@ -47,6 +47,7 @@ HEADERS  += \
 TRANSLATIONS += \
     translations/mx-viewer_en.ts \
     translations/mx-viewer_fr.ts
+    translations/mx-viewer_fr_BE.ts
 
 
 RESOURCES += \
