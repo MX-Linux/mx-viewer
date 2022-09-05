@@ -26,17 +26,17 @@
 
 QPair<int, int> getUserIDs()
 {
-    QPair<int, int> id;
+    QPair<uint, uint> id;
     QProcess proc;
     proc.start("logname", {}, QIODevice::ReadOnly);
     proc.waitForFinished();
     QString logname = QString::fromLatin1(proc.readAllStandardOutput().trimmed());
     proc.start("id", {"-u", logname}, QIODevice::ReadOnly);
     proc.waitForFinished();
-    id.first = proc.readAllStandardOutput().trimmed().toInt();
+    id.first = proc.readAllStandardOutput().trimmed().toUInt();
     proc.start("id", {"-g", logname}, QIODevice::ReadOnly);
     proc.waitForFinished();
-    id.second = proc.readAllStandardOutput().trimmed().toInt();
+    id.second = proc.readAllStandardOutput().trimmed().toUInt();
     return id;
 }
 
