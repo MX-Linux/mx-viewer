@@ -25,16 +25,18 @@
 
 #include <QtWebEngineWidgets>
 
-namespace Ui {
+namespace Ui
+{
 class DownloadWidget;
 }
 
-class DownloadWidget : public QWidget {
+class DownloadWidget : public QWidget
+{
     Q_OBJECT
 public:
     explicit DownloadWidget(QWidget* parent = nullptr);
     ~DownloadWidget();
-    Ui::DownloadWidget *ui;
+    Ui::DownloadWidget* ui;
 
     inline static QString withUnit(qreal bytes);
     inline static QString timeUnit(int sec);

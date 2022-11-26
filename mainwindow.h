@@ -91,5 +91,4 @@ private:
     const int searchWidth {150};
 };
 
-
 #endif // MXVIEW_H

@@ -33,7 +33,6 @@ public:
 
 private slots:
     void focusInEvent(QFocusEvent *event) override;
-
 };
 
 #endif // ADDRESSBAR_H
