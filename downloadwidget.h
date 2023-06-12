@@ -35,11 +35,10 @@ class DownloadWidget : public QWidget
     Q_OBJECT
 public:
     explicit DownloadWidget(QWidget* parent = nullptr);
-    ~DownloadWidget();
-    Ui::DownloadWidget* ui;
+    ~DownloadWidget() override;
 
     inline static QString withUnit(qreal bytes);
-    inline static QString timeUnit(int sec);
+    inline static QString timeUnit(int seconds);
     void downloadRequested(QWebEngineDownloadItem* download);
     static void updateDownload(QWebEngineDownloadItem* download, QPushButton* pushButton, QProgressBar* prog);
 
@@ -49,6 +48,7 @@ protected:
 
 private:
     QSettings settings;
+    Ui::DownloadWidget* ui;
 };
 
 #endif // DOWNLOADWIDGET_H

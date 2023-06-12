@@ -29,7 +29,7 @@ class AddressBar : public QLineEdit
     Q_OBJECT
 
 public:
-    AddressBar(QWidget *parent = nullptr);
+    explicit AddressBar(QWidget *parent = nullptr);
 
 private slots:
     void focusInEvent(QFocusEvent *event) override;

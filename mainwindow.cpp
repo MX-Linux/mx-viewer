@@ -145,11 +145,11 @@ void MainWindow::listHistory()
     });
     history->addAction(deleteHistory);
     history->addSeparator();
-    QAction *histItem {nullptr};
     auto *hist = webview->history();
 
     for (int i = hist->items().count() - 1; i >= 0; --i) {
         auto item = hist->itemAt(i);
+        QAction *histItem {nullptr};
         history->addAction(histItem = new QAction(histIcons.value(item.url()), item.title()));
         histItem->setProperty("url", item.url());
         connectAddress(histItem, history);
@@ -266,10 +266,10 @@ void MainWindow::displaySite(QString url, const QString &title)
 
 void MainWindow::loadBookmarks()
 {
-    QAction *bookmark {nullptr};
     int size = settings.beginReadArray(QStringLiteral("Bookmarks"));
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
+        QAction *bookmark {nullptr};
         bookmarks->addAction(bookmark = new QAction(settings.value(QStringLiteral("icon")).value<QIcon>(),
                                                     settings.value(QStringLiteral("title")).toString()));
         bookmark->setProperty("url", settings.value(QStringLiteral("url")));
@@ -280,10 +280,10 @@ void MainWindow::loadBookmarks()
 
 void MainWindow::loadHistory()
 {
-    QAction *histItem {nullptr};
     int size = settings.beginReadArray(QStringLiteral("History"));
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
+        QAction *histItem {nullptr};
         history->addAction(histItem = new QAction(settings.value(QStringLiteral("icon")).value<QIcon>(),
                                                   settings.value(QStringLiteral("title")).toString()));
         histItem->setProperty("url", settings.value(QStringLiteral("url")));
