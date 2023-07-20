@@ -1,3 +1,9 @@
+mx-viewer (23.7) mx; urgency=medium
+
+  * Update translations
+
+ -- Adrian <adrian@mxlinux.org>  Thu, 20 Jul 2023 17:44:11 -0400
+
 mx-viewer (22.6.01) mx; urgency=medium
 
   * Save history between sessions
