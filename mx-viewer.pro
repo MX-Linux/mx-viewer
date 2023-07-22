@@ -52,7 +52,6 @@ TRANSLATIONS += \
                 translations/mx-viewer_be.ts \
                 translations/mx-viewer_bg.ts \
                 translations/mx-viewer_bn.ts \
-                translations/mx-viewer_bs_BA.ts \
                 translations/mx-viewer_bs.ts \
                 translations/mx-viewer_ca.ts \
                 translations/mx-viewer_ceb.ts \
@@ -90,7 +89,6 @@ TRANSLATIONS += \
                 translations/mx-viewer_hr.ts \
                 translations/mx-viewer_ht.ts \
                 translations/mx-viewer_hu.ts \
-                translations/mx-viewer_hy_AM.ts \
                 translations/mx-viewer_hye.ts \
                 translations/mx-viewer_hy.ts \
                 translations/mx-viewer_id.ts \
