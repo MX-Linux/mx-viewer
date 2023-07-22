@@ -1,8 +1,8 @@
 mx-viewer (23.7.01) mx; urgency=medium
 
-  * Open files without specifying the full path
+  * update language processing
 
- -- Adrian <adrian@mxlinux.org>  Wed, 26 Jul 2023 22:06:18 -0400
+ -- Dolphin Oracle <dolphinoracle@gmail.com>  Sat, 22 Jul 2023 16:17:44 -0400
 
 mx-viewer (23.7) mx; urgency=medium
 
