@@ -71,7 +71,6 @@ TRANSLATIONS += \
                 translations/mx-viewer_et.ts \
                 translations/mx-viewer_eu.ts \
                 translations/mx-viewer_fa.ts \
-                translations/mx-viewer_fi_FI.ts \
                 translations/mx-viewer_fil_PH.ts \
                 translations/mx-viewer_fil.ts \
                 translations/mx-viewer_fi.ts \
@@ -137,7 +136,6 @@ TRANSLATIONS += \
                 translations/mx-viewer_pt.ts \
                 translations/mx-viewer_ro.ts \
                 translations/mx-viewer_rue.ts \
-                translations/mx-viewer_ru_RU.ts \
                 translations/mx-viewer_ru.ts \
                 translations/mx-viewer_rw.ts \
                 translations/mx-viewer_sd.ts \
