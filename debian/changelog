@@ -1,3 +1,9 @@
+mx-viewer (23.7.02) mx; urgency=medium
+
+  * Open files without specifying the full path
+
+ -- Adrian <adrian@mxlinux.org>  Thu, 27 Jul 2023 00:02:20 -0400
+
 mx-viewer (23.7.01) mx; urgency=medium
 
   * update language processing

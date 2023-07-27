@@ -1,0 +1,46 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Date: Thu, 27 Jul 2023 00:02:20 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 23.7.02
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (23.7.02) mx; urgency=medium
+ .
+   * Open files without specifying the full path
+Checksums-Sha1:
+ 0df05fc6a9e79dc7858d9e3c5b45f2384e967d65 1181 mx-viewer_23.7.02.dsc
+ 1231540b7954bf6704c3c3027015b8fe05da8492 51260 mx-viewer_23.7.02.tar.xz
+ f4c77e7acafad6efe62ca902f2157666dfd52a27 13343 mx-viewer_23.7.02_amd64.buildinfo
+ 8af7d93c83bb7842d989429b7e46ca22c15fbf1b 46192 mx-viewer_23.7.02_amd64.deb
+Checksums-Sha256:
+ 9c1e7add999b4c2a064d834300c39c9232fce84d5f3d4b6298f450334186c0c4 1181 mx-viewer_23.7.02.dsc
+ 992bbf7e026503623d40101c405470d1f7ad519300173f80ff4c9f100d56afa4 51260 mx-viewer_23.7.02.tar.xz
+ 818799590898f771d50e56ab4383eddc9df2d1aa4a6bab9dc93a847a68509d26 13343 mx-viewer_23.7.02_amd64.buildinfo
+ d85d8dc676d302b5153852243499541998d8fb74a61d200d35df19036fad403a 46192 mx-viewer_23.7.02_amd64.deb
+Files:
+ a3f69d94983b10e9bcf69b4d961bcbf9 1181 system optional mx-viewer_23.7.02.dsc
+ 7e7001bba3ea24e7615b3c8a60a6be42 51260 system optional mx-viewer_23.7.02.tar.xz
+ 40eea5873677c452fbd852d39ee6d793 13343 system optional mx-viewer_23.7.02_amd64.buildinfo
+ d174b00a7a0106fdb633946d4a5856b1 46192 system optional mx-viewer_23.7.02_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmTB7QUTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumKkmB/9k7gzrAk11UHmERzRW4NMyfiG9Leqc
+xnH24qdtH7DnGU7xZC+EXARS20o14zf3c3TZIb4YabVstOhXdcGgNHWxVjeYB+f0
+o9gXiJob1tIMP5rbM08mWalt1uJE7txd3PRQ4XJZOv3euSwNLsoCqvalqvGgSuGS
+pkq0p6UFvwCnkzi2WZGpYnfRLItDycMls/3nL/Io0bEoi1NrxglpYO1pZgI81+A+
+seT7wOT60kfKM3pd6RV/jPOTPaupyqmwq10JhpVWVhohAAeu3/QARkreATLJYHJo
+07ZybeAxJ7+ZUbgvveLx1iK/tdbcRft4BYLiZOE9O3498WOZQ2MnkMuD
+=X4gq
+-----END PGP SIGNATURE-----
