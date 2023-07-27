@@ -1,0 +1,25 @@
+Format: 1.8
+Date: Thu, 27 Jul 2023 00:02:20 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: i386
+Version: 23.7.02
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (23.7.02) mx; urgency=medium
+ .
+   * Open files without specifying the full path
+Checksums-Sha1:
+ e44b01782c8c83b1605f469d58ab6fcb64f76f60 12470 mx-viewer_23.7.02_i386.buildinfo
+ c79a24ad48c0fe9421476be78931ff98f06969e2 48620 mx-viewer_23.7.02_i386.deb
+Checksums-Sha256:
+ 416a2113d95584cee410aa7a4806d121d797d48e02a182b2dfe6392647bee693 12470 mx-viewer_23.7.02_i386.buildinfo
+ c0b9b4e35113a8c33616f760e4e3ff440a5353253891084d3f1906335fcf59c4 48620 mx-viewer_23.7.02_i386.deb
+Files:
+ f7095bc109dbe07776234a3883c157bf 12470 system optional mx-viewer_23.7.02_i386.buildinfo
+ b2fbf85ed3492ee59c3723e29227c027 48620 system optional mx-viewer_23.7.02_i386.deb
