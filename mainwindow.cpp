@@ -27,8 +27,8 @@
 using namespace std::chrono_literals;
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
-    : QMainWindow(parent)
-    , args {arg_parser}
+    : QMainWindow(parent),
+      args {arg_parser}
 {
     timer = new QTimer(this);
     toolBar = new QToolBar(this);
@@ -77,16 +77,18 @@ void MainWindow::addBookmarksSubmenu()
 {
     bookmarks->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(bookmarks, &QMenu::customContextMenuRequested, this, [this](QPoint pos) {
-        if (bookmarks->actionAt(pos) == bookmarks->actions().at(0)) // skip first "Add bookmark" action.
+        if (bookmarks->actionAt(pos) == bookmarks->actions().at(0)) { // skip first "Add bookmark" action.
             return;
+        }
         QPoint globalPos = bookmarks->mapToGlobal(pos);
         QMenu submenu;
         if (bookmarks->actionAt(pos) != bookmarks->actions().at(1)) {
             submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-up")), tr("Move up"), bookmarks, [this, pos]() {
                 for (int i = 2; i < bookmarks->actions().count();
                      ++i) { // starting from third action (ignoring "Add bookmark" and first bookmark we cannot move up)
-                    if (bookmarks->actions().at(i) == bookmarks->actionAt(pos))
+                    if (bookmarks->actions().at(i) == bookmarks->actionAt(pos)) {
                         bookmarks->insertAction(bookmarks->actions().at(i - 1), bookmarks->actions().at(i));
+                    }
                 }
             });
         }
@@ -95,8 +97,9 @@ void MainWindow::addBookmarksSubmenu()
                 QIcon::fromTheme(QStringLiteral("arrow-down")), tr("Move down"), bookmarks, [this, pos]() {
                     for (int i = 1; i < bookmarks->actions().count();
                          ++i) { // starting from second action (ignoring "Add bookmark")
-                        if (bookmarks->actions().at(i) == bookmarks->actionAt(pos))
+                        if (bookmarks->actions().at(i) == bookmarks->actionAt(pos)) {
                             bookmarks->insertAction(bookmarks->actions().at(i + 2), bookmarks->actions().at(i));
+                        }
                     }
                 });
         }
@@ -107,8 +110,9 @@ void MainWindow::addBookmarksSubmenu()
             edit->setTextValue(bookmarks->actionAt(pos)->text());
             edit->setLabelText(tr("Rename bookmark:"));
             edit->resize(300, edit->height());
-            if (edit->exec() == QDialog::Accepted)
+            if (edit->exec() == QDialog::Accepted) {
                 bookmarks->actionAt(pos)->setText(edit->textValue());
+            }
         });
         submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), bookmarks,
                           [this, pos]() { bookmarks->removeAction(bookmarks->actionAt(pos)); });
@@ -120,8 +124,9 @@ void MainWindow::addHistorySubmenu()
 {
     history->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(history, &QMenu::customContextMenuRequested, this, [this](QPoint pos) {
-        if (history->actionAt(pos) == history->actions().at(0)) // skip first "Clear history" action.
+        if (history->actionAt(pos) == history->actions().at(0)) { // skip first "Clear history" action.
             return;
+        }
         QPoint globalPos = history->mapToGlobal(pos);
         QMenu submenu;
         submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), history, [this, pos]() {
@@ -184,8 +189,8 @@ void MainWindow::addToolbar()
     home->setShortcut(Qt::CTRL + Qt::Key_H);
     reload->setShortcuts(QKeySequence::Refresh);
     stop->setShortcut(QKeySequence::Cancel);
-    //    tab = webview->pageAction(QWebEnginePage::OpenLinkInNewTab);
-    //    tab->setShortcut(Qt::CTRL + Qt::Key_T);
+    //        tab = webview->pageAction(QWebEnginePage::OpenLinkInNewTab);
+    //        tab->setShortcut(Qt::CTRL + Qt::Key_T);
     connect(stop, &QAction::triggered, this, &MainWindow::done);
     connect(home, &QAction::triggered, this, [this]() { displaySite(); });
 
@@ -242,22 +247,26 @@ void MainWindow::openBrowseDialog()
 {
     QString file = QFileDialog::getOpenFileName(this, tr("Select file to open"), QDir::homePath(),
                                                 tr("Hypertext Files (*.htm *.html);;All Files (*.*)"));
-    if (QFileInfo::exists(file))
+    if (QFileInfo::exists(file)) {
         displaySite(file, file);
+    }
 }
 
 // pop up a window and display website
 void MainWindow::displaySite(QString url, const QString &title)
 {
-    if (url.isEmpty())
+    if (url.isEmpty()) {
         url = homeAddress;
+    }
     disconnect(conn);
     conn = connect(webview, &QWebEngineView::loadFinished, [url](bool ok) {
-        if (!ok)
+        if (!ok) {
             qDebug() << "Error :" << url;
+        }
     });
-    if (QFile::exists(url))
+    if (QFile::exists(url)) {
         url = QFileInfo(url).absoluteFilePath();
+    }
     QUrl qurl = QUrl::fromUserInput(url);
     webview->setUrl(qurl);
     webview->load(qurl);
@@ -311,12 +320,15 @@ void MainWindow::loadSettings()
     websettings->setAttribute(QWebEngineSettings::AutoLoadImages,
                               settings.value(QStringLiteral("LoadImages"), true).toBool());
 
-    if (args.isSet(QStringLiteral("enable-spatial-navigation")))
+    if (args.isSet(QStringLiteral("enable-spatial-navigation"))) {
         websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, true);
-    if (args.isSet(QStringLiteral("disable-js")))
+    }
+    if (args.isSet(QStringLiteral("disable-js"))) {
         websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, false);
-    if (args.isSet(QStringLiteral("disable-images")))
+    }
+    if (args.isSet(QStringLiteral("disable-images"))) {
         websettings->setAttribute(QWebEngineSettings::AutoLoadImages, false);
+    }
 
     QSize size {defaultWidth, defaultHeight};
     this->resize(size);
@@ -371,8 +383,9 @@ void MainWindow::setConnections()
             [this]() { histIcons.insert(webview->url(), webview->icon()); });
     connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested, downloadWidget,
             &DownloadWidget::downloadRequested);
-    if (showProgress)
+    if (showProgress) {
         connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
+    }
     connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
     connect(webview->page(), &QWebEnginePage::linkHovered, this, [this](const QString &url) {
         if (url.isEmpty()) {
@@ -553,31 +566,37 @@ void MainWindow::findForward()
 // process keystrokes
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash)
+    if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash) {
         findForward();
-    if (event->matches(QKeySequence::FindPrevious))
+    }
+    if (event->matches(QKeySequence::FindPrevious)) {
         findBackward();
-    else if (event->matches(QKeySequence::Open))
+    } else if (event->matches(QKeySequence::Open)) {
         openBrowseDialog();
-    else if (event->matches(QKeySequence::HelpContents) || event->key() == Qt::Key_Question)
+    } else if (event->matches(QKeySequence::HelpContents) || event->key() == Qt::Key_Question) {
         openQuickInfo();
-    else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus())
+    } else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
         searchBox->clear();
-    else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty())
+    } else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
         webview->setFocus();
-    else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier)
+    } else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
         addressBar->setFocus();
+    }
 }
 
 // resize event
 void MainWindow::resizeEvent(QResizeEvent * /*event*/)
 {
-    if (showProgress)
+    if (showProgress) {
         progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2,
                           this->geometry().height() - progBarVerticalAdj);
+    }
 }
 
-void MainWindow::closeEvent(QCloseEvent * /*event*/) { downloadWidget->close(); }
+void MainWindow::closeEvent(QCloseEvent * /*event*/)
+{
+    downloadWidget->close();
+}
 
 // display progressbar while loading page
 void MainWindow::loading()
