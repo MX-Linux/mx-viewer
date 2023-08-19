@@ -32,24 +32,6 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
     ~MainWindow() override;
-    void addActions();
-    void addBookmarksSubmenu();
-    void addHistorySubmenu();
-    void addToolbar();
-    void buildMenu();
-    void centerWindow();
-    void connectAddress(const QAction *action, const QMenu *menu);
-    void displaySite(QString url = {}, const QString &title = {});
-    void loadBookmarks();
-    void loadHistory();
-    void loadSettings();
-    void openBrowseDialog();
-    void openQuickInfo();
-    void saveMenuItems(const QMenu *menu, int offset);
-    void setConnections();
-    void showFullScreenNotification();
-    void toggleFullScreen();
-    void updateUrl();
 
 public slots:
     void listHistory();
@@ -77,10 +59,10 @@ private:
     QProgressBar *progressBar {};
     QSettings settings;
     QString homeAddress;
+    QTabWidget *tabWidget {};
     QToolBar *toolBar {};
     QTimer *timer {nullptr};
     QWebEngineSettings *websettings {};
-    QWebEngineView *webview {};
     DownloadWidget *downloadWidget {};
     bool showProgress {};
     const QCommandLineParser &args;
@@ -89,6 +71,26 @@ private:
     const int progBarVerticalAdj {40};
     const int progBarWidth {20};
     const int searchWidth {150};
+
+    QWebEngineView *currentWebView();
+    void addActions();
+    void addBookmarksSubmenu();
+    void addHistorySubmenu();
+    void addToolbar();
+    void buildMenu();
+    void centerWindow();
+    void connectAddress(const QAction *action, const QMenu *menu);
+    void displaySite(QString url = {}, const QString &title = {});
+    void loadBookmarks();
+    void loadHistory();
+    void loadSettings();
+    void openBrowseDialog();
+    void openQuickInfo();
+    void saveMenuItems(const QMenu *menu, int offset);
+    void setConnections();
+    void showFullScreenNotification();
+    void toggleFullScreen();
+    void updateUrl();
 };
 
 #endif // MXVIEW_H

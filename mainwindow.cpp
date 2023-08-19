@@ -33,7 +33,20 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     timer = new QTimer(this);
     toolBar = new QToolBar(this);
     toolBar->toggleViewAction()->setVisible(false);
-    webview = new QWebEngineView(this);
+    tabWidget = new QTabWidget(this);
+    tabWidget->setTabBarAutoHide(true);
+    tabWidget->setTabsClosable(true);
+    auto *webview = new QWebEngineView(this);
+    tabWidget->addTab(webview, tr("New Tab"));
+    connect(tabWidget, &QTabWidget::tabCloseRequested, tabWidget, &QTabWidget::removeTab);
+    connect(tabWidget, &QTabWidget::currentChanged, this, [this]() {
+        addressBar->setText(currentWebView()->url().toString());
+        if (addressBar->text().isEmpty()) {
+            addressBar->setFocus();
+        }
+        this->setWindowTitle(currentWebView()->title());
+        tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
+    });
     downloadWidget = new DownloadWidget;
     progressBar = new QProgressBar(this);
     searchBox = new QLineEdit(this);
@@ -131,9 +144,10 @@ void MainWindow::addHistorySubmenu()
         QMenu submenu;
         submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), history, [this, pos]() {
             history->removeAction(history->actionAt(pos));
-            saveMenuItems(history,
-                          3); // skip "clear history", separator, and first item which gets added at menu refresh
-            webview->history()->clear(); // next menu refresh will load from saved file not from webview->history()
+            saveMenuItems(history, 3); // skip "clear history", separator, and first item added at menu refresh
+            currentWebView()
+                ->history()
+                ->clear(); // next menu refresh will load from saved file not from webview->history()
         });
         submenu.exec(globalPos);
     });
@@ -145,12 +159,12 @@ void MainWindow::listHistory()
     auto *deleteHistory = new QAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("&Clear history"));
     connect(deleteHistory, &QAction::triggered, this, [this]() {
         history->clear();
-        webview->history()->clear();
+        currentWebView()->history()->clear();
         saveMenuItems(history, 2);
     });
     history->addAction(deleteHistory);
     history->addSeparator();
-    auto *hist = webview->history();
+    auto *hist = currentWebView()->history();
 
     for (int i = hist->items().count() - 1; i >= 0; --i) {
         auto item = hist->itemAt(i);
@@ -165,22 +179,22 @@ void MainWindow::listHistory()
 void MainWindow::addToolbar()
 {
     this->addToolBar(toolBar);
-    this->setCentralWidget(webview);
+    this->setCentralWidget(tabWidget);
 
     QAction *back {nullptr};
     QAction *forward {nullptr};
     QAction *reload {nullptr};
     QAction *stop {nullptr};
-    //    QAction *tab {nullptr};
+    // QAction *tab {nullptr};
     QAction *home {nullptr};
     QAction *zoomin {nullptr};
     QAction *zoompercent {nullptr};
     QAction *zoomout {nullptr};
 
-    toolBar->addAction(back = webview->pageAction(QWebEnginePage::Back));
-    toolBar->addAction(forward = webview->pageAction(QWebEnginePage::Forward));
-    toolBar->addAction(reload = webview->pageAction(QWebEnginePage::Reload));
-    toolBar->addAction(stop = webview->pageAction(QWebEnginePage::Stop));
+    toolBar->addAction(back = currentWebView()->pageAction(QWebEnginePage::Back));
+    toolBar->addAction(forward = currentWebView()->pageAction(QWebEnginePage::Forward));
+    toolBar->addAction(reload = currentWebView()->pageAction(QWebEnginePage::Reload));
+    toolBar->addAction(stop = currentWebView()->pageAction(QWebEnginePage::Stop));
     toolBar->addAction(
         home = new QAction(QIcon::fromTheme(QStringLiteral("go-home"), QIcon(QStringLiteral(":/icons/go-home.svg"))),
                            tr("Home")));
@@ -189,8 +203,8 @@ void MainWindow::addToolbar()
     home->setShortcut(Qt::CTRL + Qt::Key_H);
     reload->setShortcuts(QKeySequence::Refresh);
     stop->setShortcut(QKeySequence::Cancel);
-    //        tab = webview->pageAction(QWebEnginePage::OpenLinkInNewTab);
-    //        tab->setShortcut(Qt::CTRL + Qt::Key_T);
+    //    tab = currentWebView()->pageAction(QWebEnginePage::OpenLinkInNewTab);
+    //    tab->setShortcut(Qt::CTRL + Qt::Key_T);
     connect(stop, &QAction::triggered, this, &MainWindow::done);
     connect(home, &QAction::triggered, this, [this]() { displaySite(); });
 
@@ -227,15 +241,15 @@ void MainWindow::addToolbar()
     zoomout->setShortcut(QKeySequence::ZoomOut);
     zoompercent->setShortcut(Qt::CTRL + Qt::Key_0);
     connect(zoomout, &QAction::triggered, this, [this, step, zoompercent]() {
-        webview->setZoomFactor(webview->zoomFactor() - step);
-        zoompercent->setText(QString::number(webview->zoomFactor() * 100) + "%");
+        currentWebView()->setZoomFactor(currentWebView()->zoomFactor() - step);
+        zoompercent->setText(QString::number(currentWebView()->zoomFactor() * 100) + "%");
     });
     connect(zoomin, &QAction::triggered, this, [this, step, zoompercent]() {
-        webview->setZoomFactor(webview->zoomFactor() + step);
-        zoompercent->setText(QString::number(webview->zoomFactor() * 100) + "%");
+        currentWebView()->setZoomFactor(currentWebView()->zoomFactor() + step);
+        zoompercent->setText(QString::number(currentWebView()->zoomFactor() * 100) + "%");
     });
     connect(zoompercent, &QAction::triggered, this, [this, zoompercent]() {
-        webview->setZoomFactor(1);
+        currentWebView()->setZoomFactor(1);
         zoompercent->setText(QStringLiteral("100%"));
     });
     menuButton->setShortcut(Qt::Key_F10);
@@ -259,7 +273,7 @@ void MainWindow::displaySite(QString url, const QString &title)
         url = homeAddress;
     }
     disconnect(conn);
-    conn = connect(webview, &QWebEngineView::loadFinished, [url](bool ok) {
+    conn = connect(currentWebView(), &QWebEngineView::loadFinished, [url](bool ok) {
         if (!ok) {
             qDebug() << "Error :" << url;
         }
@@ -268,10 +282,11 @@ void MainWindow::displaySite(QString url, const QString &title)
         url = QFileInfo(url).absoluteFilePath();
     }
     QUrl qurl = QUrl::fromUserInput(url);
-    webview->setUrl(qurl);
-    webview->load(qurl);
-    webview->show();
+    currentWebView()->setUrl(qurl);
+    currentWebView()->load(qurl);
+    currentWebView()->show();
     showProgress ? loading() : progressBar->hide();
+    tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
     this->setWindowTitle(title);
 }
 
@@ -377,17 +392,17 @@ void MainWindow::saveMenuItems(const QMenu *menu, int offset)
 
 void MainWindow::setConnections()
 {
-    connect(webview, &QWebEngineView::loadStarted, toolBar, &QToolBar::show); // show toolbar when loading a new page
-    connect(webview, &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
-    connect(webview, &QWebEngineView::iconChanged, this,
-            [this]() { histIcons.insert(webview->url(), webview->icon()); });
+    connect(currentWebView(), &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
+    connect(currentWebView(), &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
+    connect(currentWebView(), &QWebEngineView::iconChanged, this,
+            [this]() { histIcons.insert(currentWebView()->url(), currentWebView()->icon()); });
     connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested, downloadWidget,
             &DownloadWidget::downloadRequested);
     if (showProgress) {
-        connect(webview, &QWebEngineView::loadStarted, this, &MainWindow::loading);
+        connect(currentWebView(), &QWebEngineView::loadStarted, this, &MainWindow::loading);
     }
-    connect(webview, &QWebEngineView::loadFinished, this, &MainWindow::done);
-    connect(webview->page(), &QWebEnginePage::linkHovered, this, [this](const QString &url) {
+    connect(currentWebView(), &QWebEngineView::loadFinished, this, &MainWindow::done);
+    connect(currentWebView()->page(), &QWebEnginePage::linkHovered, this, [this](const QString &url) {
         if (url.isEmpty()) {
             this->statusBar()->hide();
         } else {
@@ -395,6 +410,8 @@ void MainWindow::setConnections()
             this->statusBar()->showMessage(url);
         }
     });
+    connect(currentWebView(), &QWebEngineView::iconChanged, this,
+            [this] { tabWidget->setTabIcon(tabWidget->currentIndex(), currentWebView()->icon()); });
 }
 
 void MainWindow::showFullScreenNotification()
@@ -456,7 +473,8 @@ void MainWindow::buildMenu()
     history->setStyleSheet(QStringLiteral("QMenu { menu-scrollable: 1; }"));
     history->setObjectName("History");
     bookmarks->setStyleSheet(QStringLiteral("QMenu { menu-scrollable: 1; }"));
-    QAction *fullscreen {nullptr};
+    QAction *newTab {nullptr};
+    QAction *fullScreen {nullptr};
     QAction *about {nullptr};
     QAction *quit {nullptr};
     QAction *help {nullptr};
@@ -465,7 +483,10 @@ void MainWindow::buildMenu()
     QAction *historyAction {nullptr};
     menuButton->setMenu(menu);
 
-    menu->addAction(fullscreen = new QAction(QIcon::fromTheme(QStringLiteral("view-fullscreen")), tr("&Full screen")));
+    menu->addAction(newTab = new QAction(QIcon::fromTheme(QStringLiteral("tab-new")), tr("&New tab")));
+    newTab->setShortcut(Qt::CTRL + Qt::Key_T);
+    menu->addSeparator();
+    menu->addAction(fullScreen = new QAction(QIcon::fromTheme(QStringLiteral("view-fullscreen")), tr("&Full screen")));
     menu->addSeparator();
     menu->addAction(historyAction = new QAction(QIcon::fromTheme(QStringLiteral("history")), tr("H&istory")));
     historyAction->setMenu(history);
@@ -489,10 +510,17 @@ void MainWindow::buildMenu()
     addBookmarksSubmenu();
     addHistorySubmenu();
 
+    connect(newTab, &QAction::triggered, this, [this]() {
+        auto *webView = new QWebEngineView;
+        auto tab = tabWidget->addTab(webView, tr("New Tab"));
+        tabWidget->setCurrentIndex(tab);
+        setConnections();
+    });
+
     connect(addBookmark, &QAction::triggered, this, [this]() {
         QAction *bookmark {nullptr};
-        bookmarks->addAction(bookmark = new QAction(webview->icon(), webview->title()));
-        bookmark->setProperty("url", webview->url());
+        bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), currentWebView()->title()));
+        bookmark->setProperty("url", currentWebView()->url());
         connectAddress(bookmark, bookmarks);
     });
 
@@ -503,7 +531,7 @@ void MainWindow::buildMenu()
         listHistory();
     });
 
-    connect(fullscreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
+    connect(fullScreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
     QApplication::processEvents();
 
     connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
@@ -548,19 +576,19 @@ void MainWindow::toggleFullScreen()
 void MainWindow::updateUrl()
 {
     addressBar->show();
-    addressBar->setText(webview->url().toDisplayString());
+    addressBar->setText(currentWebView()->url().toDisplayString());
 }
 
 void MainWindow::findBackward()
 {
     searchBox->setFocus();
-    webview->findText(searchBox->text(), QWebEnginePage::FindBackward);
+    currentWebView()->findText(searchBox->text(), QWebEnginePage::FindBackward);
 }
 
 void MainWindow::findForward()
 {
     searchBox->setFocus();
-    webview->findText(searchBox->text());
+    currentWebView()->findText(searchBox->text());
 }
 
 // process keystrokes
@@ -578,9 +606,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     } else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
         searchBox->clear();
     } else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
-        webview->setFocus();
+        currentWebView()->setFocus();
     } else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
         addressBar->setFocus();
+    } else if (event->key() == Qt::Key_W && event->modifiers() == Qt::ControlModifier) {
+        tabWidget->removeTab(tabWidget->currentIndex());
     }
 }
 
@@ -596,6 +626,11 @@ void MainWindow::resizeEvent(QResizeEvent * /*event*/)
 void MainWindow::closeEvent(QCloseEvent * /*event*/)
 {
     downloadWidget->close();
+}
+
+QWebEngineView *MainWindow::currentWebView()
+{
+    return qobject_cast<QWebEngineView *>(tabWidget->currentWidget());
 }
 
 // display progressbar while loading page
@@ -616,11 +651,12 @@ void MainWindow::done()
 {
     timer->stop();
     timer->disconnect();
-    webview->stop();
-    webview->setFocus();
+    currentWebView()->stop();
+    currentWebView()->setFocus();
     searchBox->clear();
     progressBar->hide();
-    this->setWindowTitle(webview->title());
+    tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
+    this->setWindowTitle(currentWebView()->title());
 }
 
 // advance progressbar
