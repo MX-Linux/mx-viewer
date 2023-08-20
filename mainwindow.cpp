@@ -39,14 +39,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     auto *webview = new QWebEngineView(this);
     tabWidget->addTab(webview, tr("New Tab"));
     connect(tabWidget, &QTabWidget::tabCloseRequested, tabWidget, &QTabWidget::removeTab);
-    connect(tabWidget, &QTabWidget::currentChanged, this, [this]() {
-        addressBar->setText(currentWebView()->url().toString());
-        if (addressBar->text().isEmpty()) {
-            addressBar->setFocus();
-        }
-        this->setWindowTitle(currentWebView()->title());
-        tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
-    });
+    connect(tabWidget, &QTabWidget::currentChanged, this, [this]() { tabChanged(); });
     downloadWidget = new DownloadWidget;
     progressBar = new QProgressBar(this);
     searchBox = new QLineEdit(this);
@@ -153,6 +146,15 @@ void MainWindow::addHistorySubmenu()
     });
 }
 
+void MainWindow::addNewTab(const QString &url)
+{
+    auto *webView = new QWebEngineView;
+    auto tab = tabWidget->addTab(webView, tr("New Tab"));
+    tabWidget->setCurrentIndex(tab);
+    displaySite(url);
+    setConnections();
+}
+
 void MainWindow::listHistory()
 {
     history->clear();
@@ -181,23 +183,24 @@ void MainWindow::addToolbar()
     this->addToolBar(toolBar);
     this->setCentralWidget(tabWidget);
 
-    QAction *back {nullptr};
-    QAction *forward {nullptr};
-    QAction *reload {nullptr};
-    QAction *stop {nullptr};
+    auto *back = pageAction(QWebEnginePage::Back);
+    auto *forward = pageAction(QWebEnginePage::Forward);
+    auto *reload = pageAction(QWebEnginePage::Reload);
+    auto *stop = pageAction(QWebEnginePage::Stop);
     // QAction *tab {nullptr};
-    QAction *home {nullptr};
-    QAction *zoomin {nullptr};
-    QAction *zoompercent {nullptr};
-    QAction *zoomout {nullptr};
+    auto *home {new QAction(QIcon::fromTheme(QStringLiteral("go-home"), QIcon(QStringLiteral(":/icons/go-home.svg"))),
+                            tr("Home"))};
+    auto *zoomin {new QAction(QIcon::fromTheme(QStringLiteral("zoom-in"), QIcon(QStringLiteral(":/icons/zoom-in.svg"))),
+                              tr("Zoom In"))};
+    auto *zoompercent {new QAction(QStringLiteral("100%"))};
+    auto *zoomout {new QAction(
+        QIcon::fromTheme(QStringLiteral("zoom-out"), QIcon(QStringLiteral(":/icons/zoom-out.svg"))), tr("Zoom out"))};
 
-    toolBar->addAction(back = currentWebView()->pageAction(QWebEnginePage::Back));
-    toolBar->addAction(forward = currentWebView()->pageAction(QWebEnginePage::Forward));
-    toolBar->addAction(reload = currentWebView()->pageAction(QWebEnginePage::Reload));
-    toolBar->addAction(stop = currentWebView()->pageAction(QWebEnginePage::Stop));
-    toolBar->addAction(
-        home = new QAction(QIcon::fromTheme(QStringLiteral("go-home"), QIcon(QStringLiteral(":/icons/go-home.svg"))),
-                           tr("Home")));
+    toolBar->addAction(back);
+    toolBar->addAction(forward);
+    toolBar->addAction(reload);
+    toolBar->addAction(stop);
+    toolBar->addAction(home);
     back->setShortcut(QKeySequence::Back);
     forward->setShortcut(QKeySequence::Forward);
     home->setShortcut(Qt::CTRL + Qt::Key_H);
@@ -226,13 +229,9 @@ void MainWindow::addToolbar()
     connect(addressBar, &QLineEdit::returnPressed, this, [this]() { displaySite(addressBar->text()); });
     toolBar->addWidget(addressBar);
     toolBar->addWidget(searchBox);
-    toolBar->addAction(zoomout = new QAction(
-                           QIcon::fromTheme(QStringLiteral("zoom-out"), QIcon(QStringLiteral(":/icons/zoom-out.svg"))),
-                           tr("Zoom out")));
-    toolBar->addAction(zoompercent = new QAction(QStringLiteral("100%")));
-    toolBar->addAction(
-        zoomin = new QAction(QIcon::fromTheme(QStringLiteral("zoom-in"), QIcon(QStringLiteral(":/icons/zoom-in.svg"))),
-                             tr("Zoom In")));
+    toolBar->addAction(zoomout);
+    toolBar->addAction(zoompercent);
+    toolBar->addAction(zoomin);
     toolBar->addAction(menuButton = new QAction(QIcon::fromTheme(QStringLiteral("open-menu"),
                                                                  QIcon(QStringLiteral(":/icons/open-menu.png"))),
                                                 tr("Settings")));
@@ -240,6 +239,7 @@ void MainWindow::addToolbar()
     zoomin->setShortcuts({QKeySequence::ZoomIn, Qt::CTRL + Qt::Key_Equal});
     zoomout->setShortcut(QKeySequence::ZoomOut);
     zoompercent->setShortcut(Qt::CTRL + Qt::Key_0);
+
     connect(zoomout, &QAction::triggered, this, [this, step, zoompercent]() {
         currentWebView()->setZoomFactor(currentWebView()->zoomFactor() - step);
         zoompercent->setText(QString::number(currentWebView()->zoomFactor() * 100) + "%");
@@ -270,7 +270,11 @@ void MainWindow::openBrowseDialog()
 void MainWindow::displaySite(QString url, const QString &title)
 {
     if (url.isEmpty()) {
-        url = homeAddress;
+        if (tabWidget->currentIndex() == 0) {
+            url = homeAddress;
+        } else {
+            return;
+        }
     }
     disconnect(conn);
     conn = connect(currentWebView(), &QWebEngineView::loadFinished, [url](bool ok) {
@@ -412,6 +416,8 @@ void MainWindow::setConnections()
     });
     connect(currentWebView(), &QWebEngineView::iconChanged, this,
             [this] { tabWidget->setTabIcon(tabWidget->currentIndex(), currentWebView()->icon()); });
+    connect(currentWebView()->page()->action(QWebEnginePage::ViewSource), &QAction::triggered, this,
+            [this] { addNewTab("view-source:" + currentWebView()->page()->url().toString()); });
 }
 
 void MainWindow::showFullScreenNotification()
@@ -443,6 +449,32 @@ void MainWindow::showFullScreenNotification()
         a->start(QPropertyAnimation::DeleteWhenStopped);
         connect(a, &QPropertyAnimation::finished, label, &QLabel::deleteLater);
     });
+}
+
+void MainWindow::tabChanged()
+{
+    auto *back = pageAction(QWebEnginePage::Back);
+    auto *forward = pageAction(QWebEnginePage::Forward);
+    auto *reload = pageAction(QWebEnginePage::Reload);
+    auto *stop = pageAction(QWebEnginePage::Stop);
+    QMap<QString, QAction *> actionMap = {{"Back", back}, {"Forward", forward}, {"Reload", reload}, {"Stop", stop}};
+    auto action_list = toolBar->actions();
+    for (int i = 0; i < action_list.size() - 1; ++i) {
+        auto *currentAction = action_list.at(i);
+        auto *nextAction = action_list.at(i + 1);
+        auto it = actionMap.find(currentAction->text());
+        if (it != actionMap.end()) {
+            QAction *replacementAction = it.value();
+            toolBar->removeAction(currentAction);
+            toolBar->insertAction(nextAction, replacementAction);
+        }
+    }
+    addressBar->setText(currentWebView()->url().toString());
+    if (addressBar->text().isEmpty()) {
+        addressBar->setFocus();
+    }
+    this->setWindowTitle(currentWebView()->title());
+    tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
 }
 
 // Show the address in the toolbar and also connect it to launch it
@@ -510,12 +542,7 @@ void MainWindow::buildMenu()
     addBookmarksSubmenu();
     addHistorySubmenu();
 
-    connect(newTab, &QAction::triggered, this, [this]() {
-        auto *webView = new QWebEngineView;
-        auto tab = tabWidget->addTab(webView, tr("New Tab"));
-        tabWidget->setCurrentIndex(tab);
-        setConnections();
-    });
+    connect(newTab, &QAction::triggered, this, [this] { addNewTab(); });
 
     connect(addBookmark, &QAction::triggered, this, [this]() {
         QAction *bookmark {nullptr};
@@ -626,6 +653,11 @@ void MainWindow::resizeEvent(QResizeEvent * /*event*/)
 void MainWindow::closeEvent(QCloseEvent * /*event*/)
 {
     downloadWidget->close();
+}
+
+QAction *MainWindow::pageAction(QWebEnginePage::WebAction webAction)
+{
+    return currentWebView()->pageAction(webAction);
 }
 
 QWebEngineView *MainWindow::currentWebView()

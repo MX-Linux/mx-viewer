@@ -72,10 +72,12 @@ private:
     const int progBarWidth {20};
     const int searchWidth {150};
 
+    QAction *pageAction(QWebEnginePage::WebAction webAction);
     QWebEngineView *currentWebView();
     void addActions();
     void addBookmarksSubmenu();
     void addHistorySubmenu();
+    void addNewTab(const QString &url = {});
     void addToolbar();
     void buildMenu();
     void centerWindow();
@@ -89,6 +91,7 @@ private:
     void saveMenuItems(const QMenu *menu, int offset);
     void setConnections();
     void showFullScreenNotification();
+    void tabChanged();
     void toggleFullScreen();
     void updateUrl();
 };
