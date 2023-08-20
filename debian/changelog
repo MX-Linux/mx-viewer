@@ -1,3 +1,10 @@
+mx-viewer (23.8) mx; urgency=medium
+
+  * Implemented tab interface
+  * Enabled show source
+
+ -- Adrian <adrian@mxlinux.org>  Sat, 19 Aug 2023 23:13:22 -0400
+
 mx-viewer (23.7.02) mx; urgency=medium
 
   * Open files without specifying the full path

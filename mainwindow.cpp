@@ -36,6 +36,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     tabWidget = new QTabWidget(this);
     tabWidget->setTabBarAutoHide(true);
     tabWidget->setTabsClosable(true);
+    tabWidget->setMovable(true);
     auto *webview = new QWebEngineView(this);
     tabWidget->addTab(webview, tr("New Tab"));
     connect(tabWidget, &QTabWidget::tabCloseRequested, tabWidget, &QTabWidget::removeTab);
