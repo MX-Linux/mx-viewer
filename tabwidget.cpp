@@ -34,10 +34,7 @@ TabWidget::TabWidget(QWidget *parent)
     this->setTabBarAutoHide(true);
     this->setTabsClosable(true);
     this->setMovable(true);
-    this->addTab(webView, tr("New Tab"));
-    connect(this, &QTabWidget::tabCloseRequested, this, &TabWidget::removeTab);
-    connect(webView, &QWebEngineView::iconChanged, this, [this] { this->setTabIcon(0, webView->icon()); });
-    connect(webView, &QWebEngineView::titleChanged, this, [this] { this->setTabText(0, webView->title()); });
+    this->addNewTab();
     connect(this, &QTabWidget::currentChanged, this, &TabWidget::handleCurrentChanged);
 }
 
