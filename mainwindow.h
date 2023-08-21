@@ -25,6 +25,8 @@
 
 #include "addressbar.h"
 #include "downloadwidget.h"
+#include "tabwidget.h"
+#include "webview.h"
 
 class MainWindow : public QMainWindow
 {
@@ -42,12 +44,13 @@ public slots:
     void procTime();
 
 protected:
+    void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-    void closeEvent(QCloseEvent *event) override;
 
 private:
     AddressBar *addressBar {};
+    DownloadWidget *downloadWidget {};
     QAction *addBookmark {};
     QAction *manageBookmarks {};
     QAction *menuButton {};
@@ -59,11 +62,10 @@ private:
     QProgressBar *progressBar {};
     QSettings settings;
     QString homeAddress;
-    QTabWidget *tabWidget {};
-    QToolBar *toolBar {};
     QTimer *timer {nullptr};
+    QToolBar *toolBar {};
     QWebEngineSettings *websettings {};
-    DownloadWidget *downloadWidget {};
+    TabWidget *tabWidget {};
     bool showProgress {};
     const QCommandLineParser &args;
     const int defaultHeight {600};
@@ -73,7 +75,7 @@ private:
     const int searchWidth {150};
 
     QAction *pageAction(QWebEnginePage::WebAction webAction);
-    QWebEngineView *currentWebView();
+    WebView *currentWebView();
     void addActions();
     void addBookmarksSubmenu();
     void addHistorySubmenu();

@@ -28,24 +28,17 @@ using namespace std::chrono_literals;
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     : QMainWindow(parent),
+      downloadWidget {new DownloadWidget},
+      searchBox {new QLineEdit(this)},
+      progressBar {new QProgressBar(this)},
+      timer {new QTimer(this)},
+      toolBar {new QToolBar(this)},
+      tabWidget {new TabWidget(this)},
       args {arg_parser}
 {
-    timer = new QTimer(this);
-    toolBar = new QToolBar(this);
     toolBar->toggleViewAction()->setVisible(false);
-    tabWidget = new QTabWidget(this);
-    tabWidget->setTabBarAutoHide(true);
-    tabWidget->setTabsClosable(true);
-    tabWidget->setMovable(true);
-    auto *webview = new QWebEngineView(this);
-    tabWidget->addTab(webview, tr("New Tab"));
-    connect(tabWidget, &QTabWidget::tabCloseRequested, tabWidget, &QTabWidget::removeTab);
-    connect(tabWidget, &QTabWidget::currentChanged, this, [this]() { tabChanged(); });
-    downloadWidget = new DownloadWidget;
-    progressBar = new QProgressBar(this);
-    searchBox = new QLineEdit(this);
-    websettings = webview->settings();
-
+    connect(tabWidget, &TabWidget::currentChanged, this, [this]() { tabChanged(); });
+    websettings = currentWebView()->settings();
     loadSettings();
     addToolbar();
     addActions();
@@ -149,7 +142,7 @@ void MainWindow::addHistorySubmenu()
 
 void MainWindow::addNewTab(const QString &url)
 {
-    auto *webView = new QWebEngineView;
+    auto *webView = new WebView;
     auto tab = tabWidget->addTab(webView, tr("New Tab"));
     tabWidget->setCurrentIndex(tab);
     displaySite(url);
@@ -661,9 +654,9 @@ QAction *MainWindow::pageAction(QWebEnginePage::WebAction webAction)
     return currentWebView()->pageAction(webAction);
 }
 
-QWebEngineView *MainWindow::currentWebView()
+WebView *MainWindow::currentWebView()
 {
-    return qobject_cast<QWebEngineView *>(tabWidget->currentWidget());
+    return tabWidget->currentWebView();
 }
 
 // display progressbar while loading page
