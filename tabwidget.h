@@ -33,11 +33,13 @@ public:
     explicit TabWidget(QWidget *parent = nullptr);
     WebView *currentWebView();
     void removeTab(int index);
+    void addNewTab();
 
 protected:
+    void keyPressEvent(QKeyEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
 
 private:
-    WebView *webview {};
+    WebView *webView {};
 };
 #endif // TABWIDGET_H

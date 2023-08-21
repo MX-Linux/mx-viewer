@@ -142,9 +142,7 @@ void MainWindow::addHistorySubmenu()
 
 void MainWindow::addNewTab(const QString &url)
 {
-    auto *webView = new WebView;
-    auto tab = tabWidget->addTab(webView, tr("New Tab"));
-    tabWidget->setCurrentIndex(tab);
+    tabWidget->addNewTab();
     displaySite(url);
     setConnections();
 }
@@ -284,7 +282,6 @@ void MainWindow::displaySite(QString url, const QString &title)
     currentWebView()->load(qurl);
     currentWebView()->show();
     showProgress ? loading() : progressBar->hide();
-    tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
     this->setWindowTitle(title);
 }
 
@@ -408,8 +405,6 @@ void MainWindow::setConnections()
             this->statusBar()->showMessage(url);
         }
     });
-    connect(currentWebView(), &QWebEngineView::iconChanged, this,
-            [this] { tabWidget->setTabIcon(tabWidget->currentIndex(), currentWebView()->icon()); });
     connect(currentWebView()->page()->action(QWebEnginePage::ViewSource), &QAction::triggered, this,
             [this] { addNewTab("view-source:" + currentWebView()->page()->url().toString()); });
 }
