@@ -78,9 +78,9 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadItem* download)
     });
 
     connect(download, &QWebEngineDownloadItem::downloadProgress, this,
-            [download, pushButton, progressBar]() { updateDownload(download, pushButton, progressBar); });
+            [download, pushButton, progressBar] { updateDownload(download, pushButton, progressBar); });
     connect(download, &QWebEngineDownloadItem::stateChanged, this,
-            [download, pushButton, progressBar]() { updateDownload(download, pushButton, progressBar); });
+            [download, pushButton, progressBar] { updateDownload(download, pushButton, progressBar); });
 }
 
 inline QString DownloadWidget::withUnit(qreal bytes)

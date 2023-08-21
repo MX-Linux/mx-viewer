@@ -463,7 +463,6 @@ void MainWindow::tabChanged()
         addressBar->setFocus();
     }
     this->setWindowTitle(currentWebView()->title());
-    tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
 }
 
 // Show the address in the toolbar and also connect it to launch it

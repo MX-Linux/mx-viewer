@@ -32,8 +32,8 @@ class TabWidget : public QTabWidget
 public:
     explicit TabWidget(QWidget *parent = nullptr);
     WebView *currentWebView();
-    void removeTab(int index);
     void addNewTab();
+    void removeTab(int index);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -41,5 +41,6 @@ protected:
 
 private:
     WebView *webView {};
+    void handleCurrentChanged(int index);
 };
 #endif // TABWIDGET_H

@@ -37,6 +37,7 @@ TabWidget::TabWidget(QWidget *parent)
     connect(this, &QTabWidget::tabCloseRequested, this, &TabWidget::removeTab);
     connect(webView, &QWebEngineView::iconChanged, this, [this] { this->setTabIcon(0, webView->icon()); });
     connect(webView, &QWebEngineView::titleChanged, this, [this] { this->setTabText(0, webView->title()); });
+    connect(this, &QTabWidget::currentChanged, this, &TabWidget::handleCurrentChanged);
 }
 
 void TabWidget::mousePressEvent(QMouseEvent *event)
@@ -48,6 +49,11 @@ void TabWidget::mousePressEvent(QMouseEvent *event)
         }
     }
     QTabWidget::mousePressEvent(event);
+}
+
+void TabWidget::handleCurrentChanged(int index)
+{
+    this->setTabText(index, currentWebView()->title());
 }
 
 void TabWidget::removeTab(int index)
