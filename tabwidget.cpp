@@ -28,13 +28,13 @@
 #include <QTabBar>
 
 TabWidget::TabWidget(QWidget *parent)
-    : QTabWidget(parent),
-      webView {new WebView(this)}
+    : QTabWidget(parent)
 {
     this->setTabBarAutoHide(true);
     this->setTabsClosable(true);
     this->setMovable(true);
     this->addNewTab();
+    connect(this, &QTabWidget::tabCloseRequested, this, &TabWidget::removeTab);
     connect(this, &QTabWidget::currentChanged, this, &TabWidget::handleCurrentChanged);
 }
 

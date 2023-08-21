@@ -40,7 +40,6 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
 
 private:
-    WebView *webView {};
     void handleCurrentChanged(int index);
 };
 #endif // TABWIDGET_H
