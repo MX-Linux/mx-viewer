@@ -32,6 +32,7 @@ class TabWidget : public QTabWidget
 public:
     explicit TabWidget(QWidget *parent = nullptr);
     WebView *currentWebView();
+
     void addNewTab();
     void removeTab(int index);
 

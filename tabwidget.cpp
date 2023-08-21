@@ -56,7 +56,9 @@ void TabWidget::handleCurrentChanged(int index)
 
 void TabWidget::removeTab(int index)
 {
-    widget(index)->deleteLater();
+    auto *w = widget(index);
+    QTabWidget::removeTab(index);
+    w->deleteLater();
 }
 
 void TabWidget::addNewTab()

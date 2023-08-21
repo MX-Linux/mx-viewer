@@ -37,7 +37,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
       args {arg_parser}
 {
     toolBar->toggleViewAction()->setVisible(false);
-    connect(tabWidget, &TabWidget::currentChanged, this, [this]() { tabChanged(); });
+    connect(tabWidget, &TabWidget::currentChanged, this, [this] { tabChanged(); });
     websettings = currentWebView()->settings();
     loadSettings();
     addToolbar();
@@ -83,7 +83,7 @@ void MainWindow::addBookmarksSubmenu()
         QPoint globalPos = bookmarks->mapToGlobal(pos);
         QMenu submenu;
         if (bookmarks->actionAt(pos) != bookmarks->actions().at(1)) {
-            submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-up")), tr("Move up"), bookmarks, [this, pos]() {
+            submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-up")), tr("Move up"), bookmarks, [this, pos] {
                 for (int i = 2; i < bookmarks->actions().count();
                      ++i) { // starting from third action (ignoring "Add bookmark" and first bookmark we cannot move up)
                     if (bookmarks->actions().at(i) == bookmarks->actionAt(pos)) {
@@ -93,17 +93,16 @@ void MainWindow::addBookmarksSubmenu()
             });
         }
         if (bookmarks->actionAt(pos) != bookmarks->actions().at(bookmarks->actions().count() - 1)) {
-            submenu.addAction(
-                QIcon::fromTheme(QStringLiteral("arrow-down")), tr("Move down"), bookmarks, [this, pos]() {
-                    for (int i = 1; i < bookmarks->actions().count();
-                         ++i) { // starting from second action (ignoring "Add bookmark")
-                        if (bookmarks->actions().at(i) == bookmarks->actionAt(pos)) {
-                            bookmarks->insertAction(bookmarks->actions().at(i + 2), bookmarks->actions().at(i));
-                        }
+            submenu.addAction(QIcon::fromTheme(QStringLiteral("arrow-down")), tr("Move down"), bookmarks, [this, pos] {
+                for (int i = 1; i < bookmarks->actions().count();
+                     ++i) { // starting from second action (ignoring "Add bookmark")
+                    if (bookmarks->actions().at(i) == bookmarks->actionAt(pos)) {
+                        bookmarks->insertAction(bookmarks->actions().at(i + 2), bookmarks->actions().at(i));
                     }
-                });
+                }
+            });
         }
-        submenu.addAction(QIcon::fromTheme(QStringLiteral("edit-symbolic")), tr("Rename"), bookmarks, [this, pos]() {
+        submenu.addAction(QIcon::fromTheme(QStringLiteral("edit-symbolic")), tr("Rename"), bookmarks, [this, pos] {
             auto *edit = new QInputDialog(this);
             edit->setInputMode(QInputDialog::TextInput);
             edit->setOkButtonText(tr("Save"));
@@ -115,7 +114,7 @@ void MainWindow::addBookmarksSubmenu()
             }
         });
         submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), bookmarks,
-                          [this, pos]() { bookmarks->removeAction(bookmarks->actionAt(pos)); });
+                          [this, pos] { bookmarks->removeAction(bookmarks->actionAt(pos)); });
         submenu.exec(globalPos);
     });
 }
@@ -129,7 +128,7 @@ void MainWindow::addHistorySubmenu()
         }
         QPoint globalPos = history->mapToGlobal(pos);
         QMenu submenu;
-        submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), history, [this, pos]() {
+        submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), history, [this, pos] {
             history->removeAction(history->actionAt(pos));
             saveMenuItems(history, 3); // skip "clear history", separator, and first item added at menu refresh
             currentWebView()
@@ -151,7 +150,7 @@ void MainWindow::listHistory()
 {
     history->clear();
     auto *deleteHistory = new QAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("&Clear history"));
-    connect(deleteHistory, &QAction::triggered, this, [this]() {
+    connect(deleteHistory, &QAction::triggered, this, [this] {
         history->clear();
         currentWebView()->history()->clear();
         saveMenuItems(history, 2);
@@ -201,7 +200,7 @@ void MainWindow::addToolbar()
     //    tab = currentWebView()->pageAction(QWebEnginePage::OpenLinkInNewTab);
     //    tab->setShortcut(Qt::CTRL + Qt::Key_T);
     connect(stop, &QAction::triggered, this, &MainWindow::done);
-    connect(home, &QAction::triggered, this, [this]() { displaySite(); });
+    connect(home, &QAction::triggered, this, [this] { displaySite(); });
 
     searchBox->setPlaceholderText(tr("search in page"));
     searchBox->setClearButtonEnabled(true);
@@ -218,7 +217,7 @@ void MainWindow::addToolbar()
         QIcon::fromTheme(QStringLiteral("emblem-favorite"), QIcon(QStringLiteral(":/icons/emblem-favorite.png"))),
         QLineEdit::TrailingPosition);
     addBookmark->setToolTip(tr("Add bookmark"));
-    connect(addressBar, &QLineEdit::returnPressed, this, [this]() { displaySite(addressBar->text()); });
+    connect(addressBar, &QLineEdit::returnPressed, this, [this] { displaySite(addressBar->text()); });
     toolBar->addWidget(addressBar);
     toolBar->addWidget(searchBox);
     toolBar->addAction(zoomout);
@@ -232,15 +231,15 @@ void MainWindow::addToolbar()
     zoomout->setShortcut(QKeySequence::ZoomOut);
     zoompercent->setShortcut(Qt::CTRL + Qt::Key_0);
 
-    connect(zoomout, &QAction::triggered, this, [this, step, zoompercent]() {
+    connect(zoomout, &QAction::triggered, this, [this, step, zoompercent] {
         currentWebView()->setZoomFactor(currentWebView()->zoomFactor() - step);
         zoompercent->setText(QString::number(currentWebView()->zoomFactor() * 100) + "%");
     });
-    connect(zoomin, &QAction::triggered, this, [this, step, zoompercent]() {
+    connect(zoomin, &QAction::triggered, this, [this, step, zoompercent] {
         currentWebView()->setZoomFactor(currentWebView()->zoomFactor() + step);
         zoompercent->setText(QString::number(currentWebView()->zoomFactor() * 100) + "%");
     });
-    connect(zoompercent, &QAction::triggered, this, [this, zoompercent]() {
+    connect(zoompercent, &QAction::triggered, this, [this, zoompercent] {
         currentWebView()->setZoomFactor(1);
         zoompercent->setText(QStringLiteral("100%"));
     });
@@ -390,7 +389,7 @@ void MainWindow::setConnections()
     connect(currentWebView(), &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
     connect(currentWebView(), &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
     connect(currentWebView(), &QWebEngineView::iconChanged, this,
-            [this]() { histIcons.insert(currentWebView()->url(), currentWebView()->icon()); });
+            [this] { histIcons.insert(currentWebView()->url(), currentWebView()->icon()); });
     connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested, downloadWidget,
             &DownloadWidget::downloadRequested);
     if (showProgress) {
@@ -429,7 +428,7 @@ void MainWindow::showFullScreenNotification()
     a->setEasingCurve(QEasingCurve::InBack);
     a->start(QPropertyAnimation::DeleteWhenStopped);
     label->show();
-    QTimer::singleShot(4s, this, [label, effect, end, start]() {
+    QTimer::singleShot(4s, this, [label, effect, end, start] {
         auto *a = new QPropertyAnimation(effect, "opacity");
         a->setDuration(duration_ms);
         a->setStartValue(end);
@@ -468,7 +467,7 @@ void MainWindow::tabChanged()
 // Show the address in the toolbar and also connect it to launch it
 void MainWindow::connectAddress(const QAction *action, const QMenu *menu)
 {
-    connect(action, &QAction::hovered, this, [this, action]() {
+    connect(action, &QAction::hovered, this, [this, action] {
         QString url = action->property("url").toString();
         if (url.isEmpty()) {
             statusBar()->hide();
@@ -477,7 +476,7 @@ void MainWindow::connectAddress(const QAction *action, const QMenu *menu)
             statusBar()->showMessage(url);
         }
     });
-    connect(action, &QAction::triggered, this, [this, action]() {
+    connect(action, &QAction::triggered, this, [this, action] {
         QString url = action->property("url").toString();
         displaySite(url);
     });
@@ -532,14 +531,14 @@ void MainWindow::buildMenu()
 
     connect(newTab, &QAction::triggered, this, [this] { addNewTab(); });
 
-    connect(addBookmark, &QAction::triggered, this, [this]() {
+    connect(addBookmark, &QAction::triggered, this, [this] {
         QAction *bookmark {nullptr};
         bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), currentWebView()->title()));
         bookmark->setProperty("url", currentWebView()->url());
         connectAddress(bookmark, bookmarks);
     });
 
-    connect(menuButton, &QAction::triggered, this, [this, menu]() {
+    connect(menuButton, &QAction::triggered, this, [this, menu] {
         QPoint pos = mapToParent(toolBar->widgetForAction(menuButton)->pos());
         pos.setY(pos.y() + toolBar->widgetForAction(menuButton)->size().height());
         menu->popup(pos);
@@ -552,7 +551,7 @@ void MainWindow::buildMenu()
     connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
     connect(help, &QAction::triggered, this, &MainWindow::openQuickInfo);
     connect(quit, &QAction::triggered, this, &MainWindow::close);
-    connect(about, &QAction::triggered, this, [this]() {
+    connect(about, &QAction::triggered, this, [this] {
         QMessageBox::about(this, tr("About MX Viewer"),
                            tr("This is a VERY basic browser based on Qt WebEngine.\n\n"
 

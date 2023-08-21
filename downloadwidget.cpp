@@ -57,14 +57,14 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadItem* download)
     ui->gridLayout->addWidget(pushButton, row, 3);
     ui->gridLayout->addItem(ui->verticalSpacer, row + 1, 1);
 
-    if (!this->isVisible()) {
-        this->restoreGeometry(settings.value(QStringLiteral("DownloadGeometry")).toByteArray());
-        this->show();
+    if (!isVisible()) {
+        restoreGeometry(settings.value(QStringLiteral("DownloadGeometry")).toByteArray());
+        show();
     }
-    this->raise();
+    raise();
     download->accept();
 
-    connect(pushButton, &QPushButton::pressed, this, [this, download, pushButton, downloadLabel, progressBar]() {
+    connect(pushButton, &QPushButton::pressed, this, [this, download, pushButton, downloadLabel, progressBar] {
         if (download->state() == QWebEngineDownloadItem::DownloadInProgress) {
             download->cancel();
         } else {
