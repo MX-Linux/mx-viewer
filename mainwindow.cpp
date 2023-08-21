@@ -45,7 +45,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     setConnections();
 
     if (arg_parser.isSet(QStringLiteral("full-screen"))) {
-        this->showFullScreen();
+        showFullScreen();
         toolBar->hide();
     }
     QString url;
@@ -69,7 +69,7 @@ void MainWindow::addActions()
 {
     auto *full = new QAction(tr("Full screen"));
     full->setShortcut(Qt::Key_F11);
-    this->addAction(full);
+    addAction(full);
     connect(full, &QAction::triggered, this, &MainWindow::toggleFullScreen);
 }
 
@@ -172,8 +172,8 @@ void MainWindow::listHistory()
 
 void MainWindow::addToolbar()
 {
-    this->addToolBar(toolBar);
-    this->setCentralWidget(tabWidget);
+    addToolBar(toolBar);
+    setCentralWidget(tabWidget);
 
     auto *back = pageAction(QWebEnginePage::Back);
     auto *forward = pageAction(QWebEnginePage::Forward);
@@ -282,7 +282,7 @@ void MainWindow::displaySite(QString url, const QString &title)
     currentWebView()->load(qurl);
     currentWebView()->show();
     showProgress ? loading() : progressBar->hide();
-    this->setWindowTitle(title);
+    setWindowTitle(title);
 }
 
 void MainWindow::loadBookmarks()
@@ -341,11 +341,11 @@ void MainWindow::loadSettings()
     }
 
     QSize size {defaultWidth, defaultHeight};
-    this->resize(size);
+    resize(size);
     if (settings.contains(QStringLiteral("Geometry")) && !args.isSet(QStringLiteral("full-screen"))) {
         restoreGeometry(settings.value(QStringLiteral("Geometry")).toByteArray());
-        if (this->isMaximized()) { // add option to resize if maximized
-            this->resize(size);
+        if (isMaximized()) { // add option to resize if maximized
+            resize(size);
             centerWindow();
         }
     } else {
@@ -357,9 +357,9 @@ void MainWindow::loadSettings()
 void MainWindow::centerWindow()
 {
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
-    int x = (screenGeometry.width() - this->width()) / 2;
-    int y = (screenGeometry.height() - this->height()) / 2;
-    this->move(x, y);
+    int x = (screenGeometry.width() - width()) / 2;
+    int y = (screenGeometry.height() - height()) / 2;
+    move(x, y);
 }
 
 void MainWindow::openQuickInfo()
@@ -399,10 +399,10 @@ void MainWindow::setConnections()
     connect(currentWebView(), &QWebEngineView::loadFinished, this, &MainWindow::done);
     connect(currentWebView()->page(), &QWebEnginePage::linkHovered, this, [this](const QString &url) {
         if (url.isEmpty()) {
-            this->statusBar()->hide();
+            statusBar()->hide();
         } else {
-            this->statusBar()->show();
-            this->statusBar()->showMessage(url);
+            statusBar()->show();
+            statusBar()->showMessage(url);
         }
     });
     connect(currentWebView()->page()->action(QWebEnginePage::ViewSource), &QAction::triggered, this,
@@ -462,7 +462,7 @@ void MainWindow::tabChanged()
     if (addressBar->text().isEmpty()) {
         addressBar->setFocus();
     }
-    this->setWindowTitle(currentWebView()->title());
+    setWindowTitle(currentWebView()->title());
 }
 
 // Show the address in the toolbar and also connect it to launch it
@@ -471,17 +471,17 @@ void MainWindow::connectAddress(const QAction *action, const QMenu *menu)
     connect(action, &QAction::hovered, this, [this, action]() {
         QString url = action->property("url").toString();
         if (url.isEmpty()) {
-            this->statusBar()->hide();
+            statusBar()->hide();
         } else {
-            this->statusBar()->show();
-            this->statusBar()->showMessage(url);
+            statusBar()->show();
+            statusBar()->showMessage(url);
         }
     });
     connect(action, &QAction::triggered, this, [this, action]() {
         QString url = action->property("url").toString();
         displaySite(url);
     });
-    connect(menu, &QMenu::aboutToHide, this->statusBar(), &QStatusBar::hide);
+    connect(menu, &QMenu::aboutToHide, statusBar(), &QStatusBar::hide);
 }
 
 void MainWindow::buildMenu()
@@ -578,11 +578,11 @@ void MainWindow::buildMenu()
 
 void MainWindow::toggleFullScreen()
 {
-    if (this->isFullScreen()) {
-        this->showNormal();
+    if (isFullScreen()) {
+        showNormal();
         toolBar->show();
     } else {
-        this->showFullScreen();
+        showFullScreen();
         toolBar->hide();
         showFullScreenNotification();
     }
@@ -631,8 +631,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 void MainWindow::resizeEvent(QResizeEvent * /*event*/)
 {
     if (showProgress) {
-        progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2,
-                          this->geometry().height() - progBarVerticalAdj);
+        progressBar->move(geometry().width() / 2 - progressBar->width() / 2, geometry().height() - progBarVerticalAdj);
     }
 }
 
@@ -656,8 +655,7 @@ void MainWindow::loading()
 {
     progressBar->setFixedHeight(progBarWidth);
     progressBar->setTextVisible(false);
-    progressBar->move(this->geometry().width() / 2 - progressBar->width() / 2,
-                      this->geometry().height() - progBarVerticalAdj);
+    progressBar->move(geometry().width() / 2 - progressBar->width() / 2, geometry().height() - progBarVerticalAdj);
     progressBar->setFocus();
     progressBar->show();
     timer->start(100ms);
@@ -674,7 +672,7 @@ void MainWindow::done()
     searchBox->clear();
     progressBar->hide();
     tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
-    this->setWindowTitle(currentWebView()->title());
+    setWindowTitle(currentWebView()->title());
 }
 
 // advance progressbar
