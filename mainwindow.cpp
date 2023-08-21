@@ -624,8 +624,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         currentWebView()->setFocus();
     } else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
         addressBar->setFocus();
-    } else if (event->key() == Qt::Key_W && event->modifiers() == Qt::ControlModifier) {
-        tabWidget->removeTab(tabWidget->currentIndex());
     }
 }
 

@@ -21,6 +21,7 @@
  **********************************************************************/
 #include "tabwidget.h"
 
+#include <QApplication>
 #include <QDebug>
 #include <QMouseEvent>
 #include <QPointer>
@@ -67,11 +68,16 @@ void TabWidget::addNewTab()
     QPointer<WebView> webView = new WebView;
     auto tab = this->addTab(webView, tr("New Tab"));
     this->setCurrentIndex(tab);
-    connect(webView, &QWebEngineView::titleChanged, this,
-            [this, webView] { this->setTabText(this->currentIndex(), webView->title()); });
-
-    connect(webView, &QWebEngineView::iconChanged, this,
-            [this, webView] { this->setTabIcon(this->currentIndex(), webView->icon()); });
+    connect(webView, &QWebEngineView::titleChanged, this, [this, webView] {
+        if (webView) {
+            this->setTabText(this->indexOf(webView), webView->title());
+        }
+    });
+    connect(webView, &QWebEngineView::iconChanged, this, [this, webView] {
+        if (webView) {
+            this->setTabIcon(this->indexOf(webView), webView->icon());
+        }
+    });
 }
 
 void TabWidget::keyPressEvent(QKeyEvent *event)
@@ -101,6 +107,12 @@ void TabWidget::keyPressEvent(QKeyEvent *event)
             this->setCurrentIndex(currentIndex() + 1);
         } else {
             this->setCurrentIndex(0);
+        }
+    } else if (event->key() == Qt::Key_W && event->modifiers() == Qt::ControlModifier) {
+        if (this->count() == 1) {
+            QApplication::quit();
+        } else {
+            this->removeTab(this->currentIndex());
         }
     }
 }
