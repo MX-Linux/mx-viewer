@@ -1,0 +1,27 @@
+Format: 1.8
+Date: Sat, 19 Aug 2023 23:13:22 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: i386
+Version: 23.8
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (23.8) mx; urgency=medium
+ .
+   * Implemented tab interface
+   * Open link (right-click menu, or with target _blank) in new tab, or new window
+   * Enabled show source
+Checksums-Sha1:
+ 381889cb700708b1c825d5f7d46e0a48046cbf3f 12455 mx-viewer_23.8_i386.buildinfo
+ d769a8dc84f824e3d8cb84365e8889dbd64f6ec8 58004 mx-viewer_23.8_i386.deb
+Checksums-Sha256:
+ d7aa32541e2f87302b9156c1e1b62ceb831d4b6f85dccf70bb890895ea5c3306 12455 mx-viewer_23.8_i386.buildinfo
+ 7be4c757d088a797be286a88699887a8410d67ad4bd901cc6af6fc0d2738ae57 58004 mx-viewer_23.8_i386.deb
+Files:
+ d0d7ae215c2e8a97fc28ead586a0d52e 12455 system optional mx-viewer_23.8_i386.buildinfo
+ 598a35522642d7d353d12e9269e40cce 58004 system optional mx-viewer_23.8_i386.deb
