@@ -131,9 +131,6 @@ void MainWindow::addHistorySubmenu()
         submenu.addAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("Delete"), history, [this, pos] {
             history->removeAction(history->actionAt(pos));
             saveMenuItems(history, 3); // skip "clear history", separator, and first item added at menu refresh
-            currentWebView()
-                ->history()
-                ->clear(); // next menu refresh will load from saved file not from webview->history()
         });
         submenu.exec(globalPos);
     });
@@ -152,20 +149,10 @@ void MainWindow::listHistory()
     auto *deleteHistory = new QAction(QIcon::fromTheme(QStringLiteral("user-trash")), tr("&Clear history"));
     connect(deleteHistory, &QAction::triggered, this, [this] {
         history->clear();
-        currentWebView()->history()->clear();
         saveMenuItems(history, 2);
     });
     history->addAction(deleteHistory);
     history->addSeparator();
-    auto *hist = currentWebView()->history();
-
-    for (int i = hist->items().count() - 1; i >= 0; --i) {
-        auto item = hist->itemAt(i);
-        QAction *histItem {nullptr};
-        history->addAction(histItem = new QAction(histIcons.value(item.url()), item.title()));
-        histItem->setProperty("url", item.url());
-        connectAddress(histItem, history);
-    }
     loadHistory();
 }
 
@@ -304,8 +291,12 @@ void MainWindow::loadHistory()
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
         QAction *histItem {nullptr};
-        history->addAction(histItem = new QAction(settings.value(QStringLiteral("icon")).value<QIcon>(),
-                                                  settings.value(QStringLiteral("title")).toString()));
+        QByteArray iconByteArray = settings.value(QStringLiteral("icon")).toByteArray();
+        QPixmap restoredIconPixmap;
+        restoredIconPixmap.loadFromData(iconByteArray);
+        QIcon restoredIcon;
+        restoredIcon.addPixmap(restoredIconPixmap);
+        history->addAction(histItem = new QAction(restoredIcon, settings.value(QStringLiteral("title")).toString()));
         histItem->setProperty("url", settings.value(QStringLiteral("url")));
         connectAddress(histItem, history);
     }
@@ -379,7 +370,17 @@ void MainWindow::saveMenuItems(const QMenu *menu, int offset)
         settings.setArrayIndex(i - offset);
         settings.setValue(QStringLiteral("title"), menu->actions().at(i)->text());
         settings.setValue(QStringLiteral("url"), menu->actions().at(i)->property("url").toString());
-        settings.setValue(QStringLiteral("icon"), menu->actions().at(i)->icon());
+
+        if (menu->objectName() == "Bookmarks") {
+            settings.setValue(QStringLiteral("icon"), menu->actions().at(i)->icon());
+        } else {
+            QPixmap iconPixmap = menu->actions().at(i)->icon().pixmap(QSize(16, 16));
+            QByteArray iconByteArray;
+            QBuffer buffer(&iconByteArray);
+            buffer.open(QIODevice::WriteOnly);
+            iconPixmap.save(&buffer, "PNG");
+            settings.setValue(QStringLiteral("icon"), iconByteArray);
+        }
     }
     settings.endArray();
 }
@@ -391,7 +392,7 @@ void MainWindow::setConnections()
     connect(currentWebView(), &QWebEngineView::iconChanged, this,
             [this] { histIcons.insert(currentWebView()->url(), currentWebView()->icon()); });
     connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested, downloadWidget,
-            &DownloadWidget::downloadRequested);
+            &DownloadWidget::downloadRequested, Qt::UniqueConnection);
     if (showProgress) {
         connect(currentWebView(), &QWebEngineView::loadStarted, this, &MainWindow::loading);
     }

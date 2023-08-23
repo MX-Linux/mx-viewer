@@ -21,7 +21,57 @@
  **********************************************************************/
 #include "webview.h"
 
+#include <QBuffer>
+#include <QWebEngineHistoryItem>
+
 WebView::WebView(QWidget *parent)
-    : QWebEngineView(parent)
+    : QWebEngineView(parent),
+      index(historyLog.value("History/size", 0).toInt())
 {
+    connect(this, &WebView::loadFinished, this, &WebView::handleLoadFinished);
+    connect(this, &WebView::iconChanged, this, &WebView::handleIconChanged);
+}
+
+void WebView::handleLoadFinished()
+{
+    index = historyLog.value("History/size", 0).toInt();
+    historyLog.beginWriteArray("History");
+    historyLog.setArrayIndex(index);
+    historyLog.setValue(QStringLiteral("title"), title());
+    historyLog.setValue(QStringLiteral("url"), url().toString());
+    historyLog.endArray();
+}
+
+// Assumes this trigger after loadFinished, that might not be correct all the time
+void WebView::handleIconChanged()
+{
+    if (icon().isNull()) {
+        return;
+    }
+    index = historyLog.value("History/size", 0).toInt();
+    checkRecordComplete();
+    historyLog.beginWriteArray("History");
+    historyLog.setArrayIndex(index);
+    QPixmap iconPixmap = icon().pixmap(QSize(22, 22));
+    QByteArray iconByteArray;
+    QBuffer buffer(&iconByteArray);
+    buffer.open(QIODevice::WriteOnly);
+    iconPixmap.save(&buffer, "PNG");
+    historyLog.setValue(QStringLiteral("icon"), iconByteArray);
+    historyLog.endArray();
+}
+
+// Check if the last record is complete, if not, decrement index and go back.
+// loadFinished and iconChanged trigger independently, assumption is iconChange triggers after loadFinished
+void WebView::checkRecordComplete()
+{
+    if (index == 0) {
+        return;
+    }
+    historyLog.beginReadArray("History");
+    historyLog.setArrayIndex(index - 1);
+    if (historyLog.allKeys().count() != 3) { // if not all 3 keys were written
+        --index;
+    }
+    historyLog.endArray();
 }

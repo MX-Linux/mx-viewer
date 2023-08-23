@@ -28,7 +28,6 @@
 class TabWidget : public QTabWidget
 {
     Q_OBJECT
-
 public:
     explicit TabWidget(QWidget *parent = nullptr);
     WebView *currentWebView();

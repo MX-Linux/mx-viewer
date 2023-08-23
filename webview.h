@@ -22,6 +22,7 @@
 #ifndef WEBVIEW_H
 #define WEBVIEW_H
 
+#include <QSettings>
 #include <QWebEngineView>
 
 class WebView : public QWebEngineView
@@ -29,6 +30,16 @@ class WebView : public QWebEngineView
     Q_OBJECT
 public:
     explicit WebView(QWidget *parent = nullptr);
+
+private slots:
+    void handleLoadFinished();
+    void handleIconChanged();
+
+private:
+    QSettings historyLog;
+    int index;
+
+    void checkRecordComplete();
 };
 
 #endif // WEBVIEW_H
