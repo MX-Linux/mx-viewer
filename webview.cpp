@@ -20,6 +20,7 @@
  * along with this package. If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
 #include "webview.h"
+#include "mainwindow.h"
 
 #include <QBuffer>
 #include <QWebEngineHistoryItem>
@@ -30,6 +31,20 @@ WebView::WebView(QWidget *parent)
 {
     connect(this, &WebView::loadFinished, this, &WebView::handleLoadFinished);
     connect(this, &WebView::iconChanged, this, &WebView::handleIconChanged);
+}
+
+WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
+{
+    QPointer<WebView> newView = new WebView;
+    if (type == QWebEnginePage::WebBrowserTab) {
+        connect(newView->page(), &QWebEnginePage::urlChanged, this, [this, newView] { emit newWebView(newView); });
+    } else if (type == QWebEnginePage::WebBrowserWindow) {
+        connect(newView->page(), &QWebEnginePage::urlChanged, this, [](const QUrl &url) {
+            auto *main = new MainWindow(url);
+            main->show();
+        });
+    }
+    return newView;
 }
 
 void WebView::handleLoadFinished()

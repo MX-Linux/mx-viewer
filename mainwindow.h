@@ -33,6 +33,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 public:
     explicit MainWindow(const QCommandLineParser &arg_parser, QWidget *parent = nullptr);
+    explicit MainWindow(const QUrl &url, QWidget *parent = nullptr);
     ~MainWindow() override;
 
 public slots:

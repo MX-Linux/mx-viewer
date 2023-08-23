@@ -30,10 +30,14 @@ class WebView : public QWebEngineView
     Q_OBJECT
 public:
     explicit WebView(QWidget *parent = nullptr);
+    WebView *createWindow(QWebEnginePage::WebWindowType type) override;
 
 private slots:
     void handleLoadFinished();
     void handleIconChanged();
+
+signals:
+    void newWebView(WebView *wv);
 
 private:
     QSettings historyLog;

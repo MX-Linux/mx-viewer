@@ -57,6 +57,26 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     displaySite(url, title);
 }
 
+MainWindow::MainWindow(const QUrl &url, QWidget *parent)
+    : QMainWindow(parent),
+      downloadWidget {new DownloadWidget},
+      searchBox {new QLineEdit(this)},
+      progressBar {new QProgressBar(this)},
+      timer {new QTimer(this)},
+      toolBar {new QToolBar(this)},
+      tabWidget {new TabWidget(this)},
+      args {}
+{
+    toolBar->toggleViewAction()->setVisible(false);
+    connect(tabWidget, &TabWidget::currentChanged, this, [this] { tabChanged(); });
+    websettings = currentWebView()->settings();
+    loadSettings();
+    addToolbar();
+    addActions();
+    setConnections();
+    displaySite(url.toString(), QString());
+}
+
 MainWindow::~MainWindow()
 {
     settings.setValue(QStringLiteral("Geometry"), saveGeometry());
@@ -138,7 +158,7 @@ void MainWindow::addHistorySubmenu()
 
 void MainWindow::addNewTab(const QString &url)
 {
-    tabWidget->addNewTab();
+    tabWidget->createTab();
     displaySite(url);
     setConnections();
 }
@@ -165,7 +185,6 @@ void MainWindow::addToolbar()
     auto *forward = pageAction(QWebEnginePage::Forward);
     auto *reload = pageAction(QWebEnginePage::Reload);
     auto *stop = pageAction(QWebEnginePage::Stop);
-    // QAction *tab {nullptr};
     auto *home {new QAction(QIcon::fromTheme(QStringLiteral("go-home"), QIcon(QStringLiteral(":/icons/go-home.svg"))),
                             tr("Home"))};
     auto *zoomin {new QAction(QIcon::fromTheme(QStringLiteral("zoom-in"), QIcon(QStringLiteral(":/icons/zoom-in.svg"))),
@@ -184,8 +203,6 @@ void MainWindow::addToolbar()
     home->setShortcut(Qt::CTRL + Qt::Key_H);
     reload->setShortcuts(QKeySequence::Refresh);
     stop->setShortcut(QKeySequence::Cancel);
-    //    tab = currentWebView()->pageAction(QWebEnginePage::OpenLinkInNewTab);
-    //    tab->setShortcut(Qt::CTRL + Qt::Key_T);
     connect(stop, &QAction::triggered, this, &MainWindow::done);
     connect(home, &QAction::triggered, this, [this] { displaySite(); });
 

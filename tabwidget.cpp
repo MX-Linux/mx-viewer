@@ -33,7 +33,7 @@ TabWidget::TabWidget(QWidget *parent)
     setTabBarAutoHide(true);
     setTabsClosable(true);
     setMovable(true);
-    addNewTab();
+    createTab();
     connect(this, &QTabWidget::tabCloseRequested, this, &TabWidget::removeTab);
     connect(this, &QTabWidget::currentChanged, this, &TabWidget::handleCurrentChanged);
 }
@@ -61,21 +61,27 @@ void TabWidget::removeTab(int index)
     w->deleteLater();
 }
 
-void TabWidget::addNewTab()
+void TabWidget::createTab()
 {
     QPointer<WebView> webView = new WebView;
+    addNewTab(webView);
+}
+
+void TabWidget::addNewTab(WebView *webView)
+{
     auto tab = addTab(webView, tr("New Tab"));
     setCurrentIndex(tab);
-    connect(webView, &QWebEngineView::titleChanged, this, [this, webView] {
+    connect(webView, &WebView::titleChanged, this, [this, webView] {
         if (webView) {
             setTabText(indexOf(webView), webView->title());
         }
     });
-    connect(webView, &QWebEngineView::iconChanged, this, [this, webView] {
+    connect(webView, &WebView::iconChanged, this, [this, webView] {
         if (webView) {
             setTabIcon(indexOf(webView), webView->icon());
         }
     });
+    connect(webView, &WebView::newWebView, this, &TabWidget::addNewTab);
 }
 
 void TabWidget::keyPressEvent(QKeyEvent *event)

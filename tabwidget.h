@@ -32,7 +32,8 @@ public:
     explicit TabWidget(QWidget *parent = nullptr);
     WebView *currentWebView();
 
-    void addNewTab();
+    void createTab();
+    void addNewTab(WebView *webView);
     void removeTab(int index);
 
 protected:
