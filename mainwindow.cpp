@@ -422,8 +422,6 @@ void MainWindow::setConnections()
             statusBar()->showMessage(url);
         }
     });
-    connect(currentWebView()->page()->action(QWebEnginePage::ViewSource), &QAction::triggered, this,
-            [this] { addNewTab("view-source:" + currentWebView()->page()->url().toString()); });
 }
 
 void MainWindow::showFullScreenNotification()
