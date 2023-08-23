@@ -20,29 +20,29 @@ Changes:
    * Open link (right-click menu, or with target _blank) in new tab, or new window
    * Enabled show source
 Checksums-Sha1:
- b03b78c86ea46103c41ccc77909449da7a30601b 1169 mx-viewer_23.8.dsc
- bf6a296b4ad82b334761ac94f8231b3fb4236b44 53428 mx-viewer_23.8.tar.xz
- d233a9f5925a66b8567e6fe5771850fdc3122812 13319 mx-viewer_23.8_amd64.buildinfo
- 4c13fb6802db2c39481b57bd8a35a4bcd8bdfa2b 54832 mx-viewer_23.8_amd64.deb
+ 2fb13387637f65a62835f80b27e11ed805ed3af3 1169 mx-viewer_23.8.dsc
+ ed0523013f7c3792d12649c972deb5c23b36d370 53380 mx-viewer_23.8.tar.xz
+ b5923d8614d0108f8ddde1d9e362a8c7bc1ea0d2 13319 mx-viewer_23.8_amd64.buildinfo
+ 86579babc48600fa806b4d8a806d938de3cae560 54684 mx-viewer_23.8_amd64.deb
 Checksums-Sha256:
- 7e12ddc47871a8ca0ea00079e7591e37cbfd6f1ae3c375f94d831ad5d124cb4f 1169 mx-viewer_23.8.dsc
- 24cfaa718fe4b2235de7bb6762319253287d3cf94f4ac6515cbc5b8c4d4b23f9 53428 mx-viewer_23.8.tar.xz
- 73aa73e8af06f9038a406256eb385815422f89f17d6f39f444eca37338553a8e 13319 mx-viewer_23.8_amd64.buildinfo
- 4503ee0d19218078ea8b8a6c3d9f0dbcb9aca326d791d5d0d16f384b99d181c7 54832 mx-viewer_23.8_amd64.deb
+ 6a2dde88c8412e579617685229bb566c717dbce1edc5f70688262176d08c4c2e 1169 mx-viewer_23.8.dsc
+ 990edf5491394cd272c7e8f39fe564c67a2cbfedcbffa019e6aaaffe42c27e03 53380 mx-viewer_23.8.tar.xz
+ a5ad87fc1d3effbdd4f00d9dc733cf9c2fb138fc1e2ea882a3c4c00f42b09dde 13319 mx-viewer_23.8_amd64.buildinfo
+ e0fe36c1294567f2899b4b34a10fd236f1342cccac3dcda9ee8277cf4ed6058a 54684 mx-viewer_23.8_amd64.deb
 Files:
- 8527072bc1c3bcdda6805f453d246bb3 1169 system optional mx-viewer_23.8.dsc
- 3a02fe44dae10ddad5635d2bcc7680d7 53428 system optional mx-viewer_23.8.tar.xz
- 1dd6635bf11f58ec8e94fa2357f5b676 13319 system optional mx-viewer_23.8_amd64.buildinfo
- 18222006b785b1b6f14ba005ac6a37f1 54832 system optional mx-viewer_23.8_amd64.deb
+ f44cb5d13f2aa66579d51b3fc06d32c4 1169 system optional mx-viewer_23.8.dsc
+ 25ed95a1e2bc0633bdacad6690fcc4ca 53380 system optional mx-viewer_23.8.tar.xz
+ ed2e0c44f2c61302a4435abb74af12cc 13319 system optional mx-viewer_23.8_amd64.buildinfo
+ c80149731573c6413f458a5da1b75f0e 54684 system optional mx-viewer_23.8_amd64.deb
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmTlkawTHGFkcmlhbkBt
-eGxpbnV4Lm9yZwAKCRBwk4x4BnnumOF6B/91S6MuqE7tXti4hQ0O+epUNhmPXSp7
-SG7CEKdMsH3e2eA3cM8cGhYEaThSPOvbkrNoDWyCx19tiCRoGqwbVWTNodfq8HgG
-TMGN58Mx7yTmMmKN4HE3DvSUdoKGzCAzZeAVlZD/w944J531GdUcI3dH68hcAOsn
-VCBQN1DqVEcftXnr/OkR9AqTVCeowfUTsaSq5000j90h767+msFFZdgPj83rjmNn
-CTRkOTQuFgq6dFfgOSOTmPESTU9oTwJhxs72ZfhFwkrLMaHvUA+LR8J5VFvjNXs3
-RwdZrnltN/jOfFAfU4PT6szBrt8rpvciEXkFTkwW9+AMTsEtQYaj2OcE
-=rUhN
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmTlkvMTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumDTkB/9nvQRUKVbiz9kCuaKgOcq0e+Mfjgkn
+R8MU2gh57gz2ixRRWNz8IsLEEBvyna0os1HbQjy5TOv3uQRF67/SBl9YihnzNe1U
+gUolhMY9HZq3qbxxyxky10+lptU8S/qdnXyOla5138eXQQF2Q71NMBbg4xYh3Wb7
+uCPpGI496xotHCC5tXITYRM6jfZQmxzpppGTW4KCTJ9TqbCCF3LP2lIsvL2+s7W6
+fbUJzrJ7NXFdqn2OpojwG1VGknyYlEt5kuYMB3KEVi5DaA1dmBCn/USAr6YAUovh
+j6kzgr7MGq0bVgD9dCDSFJ6NRjLRnkMX7JO819FRuc/bYaFjUjxBUQtg
+=+QQN
 -----END PGP SIGNATURE-----

@@ -17,11 +17,11 @@ Changes:
    * Open link (right-click menu, or with target _blank) in new tab, or new window
    * Enabled show source
 Checksums-Sha1:
- 381889cb700708b1c825d5f7d46e0a48046cbf3f 12455 mx-viewer_23.8_i386.buildinfo
- d769a8dc84f824e3d8cb84365e8889dbd64f6ec8 58004 mx-viewer_23.8_i386.deb
+ 138ddc67999eb9ada912529b43f6b5dbee5dea0a 12455 mx-viewer_23.8_i386.buildinfo
+ 72257e47f63dcde2177ddf1b38d22083968311e2 57660 mx-viewer_23.8_i386.deb
 Checksums-Sha256:
- d7aa32541e2f87302b9156c1e1b62ceb831d4b6f85dccf70bb890895ea5c3306 12455 mx-viewer_23.8_i386.buildinfo
- 7be4c757d088a797be286a88699887a8410d67ad4bd901cc6af6fc0d2738ae57 58004 mx-viewer_23.8_i386.deb
+ 355df3b2f2425ebcbe9d8acc98b5e0f2f49d23b280553609f11c62e1dd2805b4 12455 mx-viewer_23.8_i386.buildinfo
+ 297f7a4ae1ee06316eebc8f2c7616575a7a7aa856d11608438aed8c64c3b178c 57660 mx-viewer_23.8_i386.deb
 Files:
- d0d7ae215c2e8a97fc28ead586a0d52e 12455 system optional mx-viewer_23.8_i386.buildinfo
- 598a35522642d7d353d12e9269e40cce 58004 system optional mx-viewer_23.8_i386.deb
+ e505380d0a44099afdaa206eacfe3f07 12455 system optional mx-viewer_23.8_i386.buildinfo
+ d9115ac15ba1830789ee38e7fd171b93 57660 system optional mx-viewer_23.8_i386.deb
