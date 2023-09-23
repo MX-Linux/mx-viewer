@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
         QApplication::installTranslator(&appTran);
     }
 
-    MainWindow *window = new MainWindow(parser);
+    auto *window = new MainWindow(parser);
     window->show();
 
     return QApplication::exec();
