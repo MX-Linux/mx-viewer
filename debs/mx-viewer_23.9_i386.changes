@@ -1,0 +1,26 @@
+Format: 1.8
+Date: Sat, 23 Sep 2023 13:06:51 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: i386
+Version: 23.9
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (23.9) mx; urgency=medium
+ .
+   * Fix: key press event not being processed
+   * Update translations
+Checksums-Sha1:
+ ea8bce01b14fc804d7056dbed5c33c57e6ad1472 12455 mx-viewer_23.9_i386.buildinfo
+ c78cd31634c9db664924070b9cb8e7663a9579d8 57792 mx-viewer_23.9_i386.deb
+Checksums-Sha256:
+ 85369a6025a0e5426c85a1fe05f4f3d3242fbb320e18899e74e90234dc28c878 12455 mx-viewer_23.9_i386.buildinfo
+ 33446f49ae98c5513cae2af9f9d5f6f61374d003d88e939c6aad95eb7c9406a1 57792 mx-viewer_23.9_i386.deb
+Files:
+ a8633db1c90de6b70d5c69032b617ebe 12455 system optional mx-viewer_23.9_i386.buildinfo
+ 6e943e063fd7f2d58323ccea7630f896 57792 system optional mx-viewer_23.9_i386.deb

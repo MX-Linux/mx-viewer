@@ -1,0 +1,47 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Date: Sat, 23 Sep 2023 13:06:51 -0400
+Source: mx-viewer
+Binary: mx-viewer
+Architecture: source amd64
+Version: 23.9
+Distribution: mx
+Urgency: medium
+Maintainer: Adrian <adrian@mxlinux.org>
+Changed-By: Adrian <adrian@mxlinux.org>
+Description:
+ mx-viewer  - Displays a URL in a window
+Changes:
+ mx-viewer (23.9) mx; urgency=medium
+ .
+   * Fix: key press event not being processed
+   * Update translations
+Checksums-Sha1:
+ 64aaf280f16d80f7dcef8bf07fac6c83d35ea6b3 1169 mx-viewer_23.9.dsc
+ 0ded80c30d5687c683d0aaf4e58348a127bcd9bc 54184 mx-viewer_23.9.tar.xz
+ ba5dc82308606f3ed769ed1eea8778c90c8ce6e4 13319 mx-viewer_23.9_amd64.buildinfo
+ c3bf5de163abbb8a5ed01a39e32cb5e9e0bf81ad 54776 mx-viewer_23.9_amd64.deb
+Checksums-Sha256:
+ 163763449d23c485417ece684e1705821f657bd08e9ab4d79226c55e256ed142 1169 mx-viewer_23.9.dsc
+ 33b4431a1b827f215d257c164ea4d27e72dd941216e509bfa1d9822b9cd17198 54184 mx-viewer_23.9.tar.xz
+ eddc98f75e55b3824b0fb5aeaa185cc4672569ee6b44cd8815e1edaf8b775b5e 13319 mx-viewer_23.9_amd64.buildinfo
+ 407b7e17a42828405e53f1c7c5aff3203539c9447adc1a3392e4971f15baa038 54776 mx-viewer_23.9_amd64.deb
+Files:
+ e2d0d1a4d0a3d9ec6ec5681ec2a6e67c 1169 system optional mx-viewer_23.9.dsc
+ e8dd18834fcce3a50a20efff31edeca5 54184 system optional mx-viewer_23.9.tar.xz
+ 44435b7ea8bb1aedcdbb76b6f76ac4f8 13319 system optional mx-viewer_23.9_amd64.buildinfo
+ a52b8320f6f9bbcda6436f31eaa490c2 54776 system optional mx-viewer_23.9_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmUPHMETHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumI3PCACbkJKh4G8obJxfKjjlkYH3EryyFfy2
+PTKu8z/DfFEJtXIMOEb3047Ek88LIYJ3NtP9+O05gW17QS+FguJo+Z3nHzZN6YBL
+ySCMeb1jlpckYuRZdz+z9CGpKdnHJHTq04H1oq73SHEpzwD7tzNR3qAMAxFAb3hW
+LtxTQUYPpb3CWblRO4y0CjNA9nVtmfjIhFSmGdGVtJ2R8muaPs75+soJgNZMlTUH
+rHTMMuc5K306tcvWtz2jsreKUwNLkVYNvINKwuXRpkpoQoiXgOywOUKbdYio3Wdg
+01O9vJwH/oNOJCtrs7zLIIcqkm8NKtKp3NC/6CzpjbwC8gdZpKKdPfb5
+=H8e7
+-----END PGP SIGNATURE-----
