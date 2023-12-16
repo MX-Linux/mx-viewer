@@ -44,7 +44,6 @@ HEADERS  += \
     addressbar.h \
     downloadwidget.h \
     tabwidget.h \
-    version.h \
     mainwindow.h \
     webview.h
 

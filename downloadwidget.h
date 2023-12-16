@@ -19,9 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
-
-#ifndef DOWNLOADWIDGET_H
-#define DOWNLOADWIDGET_H
+#pragma once
 
 #include <QtWebEngineWidgets>
 
@@ -50,5 +48,3 @@ private:
     QSettings settings;
     Ui::DownloadWidget* ui;
 };
-
-#endif // DOWNLOADWIDGET_H

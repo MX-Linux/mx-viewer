@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this package. If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
-#ifndef WEBVIEW_H
-#define WEBVIEW_H
+#pragma once
 
 #include <QSettings>
 #include <QWebEngineView>
@@ -45,5 +44,3 @@ private:
 
     void checkRecordComplete();
 };
-
-#endif // WEBVIEW_H
