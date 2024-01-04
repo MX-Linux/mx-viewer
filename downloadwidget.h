@@ -31,6 +31,7 @@ class DownloadWidget;
 class DownloadWidget : public QWidget
 {
     Q_OBJECT
+
 public:
     explicit DownloadWidget(QWidget* parent = nullptr);
     ~DownloadWidget() override;

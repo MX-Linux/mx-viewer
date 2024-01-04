@@ -27,6 +27,7 @@
 class WebView : public QWebEngineView
 {
     Q_OBJECT
+
 public:
     explicit WebView(QWidget *parent = nullptr);
     WebView *createWindow(QWebEnginePage::WebWindowType type) override;
