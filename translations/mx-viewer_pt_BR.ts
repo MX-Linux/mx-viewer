@@ -107,7 +107,7 @@
     </message>
     <message>
         <source>search</source>
-        <translation type="vanished">procurar</translation>
+        <translation type="vanished">Pesquisar</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="253"/>
@@ -117,7 +117,7 @@
     <message>
         <location filename="../mainwindow.cpp" line="254"/>
         <source>Hypertext Files (*.htm *.html);;All Files (*.*)</source>
-        <translation>Arquivos de Hipertexto (*.htm *.html);;Todos os Arquivos (*.*)</translation>
+        <translation>Arquivos de Hipertexto (*.htm, *.html);;Todos os Arquivos (*.*)</translation>
     </message>
     <message>
         <source>Open</source>
@@ -125,7 +125,7 @@
     </message>
     <message>
         <source>Enter site or file URL:</source>
-        <translation type="vanished">Insira o sítio/site ou URL do arquivo:</translation>
+        <translation type="vanished">Insira o endereço da página eletrônica ou o arquivo:</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="92"/>
@@ -206,12 +206,12 @@
     <message>
         <location filename="../mainwindow.cpp" line="368"/>
         <source>Ctrl-F, or F3</source>
-        <translation>Ctrl+F, ou F3</translation>
+        <translation>Ctrl+F ou F3</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="368"/>
         <source>Find</source>
-        <translation>Procurar</translation>
+        <translation>Localizar</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="368"/>
@@ -221,7 +221,7 @@
     <message>
         <location filename="../mainwindow.cpp" line="369"/>
         <source>Ctrl-R, or F5</source>
-        <translation>Ctrl+R, ou F5</translation>
+        <translation>Ctrl+R ou F5</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="369"/>
@@ -323,7 +323,7 @@ You should have received a copy of the GNU General Public License along with MX 
     </message>
     <message>
         <source>Open URL</source>
-        <translation type="vanished">Abrir a URL</translation>
+        <translation type="vanished">Abrir o URL</translation>
     </message>
     <message>
         <source>Ctrl-B</source>
@@ -332,15 +332,15 @@ You should have received a copy of the GNU General Public License along with MX 
     <message>
         <location filename="../mainwindow.cpp" line="370"/>
         <source>Browse file to open</source>
-        <translation>Navegue pelo arquivo para abrir</translation>
+        <translation>Navegar para abrir o arquivo</translation>
     </message>
     <message>
         <source>Esc - Stop loading/clear Find field</source>
-        <translation type="vanished">Esc - Parar o carregar/limpar o campo Procurar</translation>
+        <translation type="vanished">Esc - Parar de carregar/limpar o campo ‘Localizar’</translation>
     </message>
     <message>
         <source>Alt-LeftArrow, Alt-RightArrow</source>
-        <translation type="vanished">Alt+Seta para a Esquerda, Alt+Seta para a Direita</translation>
+        <translation type="vanished">Alt+Seta para a Esquerda ou Alt+Seta para a Direita</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="372"/>
@@ -350,28 +350,28 @@ You should have received a copy of the GNU General Public License along with MX 
     <message>
         <location filename="../mainwindow.cpp" line="372"/>
         <source>F1, or ?</source>
-        <translation>F1, ou ?</translation>
+        <translation>F1 ou ?</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="372"/>
         <source>Open this help dialog</source>
-        <translation>Abrir esta janela de diálogo de ajuda</translation>
+        <translation>Abrir a janela de diálogo da ajuda</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>This tool will display the URL content in a window, window title is optional.</source>
-        <translation type="vanished">Esta ferramenta exibirá o conteúdo da URL em uma janela, o título da janela é opcional.</translation>
+        <translation type="vanished">Esta ferramenta exibirá o conteúdo do endereço de URL em uma janela e o título da janela é opcional</translation>
     </message>
     <message>
         <location filename="../main.cpp" line="96"/>
         <source>Disable JavaScript</source>
-        <translation>Desativar JavaScript</translation>
+        <translation>Desativar o JavaScript</translation>
     </message>
     <message>
         <source>Disable workaround for broken sites</source>
-        <translation type="vanished">Desativar a solução alternativa para sites corrompidos</translation>
+        <translation type="vanished">Desativar a solução alternativa para as páginas corrompidas</translation>
     </message>
     <message>
         <location filename="../main.cpp" line="105"/>
@@ -410,7 +410,7 @@ You should have received a copy of the GNU General Public License along with MX 
     <message>
         <location filename="../main.cpp" line="107"/>
         <source>URL of the page you want to load</source>
-        <translation>URL da página que você deseja carregar</translation>
+        <translation>Endereço da página eletrônica que você quer carregar</translation>
     </message>
     <message>
         <location filename="../main.cpp" line="109"/>

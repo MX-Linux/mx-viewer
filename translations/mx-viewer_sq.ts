@@ -345,7 +345,7 @@ You should have received a copy of the GNU General Public License along with MX 
     <message>
         <location filename="../mainwindow.cpp" line="372"/>
         <source>Back/Forward</source>
-        <translation>Mbrapa/Përpara</translation>
+        <translation>Mbrapsht/Përpara</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="372"/>
