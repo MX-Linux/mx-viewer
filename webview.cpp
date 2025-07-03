@@ -23,6 +23,7 @@
 #include "mainwindow.h"
 
 #include <QBuffer>
+#include <QPointer>
 #include <QWebEngineHistoryItem>
 
 WebView::WebView(QWidget *parent)
@@ -35,9 +36,14 @@ WebView::WebView(QWidget *parent)
 
 WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
 {
-    QPointer<WebView> newView = new WebView;
+    auto *newView = new WebView;
     if (type == QWebEnginePage::WebBrowserTab) {
-        connect(newView->page(), &QWebEnginePage::urlChanged, this, [this, newView] { emit newWebView(newView); });
+        QPointer<WebView> viewPtr(newView);
+        connect(newView->page(), &QWebEnginePage::urlChanged, this, [this, viewPtr] {
+            if (viewPtr) {
+                emit newWebView(viewPtr.data());
+            }
+        });
     } else if (type == QWebEnginePage::WebBrowserWindow) {
         connect(newView->page(), &QWebEnginePage::urlChanged, this, [](const QUrl &url) {
             auto *main = new MainWindow(url);

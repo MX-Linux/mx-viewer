@@ -134,5 +134,12 @@ int main(int argc, char *argv[])
     auto *window = new MainWindow(parser);
     window->show();
 
+    // Ensure proper cleanup on application exit
+    QObject::connect(&app, &QApplication::aboutToQuit, [window]() {
+        if (window && !window->isHidden()) {
+            window->close();
+        }
+    });
+
     return QApplication::exec();
 }
