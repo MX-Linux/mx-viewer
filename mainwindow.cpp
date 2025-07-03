@@ -34,7 +34,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
       timer {new QTimer(this)},
       toolBar {new QToolBar(this)},
       tabWidget {new TabWidget(this)},
-      args {arg_parser}
+      args {&arg_parser}
 {
     setAttribute(Qt::WA_DeleteOnClose);
     toolBar->toggleViewAction()->setVisible(false);
@@ -51,9 +51,9 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     }
     QString url;
     QString title;
-    if (!args.positionalArguments().isEmpty()) {
-        url = args.positionalArguments().at(0);
-        title = (args.positionalArguments().size() > 1) ? args.positionalArguments().at(1) : url;
+    if (args && !args->positionalArguments().isEmpty()) {
+        url = args->positionalArguments().at(0);
+        title = (args->positionalArguments().size() > 1) ? args->positionalArguments().at(1) : url;
     }
     displaySite(url, title);
 }
@@ -66,7 +66,7 @@ MainWindow::MainWindow(const QUrl &url, QWidget *parent)
       timer {new QTimer(this)},
       toolBar {new QToolBar(this)},
       tabWidget {new TabWidget(this)},
-      args {args}
+      args {nullptr}
 {
     setAttribute(Qt::WA_DeleteOnClose);
     toolBar->toggleViewAction()->setVisible(false);
@@ -331,19 +331,19 @@ void MainWindow::loadSettings()
     websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !settings.value("DisableJava", false).toBool());
     websettings->setAttribute(QWebEngineSettings::AutoLoadImages, settings.value("LoadImages", true).toBool());
 
-    if (args.isSet("enable-spatial-navigation")) {
+    if (args && args->isSet("enable-spatial-navigation")) {
         websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, true);
     }
-    if (args.isSet("disable-js")) {
+    if (args && args->isSet("disable-js")) {
         websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, false);
     }
-    if (args.isSet("disable-images")) {
+    if (args && args->isSet("disable-images")) {
         websettings->setAttribute(QWebEngineSettings::AutoLoadImages, false);
     }
 
     QSize size {defaultWidth, defaultHeight};
     resize(size);
-    if (settings.contains("Geometry") && !args.isSet("full-screen")) {
+    if (settings.contains("Geometry") && (!args || !args->isSet("full-screen"))) {
         restoreGeometry(settings.value("Geometry").toByteArray());
         if (isMaximized()) { // add option to resize if maximized
             resize(size);
