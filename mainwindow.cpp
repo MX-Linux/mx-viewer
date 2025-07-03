@@ -323,7 +323,7 @@ void MainWindow::loadSettings()
     websettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
     QWebEngineProfile::defaultProfile()->setHttpAcceptLanguage(QLocale::system().name());
 
-    homeAddress = settings.value("Home", "https://duckduckgo.com").toString();
+    homeAddress = settings.value("Home", "https://start.duckduckgo.com").toString();
     showProgress = settings.value("ShowProgressBar", false).toBool();
 
     websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled,

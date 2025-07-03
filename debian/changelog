@@ -1,3 +1,11 @@
+mx-viewer (25.7) mx; urgency=medium
+
+  * Change default page to start.duckduckgo.com (might need to change
+    ~/.config/MX-Linux/mx-viewer.conf
+  * Update translations
+
+ -- Adrian <adrian@mxlinux.org>  Thu, 03 Jul 2025 13:08:57 -0400
+
 mx-viewer (24.4) mx; urgency=medium
 
   * Update to Qt6
