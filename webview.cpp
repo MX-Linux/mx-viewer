@@ -76,8 +76,9 @@ void WebView::handleIconChanged()
     QPixmap iconPixmap = icon().pixmap(QSize(22, 22));
     QByteArray iconByteArray;
     QBuffer buffer(&iconByteArray);
-    buffer.open(QIODevice::WriteOnly);
-    iconPixmap.save(&buffer, "PNG");
+    if (buffer.open(QIODevice::WriteOnly)) {
+        iconPixmap.save(&buffer, "PNG");
+    }
     historyLog.setValue("icon", iconByteArray);
     historyLog.endArray();
 }
@@ -86,13 +87,15 @@ void WebView::handleIconChanged()
 // loadFinished and iconChanged trigger independently, assumption is iconChange triggers after loadFinished
 void WebView::checkRecordComplete()
 {
-    if (index == 0) {
+    if (index <= 0) {
         return;
     }
     historyLog.beginReadArray("History");
-    historyLog.setArrayIndex(index - 1);
-    if (historyLog.allKeys().count() != 3) { // if not all 3 keys were written
-        --index;
+    if (index > 0) {
+        historyLog.setArrayIndex(index - 1);
+        if (historyLog.allKeys().count() != 3) { // if not all 3 keys were written
+            --index;
+        }
     }
     historyLog.endArray();
 }

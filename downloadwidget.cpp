@@ -103,7 +103,7 @@ inline QString DownloadWidget::timeUnit(int seconds)
     } else if (seconds < 3600) {
         return tr("%1min. %2sec.").arg(seconds / 60).arg(seconds % 60);
     } else {
-        return tr("%1h. %2m. %3s.").arg(seconds / 3600, seconds % 3600, seconds % 3600 % 60);
+        return tr("%1h. %2m. %3s.").arg(seconds / 3600).arg((seconds % 3600) / 60).arg(seconds % 60);
     }
 }
 
@@ -125,7 +125,7 @@ void DownloadWidget::updateDownload(QWebEngineDownloadRequest* download, QPushBu
             progressBar->setDisabled(false);
             progressBar->setFormat(tr("%p% - %1 of %2 at %3/s - %4 left")
                                        .arg(withUnit(receivedBytes), withUnit(totalBytes), withUnit(bytesPerSecond),
-                                            timeUnit(static_cast<int>((totalBytes - receivedBytes) / bytesPerSecond))));
+                                            bytesPerSecond > 0 ? timeUnit(static_cast<int>((totalBytes - receivedBytes) / bytesPerSecond)) : tr("unknown")));
         } else {
             progressBar->setValue(0);
             progressBar->setDisabled(false);

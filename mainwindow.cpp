@@ -39,7 +39,10 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     setAttribute(Qt::WA_DeleteOnClose);
     toolBar->toggleViewAction()->setVisible(false);
     connect(tabWidget, &TabWidget::currentChanged, this, [this] { tabChanged(); });
-    websettings = currentWebView()->settings();
+    auto *webView = currentWebView();
+    if (webView) {
+        websettings = webView->settings();
+    }
     loadSettings();
     addToolbar();
     addActions();
@@ -71,7 +74,10 @@ MainWindow::MainWindow(const QUrl &url, QWidget *parent)
     setAttribute(Qt::WA_DeleteOnClose);
     toolBar->toggleViewAction()->setVisible(false);
     connect(tabWidget, &TabWidget::currentChanged, this, [this] { tabChanged(); });
-    websettings = currentWebView()->settings();
+    auto *webView = currentWebView();
+    if (webView) {
+        websettings = webView->settings();
+    }
     loadSettings();
     addToolbar();
     addActions();
@@ -664,8 +670,8 @@ void MainWindow::loading()
     progressBar->move(geometry().width() / 2 - progressBar->width() / 2, geometry().height() - progBarVerticalAdj);
     progressBar->setFocus();
     progressBar->show();
-    timer->start(100ms);
     connect(timer, &QTimer::timeout, this, &MainWindow::procTime);
+    timer->start(100ms);
 }
 
 // done loading
