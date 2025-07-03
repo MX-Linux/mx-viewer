@@ -56,10 +56,10 @@ bool dropElevatedPrivileges(bool force_nobody)
         id = gid = nobody;
     }
 
-    if (setgid(id) != 0) {
+    if (setgid(gid) != 0) {
         return false;
     }
-    if (setuid(gid) != 0) {
+    if (setuid(id) != 0) {
         return false;
     }
 
