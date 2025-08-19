@@ -22,7 +22,7 @@
 #pragma once
 
 #include <QTabWidget>
-#include <webview.h>
+#include "webview.h"
 
 class TabWidget : public QTabWidget
 {
