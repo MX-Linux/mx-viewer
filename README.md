@@ -106,10 +106,9 @@ dpkg-buildpackage -b -uc -us
 
 ## Translation Contributions
 
-Please join Translation Forum: https://forum.mxlinux.org/viewforum.php?f=96
-Please register on Transifex: https://forum.mxlinux.org/viewtopic.php?t=38671
-Choose your language and start translating: https://app.transifex.com/anticapitalista/antix-development
-
+- Please join Translation Forum: https://forum.mxlinux.org/viewforum.php?f=96
+- Please register on Transifex: https://forum.mxlinux.org/viewtopic.php?t=38671
+- Choose your language and start translating: https://app.transifex.com/anticapitalista/antix-development
 
 ## License
 
