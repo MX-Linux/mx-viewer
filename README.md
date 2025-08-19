@@ -3,7 +3,8 @@
 [![latest packaged version(s)](https://repology.org/badge/latest-versions/mx-viewer.svg)](https://repology.org/project/mx-viewer/versions)
 [![build result](https://build.opensuse.org/projects/home:mx-packaging/packages/mx-viewer/badge.svg?type=default)](https://software.opensuse.org//download.html?project=home%3Amx-packaging&package=mx-viewer)
 
-A lightweight Qt6 WebEngine-based browser designed for displaying web content in standalone windows. Built specifically for MX Linux, this tool provides a secure, minimal browser interface with multi-tab support and comprehensive internationalization.
+A lightweight Qt6 WebEngine-based browser designed for displaying web content in standalone windows. Built specifically for MX Linux, this tool provides a secure, minimal browser interface with multi-tab support
+![image](https://github.com/MX-Linux/mx-viewer/assets/418436/86d65a22-cb58-46c5-81a5-7e9614554dd3)
 
 ## Features
 
@@ -113,5 +114,3 @@ dpkg-buildpackage -b -uc -us
 ## License
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-![image](https://github.com/MX-Linux/mx-viewer/assets/418436/86d65a22-cb58-46c5-81a5-7e9614554dd3)
