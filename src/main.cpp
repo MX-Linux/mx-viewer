@@ -21,8 +21,21 @@
  ****************************************************************************/
 
 #include "mainwindow.h"
-#include "version.h"
+
+#include <QApplication>
+#include <QCommandLineParser>
+#include <QDebug>
+#include <QGuiApplication>
+#include <QIcon>
+#include <QLibraryInfo>
+#include <QLocale>
+#include <QProcess>
+#include <QTranslator>
 #include <unistd.h>
+
+#ifndef VERSION
+    #define VERSION "?.?.?.?"
+#endif
 
 QPair<int, int> getUserIDs()
 {

@@ -147,6 +147,7 @@ endif()
 target_compile_definitions(mx-viewer PRIVATE
     QT_DEPRECATED_WARNINGS
     QT_DISABLE_DEPRECATED_BEFORE=0x060000
+    VERSION="${PROJECT_VERSION}"
 )
 
 # Release-specific optimizations
@@ -170,23 +171,15 @@ qt6_add_translations(mx-viewer
     QM_FILES_OUTPUT_VARIABLE qm_files
 )
 
-# Generate version.h file
-configure_file(
-    "${CMAKE_SOURCE_DIR}/src/version.h.in"
-    "${CMAKE_BINARY_DIR}/src/version.h"
-    @ONLY
-)
-
 # Set target properties
 set_target_properties(mx-viewer PROPERTIES
     OUTPUT_NAME "mx-viewer"
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
-# Add include directories for headers and generated files
+# Add include directories for headers
 target_include_directories(mx-viewer PRIVATE 
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_BINARY_DIR}/src
 )
 
 # Install target (required by Debian build system)

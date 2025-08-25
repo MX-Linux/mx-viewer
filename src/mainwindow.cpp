@@ -21,7 +21,6 @@
  ****************************************************************************/
 #include "mainwindow.h"
 
-#include "version.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
