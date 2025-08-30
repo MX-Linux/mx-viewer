@@ -168,6 +168,7 @@ endif()
 # Handle translations
 qt6_add_translations(mx-viewer
     TS_FILES ${TRANSLATION_FILES}
+    LRELEASE_OPTIONS -compress -nounfinished -removeidentical -silent
     QM_FILES_OUTPUT_VARIABLE qm_files
 )
 
@@ -178,7 +179,7 @@ set_target_properties(mx-viewer PROPERTIES
 )
 
 # Add include directories for headers
-target_include_directories(mx-viewer PRIVATE 
+target_include_directories(mx-viewer PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 
