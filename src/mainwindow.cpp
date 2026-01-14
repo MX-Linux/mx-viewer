@@ -440,6 +440,7 @@ void MainWindow::showFullScreenNotification()
 
 void MainWindow::tabChanged()
 {
+    if (!currentWebView()) return;
     auto *back = pageAction(QWebEnginePage::Back);
     auto *forward = pageAction(QWebEnginePage::Forward);
     auto *reload = pageAction(QWebEnginePage::Reload);
