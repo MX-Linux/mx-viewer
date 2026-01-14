@@ -28,6 +28,8 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
+#include <QSpinBox>
+#include <QtGlobal>
 #include <QListWidget>
 #include <QPushButton>
 #include <QTimer>
@@ -112,28 +114,53 @@ void MainWindow::addBookmarksSubmenu()
 {
     bookmarks->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(bookmarks, &QMenu::customContextMenuRequested, this, [this](QPoint pos) {
-        if (bookmarks->actionAt(pos) == bookmarks->actions().at(0)) { // skip first "Add bookmark" action.
+        QAction *currentAction = bookmarks->actionAt(pos);
+        if (!currentAction || !currentAction->property("url").isValid()) {
             return;
         }
         QPoint globalPos = bookmarks->mapToGlobal(pos);
         QMenu submenu;
-        if (bookmarks->actionAt(pos) != bookmarks->actions().at(1)) {
+        QList<QAction *> bookmarkActions;
+        for (auto *action : bookmarks->actions()) {
+            if (action->property("url").isValid()) {
+                bookmarkActions.append(action);
+            }
+        }
+        const int currentIndex = bookmarkActions.indexOf(currentAction);
+        if (currentIndex > 0) {
             submenu.addAction(QIcon::fromTheme("arrow-up"), tr("Move up"), bookmarks, [this, pos] {
-                for (int i = 2; i < bookmarks->actions().count();
-                     ++i) { // starting from third action (ignoring "Add bookmark" and first bookmark we cannot move up)
-                    if (bookmarks->actions().at(i) == bookmarks->actionAt(pos)) {
-                        bookmarks->insertAction(bookmarks->actions().at(i - 1), bookmarks->actions().at(i));
+                QAction *action = bookmarks->actionAt(pos);
+                if (!action || !action->property("url").isValid()) {
+                    return;
+                }
+                QList<QAction *> actions;
+                for (auto *entry : bookmarks->actions()) {
+                    if (entry->property("url").isValid()) {
+                        actions.append(entry);
                     }
+                }
+                const int index = actions.indexOf(action);
+                if (index > 0) {
+                    bookmarks->insertAction(actions.at(index - 1), action);
                 }
             });
         }
-        if (bookmarks->actionAt(pos) != bookmarks->actions().at(bookmarks->actions().count() - 1)) {
+        if (currentIndex >= 0 && currentIndex < bookmarkActions.count() - 1) {
             submenu.addAction(QIcon::fromTheme("arrow-down"), tr("Move down"), bookmarks, [this, pos] {
-                for (int i = 1; i < bookmarks->actions().count();
-                     ++i) { // starting from second action (ignoring "Add bookmark")
-                    if (bookmarks->actions().at(i) == bookmarks->actionAt(pos)) {
-                        bookmarks->insertAction(bookmarks->actions().at(i + 2), bookmarks->actions().at(i));
+                QAction *action = bookmarks->actionAt(pos);
+                if (!action || !action->property("url").isValid()) {
+                    return;
+                }
+                QList<QAction *> actions;
+                for (auto *entry : bookmarks->actions()) {
+                    if (entry->property("url").isValid()) {
+                        actions.append(entry);
                     }
+                }
+                const int index = actions.indexOf(action);
+                if (index >= 0 && index < actions.count() - 1) {
+                    QAction *insertBefore = (index + 2 < actions.count()) ? actions.at(index + 2) : nullptr;
+                    bookmarks->insertAction(insertBefore, action);
                 }
             });
         }
@@ -274,27 +301,27 @@ void MainWindow::setupSearchBox()
 void MainWindow::addZoomActions()
 {
     auto *zoomout {new QAction(QIcon::fromTheme("zoom-out", QIcon(":/icons/zoom-out.svg")), tr("Zoom out"))};
-    auto *zoompercent {new QAction("100%")};
+    zoomPercentAction = new QAction("100%");
     auto *zoomin {new QAction(QIcon::fromTheme("zoom-in", QIcon(":/icons/zoom-in.svg")), tr("Zoom In"))};
     toolBar->addAction(zoomout);
-    toolBar->addAction(zoompercent);
+    toolBar->addAction(zoomPercentAction);
     toolBar->addAction(zoomin);
     constexpr auto step = 0.1;
     zoomin->setShortcuts({QKeySequence::ZoomIn, Qt::CTRL | Qt::Key_Equal});
     zoomout->setShortcut(QKeySequence::ZoomOut);
-    zoompercent->setShortcut(Qt::CTRL | Qt::Key_0);
-    connect(zoomout, &QAction::triggered, this, [this, step, zoompercent] {
-        currentWebView()->setZoomFactor(currentWebView()->zoomFactor() - step);
-        zoompercent->setText(QString::number(currentWebView()->zoomFactor() * 100) + "%");
+    zoomPercentAction->setShortcut(Qt::CTRL | Qt::Key_0);
+    connect(zoomout, &QAction::triggered, this, [this, step] {
+        Q_UNUSED(step);
+        setZoomPercent(zoomPercent - 10, true);
     });
-    connect(zoomin, &QAction::triggered, this, [this, step, zoompercent] {
-        currentWebView()->setZoomFactor(currentWebView()->zoomFactor() + step);
-        zoompercent->setText(QString::number(currentWebView()->zoomFactor() * 100) + "%");
+    connect(zoomin, &QAction::triggered, this, [this, step] {
+        Q_UNUSED(step);
+        setZoomPercent(zoomPercent + 10, true);
     });
-    connect(zoompercent, &QAction::triggered, this, [this, zoompercent] {
-        currentWebView()->setZoomFactor(1);
-        zoompercent->setText("100%");
+    connect(zoomPercentAction, &QAction::triggered, this, [this] {
+        setZoomPercent(100, true);
     });
+    setZoomPercent(zoomPercent, false);
 }
 
 void MainWindow::setupMenuButton()
@@ -375,6 +402,7 @@ void MainWindow::loadSettings()
     homeAddress = settings.value("Home", "https://start.duckduckgo.com").toString();
     showProgress = settings.value("ShowProgressBar", false).toBool();
     openNewTabWithHome = settings.value("OpenNewTabWithHome", true).toBool();
+    zoomPercent = settings.value("ZoomPercent", 100).toInt();
 
     websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled,
                               settings.value("SpatialNavigation", false).toBool());
@@ -426,14 +454,23 @@ void MainWindow::saveMenuItems(const QMenu *menu, int offset)
 {
     // Offset is for skipping "Clear history" item, separator, etc.
     settings.beginWriteArray(menu->objectName());
-    for (int i = offset; i < menu->actions().count(); ++i) {
-        settings.setArrayIndex(i - offset);
-        settings.setValue("title", menu->actions().at(i)->text());
-        settings.setValue("url", menu->actions().at(i)->property("url").toString());
+    if (menu->objectName() == "Bookmarks") {
+        int index = 0;
+        for (auto *action : menu->actions()) {
+            if (!action->property("url").isValid()) {
+                continue;
+            }
+            settings.setArrayIndex(index++);
+            settings.setValue("title", action->text());
+            settings.setValue("url", action->property("url").toString());
+            settings.setValue("icon", action->icon());
+        }
+    } else {
+        for (int i = offset; i < menu->actions().count(); ++i) {
+            settings.setArrayIndex(i - offset);
+            settings.setValue("title", menu->actions().at(i)->text());
+            settings.setValue("url", menu->actions().at(i)->property("url").toString());
 
-        if (menu->objectName() == "Bookmarks") {
-            settings.setValue("icon", menu->actions().at(i)->icon());
-        } else {
             QPixmap iconPixmap = menu->actions().at(i)->icon().pixmap(QSize(16, 16));
             QByteArray iconByteArray;
             QBuffer buffer(&iconByteArray);
@@ -481,6 +518,7 @@ void MainWindow::setConnections()
             statusBar()->showMessage(url);
         }
     });
+    setZoomPercent(zoomPercent, false);
 }
 
 void MainWindow::showFullScreenNotification()
@@ -711,6 +749,10 @@ void MainWindow::openSettings()
     openNewTabCheck->setChecked(openNewTabWithHome);
     auto *showProgressCheck = new QCheckBox(tr("Show progress bar"), &dialog);
     showProgressCheck->setChecked(showProgress);
+    auto *zoomSpin = new QSpinBox(&dialog);
+    zoomSpin->setRange(25, 500);
+    zoomSpin->setSuffix("%");
+    zoomSpin->setValue(zoomPercent);
     auto *spatialNavCheck = new QCheckBox(tr("Enable spatial navigation"), &dialog);
     spatialNavCheck->setChecked(settings.value("SpatialNavigation", false).toBool());
     auto *disableJsCheck = new QCheckBox(tr("Disable JavaScript"), &dialog);
@@ -721,6 +763,7 @@ void MainWindow::openSettings()
     layout->addRow(tr("Home address"), homeInput);
     layout->addRow(QString(), openNewTabCheck);
     layout->addRow(QString(), showProgressCheck);
+    layout->addRow(tr("Zoom level"), zoomSpin);
     layout->addRow(QString(), spatialNavCheck);
     layout->addRow(QString(), disableJsCheck);
     layout->addRow(QString(), loadImagesCheck);
@@ -737,6 +780,7 @@ void MainWindow::openSettings()
         settings.setValue("OpenNewTabWithHome", openNewTabWithHome);
         showProgress = showProgressCheck->isChecked();
         settings.setValue("ShowProgressBar", showProgress);
+        setZoomPercent(zoomSpin->value(), true);
         settings.setValue("SpatialNavigation", spatialNavCheck->isChecked());
         settings.setValue("DisableJava", disableJsCheck->isChecked());
         settings.setValue("LoadImages", loadImagesCheck->isChecked());
@@ -756,6 +800,20 @@ void MainWindow::openSettings()
         websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, spatialNav);
         websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !disableJs);
         websettings->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
+    }
+}
+
+void MainWindow::setZoomPercent(int percent, bool persist)
+{
+    zoomPercent = qBound(25, percent, 500);
+    if (zoomPercentAction) {
+        zoomPercentAction->setText(QString::number(zoomPercent) + "%");
+    }
+    if (auto *view = currentWebView()) {
+        view->setZoomFactor(zoomPercent / 100.0);
+    }
+    if (persist) {
+        settings.setValue("ZoomPercent", zoomPercent);
     }
 }
 
@@ -790,8 +848,10 @@ void MainWindow::openBookmarksEditor()
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
     layout->addWidget(buttons);
 
-    for (int i = 2; i < bookmarks->actions().count(); ++i) {
-        QAction *action = bookmarks->actions().at(i);
+    for (auto *action : bookmarks->actions()) {
+        if (!action->property("url").isValid()) {
+            continue;
+        }
         auto *item = new QListWidgetItem(action->icon(), action->text(), list);
         item->setData(Qt::UserRole, action->property("url").toString());
     }
@@ -861,8 +921,10 @@ void MainWindow::openBookmarksEditor()
     }
 
     auto actions = bookmarks->actions();
-    for (int i = actions.count() - 1; i >= 2; --i) {
-        QAction *action = actions.at(i);
+    for (auto *action : actions) {
+        if (!action->property("url").isValid()) {
+            continue;
+        }
         bookmarks->removeAction(action);
         action->deleteLater();
     }
