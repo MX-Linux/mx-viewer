@@ -112,7 +112,8 @@ void DownloadWidget::updateDownload(QWebEngineDownloadRequest* download, QPushBu
 {
     auto totalBytes = static_cast<qreal>(download->totalBytes());
     auto receivedBytes = static_cast<qreal>(download->receivedBytes());
-    auto bytesPerSecond = receivedBytes / static_cast<qreal>(DownloadWidget::timerDownload.elapsed()) * 1000;
+    auto elapsed = DownloadWidget::timerDownload.elapsed();
+    auto bytesPerSecond = elapsed > 0 ? receivedBytes / static_cast<qreal>(elapsed) * 1000 : 0;
 
     auto state = download->state();
     switch (state) {
