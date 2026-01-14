@@ -22,12 +22,19 @@
 #include "webview.h"
 #include "mainwindow.h"
 
+#include <QApplication>
 #include <QBuffer>
-#include <QPointer>
-#include <QWebEngineHistoryItem>
+#include <QMouseEvent>
+#include <QTimer>
 
-WebPage::WebPage(QObject *parent)
-    : QWebEnginePage(parent)
+// Static member definitions
+bool WebView::s_ctrlHeld = false;
+bool WebView::s_middleClick = false;
+bool WebView::s_consumed = false;
+
+WebPage::WebPage(WebView *parent)
+    : QWebEnginePage(parent),
+      m_webView(parent)
 {
 }
 
@@ -40,6 +47,23 @@ void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, cons
     Q_UNUSED(sourceID);
 }
 
+bool WebPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame)
+{
+    Q_UNUSED(isMainFrame);
+    // Handle Ctrl+click / middle-click on regular links
+    if (type == NavigationTypeLinkClicked && WebView::consumeIfNewTabRequest()) {
+        auto *mw = qobject_cast<MainWindow *>(m_webView->window());
+        if (!mw) {
+            mw = qobject_cast<MainWindow *>(QApplication::activeWindow());
+        }
+        if (mw) {
+            mw->openLinkInNewTab(url);
+        }
+        return false;
+    }
+    return QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);
+}
+
 WebView::WebView(QWidget *parent)
     : QWebEngineView(parent),
       index(historyLog.value("History/size", 0).toInt())
@@ -49,16 +73,71 @@ WebView::WebView(QWidget *parent)
     connect(this, &WebView::iconChanged, this, &WebView::handleIconChanged);
 }
 
+void WebView::installEventFilterOnFocusProxy()
+{
+    QWidget *proxy = focusProxy();
+    if (proxy && proxy != m_currentProxy) {
+        proxy->installEventFilter(this);
+        m_currentProxy = proxy;
+    }
+}
+
+bool WebView::event(QEvent *event)
+{
+    // focusProxy() is created lazily, install event filter when it becomes available
+    if (event->type() == QEvent::ChildAdded) {
+        QTimer::singleShot(0, this, &WebView::installEventFilterOnFocusProxy);
+    }
+    return QWebEngineView::event(event);
+}
+
+bool WebView::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == focusProxy() && event->type() == QEvent::MouseButtonPress) {
+        auto *me = static_cast<QMouseEvent *>(event);
+        s_ctrlHeld = (me->modifiers() & Qt::ControlModifier);
+        s_middleClick = (me->button() == Qt::MiddleButton);
+        s_consumed = false;  // New click, reset consumed state
+    }
+    return QWebEngineView::eventFilter(obj, event);
+}
+
+bool WebView::lastClickWasNewTabRequest()
+{
+    return s_ctrlHeld || s_middleClick;
+}
+
+bool WebView::consumeIfNewTabRequest()
+{
+    if (s_ctrlHeld || s_middleClick) {
+        s_consumed = true;
+        s_ctrlHeld = false;
+        s_middleClick = false;
+        return true;
+    }
+    return false;
+}
+
+void WebView::clearClickState()
+{
+    s_ctrlHeld = false;
+    s_middleClick = false;
+    s_consumed = false;
+}
+
+bool WebView::wasClickConsumed()
+{
+    return s_consumed;
+}
+
 WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
 {
     auto *newView = new WebView;
     if (type == QWebEnginePage::WebBrowserTab) {
-        QPointer<WebView> viewPtr(newView);
-        connect(newView->page(), &QWebEnginePage::urlChanged, this, [this, viewPtr] {
-            if (viewPtr) {
-                emit newWebView(viewPtr.data());
-            }
-        });
+        // Check if acceptNavigationRequest already handled this click
+        bool background = !wasClickConsumed() && lastClickWasNewTabRequest();
+        clearClickState();
+        emit newWebView(newView, !background);
     } else if (type == QWebEnginePage::WebBrowserWindow) {
         connect(newView->page(), &QWebEnginePage::urlChanged, this, [](const QUrl &url) {
             auto *main = new MainWindow(url);

@@ -5,6 +5,7 @@ mx-viewer (26.01) mx; urgency=medium
   * Added Settings page
   * Added Bookmark editor
   * Added F12 dev tools
+  * Ctrl-click and middle-click open tab in background
 
  -- Adrian <adrian@mxlinux.org>  Tue, 13 Jan 2026 21:55:54 -0500
 

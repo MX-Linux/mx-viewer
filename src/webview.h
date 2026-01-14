@@ -22,17 +22,25 @@
 #pragma once
 
 #include <QSettings>
+#include <QUrl>
 #include <QWebEnginePage>
 #include <QWebEngineView>
 
+class WebView;
+
 class WebPage : public QWebEnginePage
 {
+    Q_OBJECT
 public:
-    explicit WebPage(QObject *parent = nullptr);
+    explicit WebPage(WebView *parent);
 
 protected:
+    bool acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame) override;
     void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message, int lineNumber,
                                   const QString &sourceID) override;
+
+private:
+    WebView *m_webView;
 };
 
 class WebView : public QWebEngineView
@@ -43,16 +51,33 @@ public:
     explicit WebView(QWidget *parent = nullptr);
     WebView *createWindow(QWebEnginePage::WebWindowType type) override;
 
+    static bool lastClickWasNewTabRequest();
+    static bool consumeIfNewTabRequest();  // Check, mark consumed, and clear - returns true if was new tab request
+    static void clearClickState();
+    static bool wasClickConsumed();
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
+    bool event(QEvent *event) override;
+
 private slots:
     void handleLoadFinished();
     void handleIconChanged();
 
 signals:
-    void newWebView(WebView *wv);
+    void newWebView(WebView *wv, bool makeCurrent);
 
 private:
     QSettings historyLog;
     int index;
+    QWidget *m_currentProxy = nullptr;
+
+    // Static because Chromium creates new WebViews for navigation,
+    // but the click is captured on the original view
+    static bool s_ctrlHeld;
+    static bool s_middleClick;
+    static bool s_consumed;  // Set when acceptNavigationRequest handles the click
 
     void checkRecordComplete();
+    void installEventFilterOnFocusProxy();
 };

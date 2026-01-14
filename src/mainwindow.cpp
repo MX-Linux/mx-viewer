@@ -198,21 +198,26 @@ void MainWindow::addHistorySubmenu()
     });
 }
 
-void MainWindow::addNewTab(const QString &url)
+void MainWindow::addNewTab(const QUrl &url, bool makeCurrent)
 {
-    tabWidget->createTab();
-    setConnections();
-    QString finalUrl = url;
+    WebView *view = tabWidget->createTab(makeCurrent);
+    if (!view) {
+        return;
+    }
+    if (makeCurrent) {
+        setConnections();
+    }
+    QUrl finalUrl = url;
     if (finalUrl.isEmpty() && openNewTabWithHome) {
-        finalUrl = homeAddress;
+        finalUrl = QUrl::fromUserInput(homeAddress);
     }
     if (finalUrl.isEmpty()) {
-        finalUrl = "about:blank";
+        finalUrl = QUrl("about:blank");
     }
-    currentWebView()->setUrl(QUrl::fromUserInput(finalUrl));
-    currentWebView()->show();
-    QTimer::singleShot(0, this, &MainWindow::focusAddressBarIfBlank);
-    if (auto *view = currentWebView()) {
+    view->setUrl(finalUrl);
+    view->show();
+    if (makeCurrent) {
+        QTimer::singleShot(0, this, &MainWindow::focusAddressBarIfBlank);
         QMetaObject::Connection once;
         once = connect(view, &QWebEngineView::loadFinished, this, [this, view, once](bool) mutable {
             if (view == currentWebView()) {
@@ -947,8 +952,13 @@ void MainWindow::closeCurrentTab()
 void MainWindow::reopenClosedTab()
 {
     if (!closedTabs.isEmpty()) {
-        addNewTab(closedTabs.takeLast().toString());
+        addNewTab(closedTabs.takeLast());
     }
+}
+
+void MainWindow::openLinkInNewTab(const QUrl &url)
+{
+    addNewTab(url, false);
 }
 
 void MainWindow::toggleFullScreen()

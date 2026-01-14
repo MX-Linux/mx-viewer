@@ -46,6 +46,7 @@ public slots:
     void done(bool ok);
     void closeCurrentTab();
     void reopenClosedTab();
+    void openLinkInNewTab(const QUrl &url);
     void openDevTools();
     void openSettings();
 
@@ -95,7 +96,7 @@ private:
     void addHistorySubmenu();
     void addNavigationActions();
     void addHomeAction();
-    void addNewTab(const QString &url = {});
+    void addNewTab(const QUrl &url = QUrl(), bool makeCurrent = true);
     void addToolbar();
     void addZoomActions();
     void setupAddressBar();
