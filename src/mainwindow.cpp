@@ -21,6 +21,8 @@
  ****************************************************************************/
 #include "mainwindow.h"
 
+#include <QWebEngineView>
+
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     : QMainWindow(parent),
       downloadWidget {new DownloadWidget},
@@ -511,6 +513,9 @@ void MainWindow::tabChanged()
     }
     setWindowTitle(currentWebView()->title());
     setConnections();
+    if (devToolsWindow && devToolsView) {
+        currentWebView()->page()->setDevToolsPage(devToolsView->page());
+    }
 }
 
 // Show the address in the toolbar and also connect it to launch it
@@ -565,11 +570,14 @@ void MainWindow::addFileMenuActions(QMenu *menu)
 void MainWindow::addViewMenuActions(QMenu *menu)
 {
     QAction *fullScreen {nullptr};
+    QAction *devTools {nullptr};
     QAction *historyAction {nullptr};
     QAction *downloadAction {nullptr};
     QAction *bookmarkAction {nullptr};
     menu->addAction(fullScreen = new QAction(QIcon::fromTheme("view-fullscreen"), tr("&Full screen")));
     menu->addSeparator();
+    menu->addAction(devTools = new QAction(QIcon::fromTheme("applications-development"), tr("&Developer Tools")));
+    devTools->setShortcut(Qt::Key_F12);
     menu->addAction(historyAction = new QAction(QIcon::fromTheme("history"), tr("H&istory")));
     historyAction->setMenu(history);
     menu->addAction(downloadAction = new QAction(QIcon::fromTheme("folder-download"), tr("&Downloads")));
@@ -581,6 +589,7 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     addBookmark->setShortcut(Qt::CTRL | Qt::Key_D);
     bookmarks->addSeparator();
     connect(fullScreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
+    connect(devTools, &QAction::triggered, this, &MainWindow::openDevTools);
     connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
     connect(addBookmark, &QAction::triggered, this, [this] {
         QAction *bookmark {nullptr};
@@ -630,6 +639,29 @@ void MainWindow::setupMenuConnections(QMenu *menu)
         menu->popup(pos);
         listHistory();
     });
+}
+
+void MainWindow::openDevTools()
+{
+    if (!currentWebView()) {
+        return;
+    }
+    if (!devToolsWindow) {
+        devToolsWindow = new QMainWindow(this);
+        devToolsWindow->setAttribute(Qt::WA_DeleteOnClose);
+        devToolsWindow->setWindowTitle(tr("Developer Tools"));
+        devToolsView = new QWebEngineView(devToolsWindow);
+        devToolsWindow->setCentralWidget(devToolsView);
+        devToolsWindow->resize(900, 700);
+        connect(devToolsWindow.data(), &QObject::destroyed, this, [this] {
+            devToolsWindow = nullptr;
+            devToolsView = nullptr;
+        });
+    }
+    currentWebView()->page()->setDevToolsPage(devToolsView->page());
+    devToolsWindow->show();
+    devToolsWindow->raise();
+    devToolsWindow->activateWindow();
 }
 
 void MainWindow::closeCurrentTab()

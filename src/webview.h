@@ -22,7 +22,18 @@
 #pragma once
 
 #include <QSettings>
+#include <QWebEnginePage>
 #include <QWebEngineView>
+
+class WebPage : public QWebEnginePage
+{
+public:
+    explicit WebPage(QObject *parent = nullptr);
+
+protected:
+    void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message, int lineNumber,
+                                  const QString &sourceID) override;
+};
 
 class WebView : public QWebEngineView
 {

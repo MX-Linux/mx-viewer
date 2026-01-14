@@ -26,6 +26,10 @@
 #include "tabwidget.h"
 #include "webview.h"
 
+#include <QPointer>
+
+class QWebEngineView;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -42,6 +46,7 @@ public slots:
     void done(bool ok);
     void closeCurrentTab();
     void reopenClosedTab();
+    void openDevTools();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -65,6 +70,8 @@ private:
     bool showProgress {};
     const QCommandLineParser *args;
     QList<QUrl> closedTabs;
+    QPointer<QMainWindow> devToolsWindow;
+    QPointer<QWebEngineView> devToolsView;
     QMetaObject::Connection loadStartedConn;
     QMetaObject::Connection loadingConn;
     QMetaObject::Connection loadFinishedConn;

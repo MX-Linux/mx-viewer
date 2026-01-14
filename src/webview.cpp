@@ -26,10 +26,25 @@
 #include <QPointer>
 #include <QWebEngineHistoryItem>
 
+WebPage::WebPage(QObject *parent)
+    : QWebEnginePage(parent)
+{
+}
+
+void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message, int lineNumber,
+                                       const QString &sourceID)
+{
+    Q_UNUSED(level);
+    Q_UNUSED(message);
+    Q_UNUSED(lineNumber);
+    Q_UNUSED(sourceID);
+}
+
 WebView::WebView(QWidget *parent)
     : QWebEngineView(parent),
       index(historyLog.value("History/size", 0).toInt())
 {
+    setPage(new WebPage(this));
     connect(this, &WebView::loadFinished, this, &WebView::handleLoadFinished);
     connect(this, &WebView::iconChanged, this, &WebView::handleIconChanged);
 }
