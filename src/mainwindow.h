@@ -107,6 +107,8 @@ private:
     void centerWindow();
     void connectAddress(const QAction *action, const QMenu *menu);
     void displaySite(QString url = {}, const QString &title = {});
+    void focusAddressBar();
+    void focusAddressBarIfBlank();
     void loadBookmarks();
     void loadHistory();
     void loadSettings();

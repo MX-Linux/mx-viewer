@@ -26,6 +26,7 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QLineEdit>
+#include <QTimer>
 #include <QWebEngineView>
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
@@ -176,9 +177,18 @@ void MainWindow::addNewTab(const QString &url)
     if (finalUrl.isEmpty()) {
         finalUrl = "about:blank";
     }
-     currentWebView()->setUrl(QUrl::fromUserInput(finalUrl));
-     currentWebView()->show();
-     addressBar->setFocus();
+    currentWebView()->setUrl(QUrl::fromUserInput(finalUrl));
+    currentWebView()->show();
+    QTimer::singleShot(0, this, &MainWindow::focusAddressBarIfBlank);
+    if (auto *view = currentWebView()) {
+        QMetaObject::Connection once;
+        once = connect(view, &QWebEngineView::loadFinished, this, [this, view, once](bool) mutable {
+            if (view == currentWebView()) {
+                focusAddressBarIfBlank();
+            }
+            disconnect(once);
+        });
+    }
 }
 
 void MainWindow::listHistory()
@@ -775,6 +785,24 @@ void MainWindow::updateUrl()
     addressBar->setText(currentWebView()->url().toDisplayString());
 }
 
+void MainWindow::focusAddressBar()
+{
+    if (addressBar) {
+        addressBar->setFocus();
+    }
+}
+
+void MainWindow::focusAddressBarIfBlank()
+{
+    if (!addressBar) {
+        return;
+    }
+    const QString text = addressBar->text().trimmed();
+    if (text.isEmpty() || text == "about:blank") {
+        focusAddressBar();
+    }
+}
+
 void MainWindow::findBackward()
 {
     searchBox->setFocus();
@@ -804,7 +832,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     } else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
         currentWebView()->setFocus();
     } else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
-        addressBar->setFocus();
+        focusAddressBar();
     }
 }
 
