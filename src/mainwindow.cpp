@@ -26,7 +26,6 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
       downloadWidget {new DownloadWidget},
       searchBox {new QLineEdit(this)},
       progressBar {new QProgressBar(this)},
-      timer {new QTimer(this)},
       toolBar {new QToolBar(this)},
       tabWidget {new TabWidget(this)},
       args {&arg_parser}
@@ -50,7 +49,6 @@ MainWindow::MainWindow(const QUrl &url, QWidget *parent)
       downloadWidget {new DownloadWidget},
       searchBox {new QLineEdit(this)},
       progressBar {new QProgressBar(this)},
-      timer {new QTimer(this)},
       toolBar {new QToolBar(this)},
       tabWidget {new TabWidget(this)},
       args {nullptr}
@@ -647,8 +645,7 @@ void MainWindow::loading()
     progressBar->move(geometry().width() / 2 - progressBar->width() / 2, geometry().height() - progBarVerticalAdj);
     progressBar->setFocus();
     progressBar->show();
-    connect(timer, &QTimer::timeout, this, &MainWindow::procTime);
-    timer->start(100);
+    progressBar->setRange(0, 0);
 }
 
 // done loading
@@ -657,20 +654,14 @@ void MainWindow::done(bool ok)
     if (!ok) {
         qDebug() << "Error loading:" << currentWebView()->url().toString();
     }
-    timer->stop();
-    timer->disconnect();
     currentWebView()->stop();
     currentWebView()->setFocus();
     searchBox->clear();
+    progressBar->setRange(0, 100);
     progressBar->setValue(0);
     progressBar->hide();
     tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
     setWindowTitle(currentWebView()->title());
 }
 
-// advance progressbar
-void MainWindow::procTime()
-{
-    constexpr int step = 5;
-    progressBar->setValue((progressBar->value() + step) % progressBar->maximum());
-}
+

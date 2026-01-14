@@ -40,7 +40,6 @@ public slots:
     void findForward();
     void loading();
     void done(bool ok);
-    void procTime();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -58,7 +57,6 @@ private:
     QProgressBar *progressBar {};
     QSettings settings;
     QString homeAddress;
-    QTimer *timer {nullptr};
     QToolBar *toolBar {};
     QWebEngineSettings *websettings {};
     TabWidget *tabWidget {};
