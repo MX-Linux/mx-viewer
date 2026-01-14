@@ -40,6 +40,8 @@ public slots:
     void findForward();
     void loading();
     void done(bool ok);
+    void closeCurrentTab();
+    void reopenClosedTab();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -62,6 +64,7 @@ private:
     TabWidget *tabWidget {};
     bool showProgress {};
     const QCommandLineParser *args;
+    QList<QUrl> closedTabs;
     static constexpr int defaultHeight {600};
     static constexpr int defaultWidth {800};
     static constexpr int progBarVerticalAdj {40};

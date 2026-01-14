@@ -69,6 +69,14 @@ void MainWindow::init()
     addToolbar();
     addActions();
     setConnections();
+    auto *closeTabAction = new QAction(this);
+    closeTabAction->setShortcut(QKeySequence::Close);
+    connect(closeTabAction, &QAction::triggered, this, &MainWindow::closeCurrentTab);
+    addAction(closeTabAction);
+    auto *reopenTabAction = new QAction(this);
+    reopenTabAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_T));
+    connect(reopenTabAction, &QAction::triggered, this, &MainWindow::reopenClosedTab);
+    addAction(reopenTabAction);
 }
 
 MainWindow::~MainWindow()
@@ -603,6 +611,23 @@ void MainWindow::setupMenuConnections(QMenu *menu)
     });
 }
 
+void MainWindow::closeCurrentTab()
+{
+    if (tabWidget->count() > 1) {
+        closedTabs.append(currentWebView()->url());
+        tabWidget->removeTab(tabWidget->currentIndex());
+    } else {
+        close();
+    }
+}
+
+void MainWindow::reopenClosedTab()
+{
+    if (!closedTabs.isEmpty()) {
+        addNewTab(closedTabs.takeLast().toString());
+    }
+}
+
 void MainWindow::toggleFullScreen()
 {
     if (isFullScreen()) {
@@ -703,5 +728,4 @@ void MainWindow::done(bool ok)
     tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
     setWindowTitle(currentWebView()->title());
 }
-
 
