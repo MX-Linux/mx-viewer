@@ -47,6 +47,7 @@ public slots:
     void closeCurrentTab();
     void reopenClosedTab();
     void openDevTools();
+    void openSettings();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -68,6 +69,7 @@ private:
     QWebEngineSettings *websettings {};
     TabWidget *tabWidget {};
     bool showProgress {};
+    bool openNewTabWithHome {};
     const QCommandLineParser *args;
     QList<QUrl> closedTabs;
     QPointer<QMainWindow> devToolsWindow;

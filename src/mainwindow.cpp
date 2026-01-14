@@ -21,6 +21,11 @@
  ****************************************************************************/
 #include "mainwindow.h"
 
+#include <QCheckBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QFormLayout>
+#include <QLineEdit>
 #include <QWebEngineView>
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
@@ -164,9 +169,16 @@ void MainWindow::addNewTab(const QString &url)
 {
     tabWidget->createTab();
     setConnections();
-    QString finalUrl = url.isEmpty() ? homeAddress : url;
-    currentWebView()->setUrl(QUrl::fromUserInput(finalUrl));
-    currentWebView()->show();
+    QString finalUrl = url;
+    if (finalUrl.isEmpty() && openNewTabWithHome) {
+        finalUrl = homeAddress;
+    }
+    if (finalUrl.isEmpty()) {
+        finalUrl = "about:blank";
+    }
+     currentWebView()->setUrl(QUrl::fromUserInput(finalUrl));
+     currentWebView()->show();
+     addressBar->setFocus();
 }
 
 void MainWindow::listHistory()
@@ -347,6 +359,7 @@ void MainWindow::loadSettings()
 
     homeAddress = settings.value("Home", "https://start.duckduckgo.com").toString();
     showProgress = settings.value("ShowProgressBar", false).toBool();
+    openNewTabWithHome = settings.value("OpenNewTabWithHome", true).toBool();
 
     websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled,
                               settings.value("SpatialNavigation", false).toBool());
@@ -601,14 +614,19 @@ void MainWindow::addViewMenuActions(QMenu *menu)
 
 void MainWindow::addHelpMenuActions(QMenu *menu)
 {
+    QAction *settingsAction {nullptr};
     QAction *help {nullptr};
     QAction *about {nullptr};
     QAction *quit {nullptr};
+    menu->addSeparator();
+    menu->addAction(settingsAction = new QAction(QIcon::fromTheme("preferences-system"), tr("&Settings")));
+    settingsAction->setShortcut(QKeySequence::Preferences);
     menu->addSeparator();
     menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Help")));
     menu->addAction(about = new QAction(QIcon::fromTheme("help-about"), tr("&About")));
     menu->addSeparator();
     menu->addAction(quit = new QAction(QIcon::fromTheme("window-close"), tr("&Exit")));
+    connect(settingsAction, &QAction::triggered, this, &MainWindow::openSettings);
     connect(help, &QAction::triggered, this, &MainWindow::openQuickInfo);
     connect(quit, &QAction::triggered, this, &MainWindow::close);
     connect(about, &QAction::triggered, this, [this] {
@@ -662,6 +680,64 @@ void MainWindow::openDevTools()
     devToolsWindow->show();
     devToolsWindow->raise();
     devToolsWindow->activateWindow();
+}
+
+void MainWindow::openSettings()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Settings"));
+    auto *layout = new QFormLayout(&dialog);
+    auto *homeInput = new QLineEdit(homeAddress, &dialog);
+    auto *openNewTabCheck = new QCheckBox(tr("Open new tabs with home page"), &dialog);
+    openNewTabCheck->setChecked(openNewTabWithHome);
+    auto *showProgressCheck = new QCheckBox(tr("Show progress bar"), &dialog);
+    showProgressCheck->setChecked(showProgress);
+    auto *spatialNavCheck = new QCheckBox(tr("Enable spatial navigation"), &dialog);
+    spatialNavCheck->setChecked(settings.value("SpatialNavigation", false).toBool());
+    auto *disableJsCheck = new QCheckBox(tr("Disable JavaScript"), &dialog);
+    disableJsCheck->setChecked(settings.value("DisableJava", false).toBool());
+    auto *loadImagesCheck = new QCheckBox(tr("Load images"), &dialog);
+    loadImagesCheck->setChecked(settings.value("LoadImages", true).toBool());
+
+    layout->addRow(tr("Home address"), homeInput);
+    layout->addRow(QString(), openNewTabCheck);
+    layout->addRow(QString(), showProgressCheck);
+    layout->addRow(QString(), spatialNavCheck);
+    layout->addRow(QString(), disableJsCheck);
+    layout->addRow(QString(), loadImagesCheck);
+
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    layout->addRow(buttons);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        homeAddress = homeInput->text().trimmed();
+        openNewTabWithHome = openNewTabCheck->isChecked();
+        settings.setValue("Home", homeAddress);
+        settings.setValue("OpenNewTabWithHome", openNewTabWithHome);
+        showProgress = showProgressCheck->isChecked();
+        settings.setValue("ShowProgressBar", showProgress);
+        settings.setValue("SpatialNavigation", spatialNavCheck->isChecked());
+        settings.setValue("DisableJava", disableJsCheck->isChecked());
+        settings.setValue("LoadImages", loadImagesCheck->isChecked());
+
+        bool spatialNav = spatialNavCheck->isChecked();
+        if (args && args->isSet("enable-spatial-navigation")) {
+            spatialNav = true;
+        }
+        bool disableJs = disableJsCheck->isChecked();
+        if (args && args->isSet("disable-js")) {
+            disableJs = true;
+        }
+        bool loadImages = loadImagesCheck->isChecked();
+        if (args && args->isSet("disable-images")) {
+            loadImages = false;
+        }
+        websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, spatialNav);
+        websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !disableJs);
+        websettings->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
+    }
 }
 
 void MainWindow::closeCurrentTab()
