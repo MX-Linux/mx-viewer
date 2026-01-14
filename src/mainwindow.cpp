@@ -777,6 +777,10 @@ void MainWindow::openSettings()
         thirdPartyCookiesCheck->setChecked(false);
     }
     thirdPartyCookiesCheck->setEnabled(cookiesCheck->isChecked());
+    auto *thirdPartyRow = new QWidget(&dialog);
+    auto *thirdPartyLayout = new QHBoxLayout(thirdPartyRow);
+    thirdPartyLayout->setContentsMargins(20, 0, 0, 0);
+    thirdPartyLayout->addWidget(thirdPartyCookiesCheck);
     auto *popupCheck = new QCheckBox(tr("Allow pop-up windows"), &dialog);
     popupCheck->setChecked(settings.value("AllowPopups", true).toBool());
     auto *saveTabsCheck = new QCheckBox(tr("Save tabs on closing"), &dialog);
@@ -789,8 +793,8 @@ void MainWindow::openSettings()
     layout->addRow(QString(), spatialNavCheck);
     layout->addRow(QString(), enableJsCheck);
     layout->addRow(QString(), loadImagesCheck);
-    layout->addRow(cookiesCheck);
-    layout->addRow("    ", thirdPartyCookiesCheck);
+    layout->addRow(QString(), cookiesCheck);
+    layout->addRow(QString(), thirdPartyRow);
     layout->addRow(QString(), popupCheck);
     layout->addRow(QString(), saveTabsCheck);
 
