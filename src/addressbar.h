@@ -30,6 +30,6 @@ class AddressBar : public QLineEdit
 public:
     explicit AddressBar(QWidget *parent = nullptr);
 
-private slots:
+protected:
     void focusInEvent(QFocusEvent *event) override;
 };

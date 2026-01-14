@@ -231,7 +231,7 @@ void MainWindow::addToolbar()
     toolBar->addAction(zoomin);
     toolBar->addAction(menuButton
                        = new QAction(QIcon::fromTheme("open-menu", QIcon(":/icons/open-menu.png")), tr("Settings")));
-    const auto step = 0.1;
+    constexpr auto step = 0.1;
     zoomin->setShortcuts({QKeySequence::ZoomIn, Qt::CTRL | Qt::Key_Equal});
     zoomout->setShortcut(QKeySequence::ZoomOut);
     zoompercent->setShortcut(Qt::CTRL | Qt::Key_0);
@@ -424,10 +424,10 @@ void MainWindow::setConnections()
 
 void MainWindow::showFullScreenNotification()
 {
-    const int distance_top = 100;
-    const int duration_ms = 800;
-    const double start = 0;
-    const double end = 0.85;
+    constexpr int distance_top = 100;
+    constexpr int duration_ms = 800;
+    constexpr double start = 0;
+    constexpr double end = 0.85;
     auto *label = new QLabel(this);
     auto *effect = new QGraphicsOpacityEffect;
     label->setGraphicsEffect(effect);
@@ -689,6 +689,6 @@ void MainWindow::done()
 // advance progressbar
 void MainWindow::procTime()
 {
-    const int step = 5;
+    constexpr int step = 5;
     progressBar->setValue((progressBar->value() + step) % progressBar->maximum());
 }

@@ -37,7 +37,7 @@
     #define VERSION "?.?.?.?"
 #endif
 
-QPair<int, int> getUserIDs()
+QPair<uint, uint> getUserIDs()
 {
     QPair<uint, uint> id;
     QProcess proc;
@@ -64,7 +64,7 @@ bool dropElevatedPrivileges(bool force_nobody)
     // ref:
     // https://www.safaribooksonline.com/library/view/secure-programming-cookbook/0596003943/ch01s03.html#secureprgckbk-CHP-1-SECT-3.3
     auto [id, gid] = getUserIDs();
-    const int nobody = 65534; // nobody (uid 65534), nogroup (gid 65534)
+    constexpr int nobody = 65534; // nobody (uid 65534), nogroup (gid 65534)
     if (id == 0 || gid == 0 || force_nobody) {
         id = gid = nobody;
     }

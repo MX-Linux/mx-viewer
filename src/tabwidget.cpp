@@ -94,41 +94,25 @@ void TabWidget::addNewTab(WebView *webView)
 
 void TabWidget::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_1 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(0);
-    } else if (event->key() == Qt::Key_2 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(1);
-    } else if (event->key() == Qt::Key_3 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(2);
-    } else if (event->key() == Qt::Key_4 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(3);
-    } else if (event->key() == Qt::Key_5 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(4);
-    } else if (event->key() == Qt::Key_6 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(5);
-    } else if (event->key() == Qt::Key_7 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(6);
-    } else if (event->key() == Qt::Key_8 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(7);
-    } else if (event->key() == Qt::Key_9 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(8);
-    } else if (event->key() == Qt::Key_0 && event->modifiers() == Qt::ControlModifier) {
-        setCurrentIndex(9);
-    } else if (event->key() == Qt::Key_Tab && event->modifiers() == Qt::ControlModifier) {
-        if (currentIndex() + 1 < count()) {
-            setCurrentIndex(currentIndex() + 1);
-        } else {
-            setCurrentIndex(0);
+    if (event->modifiers() == Qt::ControlModifier) {
+        if (event->key() >= Qt::Key_1 && event->key() <= Qt::Key_9) {
+            setCurrentIndex(event->key() - Qt::Key_1);
+            return;
         }
-    } else if (event->key() == Qt::Key_W && event->modifiers() == Qt::ControlModifier) {
-        if (count() == 1) {
-            QApplication::quit();
-        } else {
-            removeTab(currentIndex());
+        if (event->key() == Qt::Key_0) {
+            setCurrentIndex(9);
+            return;
         }
-    } else {
-        QTabWidget::keyPressEvent(event);
+        if (event->key() == Qt::Key_Tab) {
+            setCurrentIndex((currentIndex() + 1) % count());
+            return;
+        }
+        if (event->key() == Qt::Key_W) {
+            count() == 1 ? QApplication::quit() : removeTab(currentIndex());
+            return;
+        }
     }
+    QTabWidget::keyPressEvent(event);
 }
 
 WebView *TabWidget::currentWebView()
