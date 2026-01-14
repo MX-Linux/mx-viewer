@@ -74,8 +74,18 @@ private:
     void addActions();
     void addBookmarksSubmenu();
     void addHistorySubmenu();
+    void addNavigationActions();
+    void addHomeAction();
     void addNewTab(const QString &url = {});
     void addToolbar();
+    void addZoomActions();
+    void setupAddressBar();
+    void setupMenuButton();
+    void setupSearchBox();
+    void addFileMenuActions(QMenu *menu);
+    void addViewMenuActions(QMenu *menu);
+    void addHelpMenuActions(QMenu *menu);
+    void setupMenuConnections(QMenu *menu);
     void buildMenu();
     void centerWindow();
     void connectAddress(const QAction *action, const QMenu *menu);

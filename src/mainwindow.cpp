@@ -174,35 +174,43 @@ void MainWindow::addToolbar()
 {
     addToolBar(toolBar);
     setCentralWidget(tabWidget);
+    addNavigationActions();
+    addHomeAction();
+    setupAddressBar();
+    setupSearchBox();
+    addZoomActions();
+    setupMenuButton();
+    buildMenu();
+    toolBar->show();
+}
 
+void MainWindow::addNavigationActions()
+{
     auto *back = pageAction(QWebEnginePage::Back);
     auto *forward = pageAction(QWebEnginePage::Forward);
     auto *reload = pageAction(QWebEnginePage::Reload);
     auto *stop = pageAction(QWebEnginePage::Stop);
-    auto *home {new QAction(QIcon::fromTheme("go-home", QIcon(":/icons/go-home.svg")), tr("Home"))};
-    auto *zoomin {new QAction(QIcon::fromTheme("zoom-in", QIcon(":/icons/zoom-in.svg")), tr("Zoom In"))};
-    auto *zoompercent {new QAction("100%")};
-    auto *zoomout {new QAction(QIcon::fromTheme("zoom-out", QIcon(":/icons/zoom-out.svg")), tr("Zoom out"))};
-
     toolBar->addAction(back);
     toolBar->addAction(forward);
     toolBar->addAction(reload);
     toolBar->addAction(stop);
-    toolBar->addAction(home);
     back->setShortcut(QKeySequence::Back);
     forward->setShortcut(QKeySequence::Forward);
-    home->setShortcut(Qt::CTRL | Qt::Key_H);
     reload->setShortcuts(QKeySequence::Refresh);
     stop->setShortcut(QKeySequence::Cancel);
     connect(stop, &QAction::triggered, this, [this] { done(true); });
-    connect(home, &QAction::triggered, this, [this] { displaySite(); });
+}
 
-    searchBox->setPlaceholderText(tr("search in page"));
-    searchBox->setClearButtonEnabled(true);
-    searchBox->setMaximumWidth(searchWidth);
-    searchBox->addAction(QIcon::fromTheme("search", QIcon(":/icons/system-search.png")), QLineEdit::LeadingPosition);
-    connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
-    connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
+void MainWindow::addHomeAction()
+{
+    auto *home {new QAction(QIcon::fromTheme("go-home", QIcon(":/icons/go-home.svg")), tr("Home"))};
+    toolBar->addAction(home);
+    home->setShortcut(Qt::CTRL | Qt::Key_H);
+    connect(home, &QAction::triggered, this, [this] { displaySite(); });
+}
+
+void MainWindow::setupAddressBar()
+{
     addressBar = new AddressBar(this);
     addressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     addressBar->setClearButtonEnabled(true);
@@ -211,17 +219,31 @@ void MainWindow::addToolbar()
     addBookmark->setToolTip(tr("Add bookmark"));
     connect(addressBar, &QLineEdit::returnPressed, this, [this] { displaySite(addressBar->text()); });
     toolBar->addWidget(addressBar);
+}
+
+void MainWindow::setupSearchBox()
+{
+    searchBox->setPlaceholderText(tr("search in page"));
+    searchBox->setClearButtonEnabled(true);
+    searchBox->setMaximumWidth(searchWidth);
+    searchBox->addAction(QIcon::fromTheme("search", QIcon(":/icons/system-search.png")), QLineEdit::LeadingPosition);
+    connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
+    connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
     toolBar->addWidget(searchBox);
+}
+
+void MainWindow::addZoomActions()
+{
+    auto *zoomout {new QAction(QIcon::fromTheme("zoom-out", QIcon(":/icons/zoom-out.svg")), tr("Zoom out"))};
+    auto *zoompercent {new QAction("100%")};
+    auto *zoomin {new QAction(QIcon::fromTheme("zoom-in", QIcon(":/icons/zoom-in.svg")), tr("Zoom In"))};
     toolBar->addAction(zoomout);
     toolBar->addAction(zoompercent);
     toolBar->addAction(zoomin);
-    toolBar->addAction(menuButton
-                       = new QAction(QIcon::fromTheme("open-menu", QIcon(":/icons/open-menu.png")), tr("Settings")));
     constexpr auto step = 0.1;
     zoomin->setShortcuts({QKeySequence::ZoomIn, Qt::CTRL | Qt::Key_Equal});
     zoomout->setShortcut(QKeySequence::ZoomOut);
     zoompercent->setShortcut(Qt::CTRL | Qt::Key_0);
-
     connect(zoomout, &QAction::triggered, this, [this, step, zoompercent] {
         currentWebView()->setZoomFactor(currentWebView()->zoomFactor() - step);
         zoompercent->setText(QString::number(currentWebView()->zoomFactor() * 100) + "%");
@@ -234,9 +256,13 @@ void MainWindow::addToolbar()
         currentWebView()->setZoomFactor(1);
         zoompercent->setText("100%");
     });
+}
+
+void MainWindow::setupMenuButton()
+{
+    menuButton = new QAction(QIcon::fromTheme("open-menu", QIcon(":/icons/open-menu.png")), tr("Settings"));
+    toolBar->addAction(menuButton);
     menuButton->setShortcut(Qt::Key_F10);
-    buildMenu();
-    toolBar->show();
 }
 
 void MainWindow::openBrowseDialog()
@@ -486,19 +512,33 @@ void MainWindow::buildMenu()
     history->setStyleSheet("QMenu { menu-scrollable: 1; }");
     history->setObjectName("History");
     bookmarks->setStyleSheet("QMenu { menu-scrollable: 1; }");
-    QAction *newTab {nullptr};
-    QAction *fullScreen {nullptr};
-    QAction *about {nullptr};
-    QAction *quit {nullptr};
-    QAction *help {nullptr};
-    QAction *downloadAction {nullptr};
-    QAction *bookmarkAction {nullptr};
-    QAction *historyAction {nullptr};
     menuButton->setMenu(menu);
 
+    addFileMenuActions(menu);
+    addViewMenuActions(menu);
+    addHelpMenuActions(menu);
+
+    loadBookmarks();
+    addBookmarksSubmenu();
+    addHistorySubmenu();
+
+    setupMenuConnections(menu);
+}
+
+void MainWindow::addFileMenuActions(QMenu *menu)
+{
+    QAction *newTab {nullptr};
     menu->addAction(newTab = new QAction(QIcon::fromTheme("tab-new"), tr("&New tab")));
     newTab->setShortcut(Qt::CTRL | Qt::Key_T);
-    menu->addSeparator();
+    connect(newTab, &QAction::triggered, this, [this] { addNewTab(); });
+}
+
+void MainWindow::addViewMenuActions(QMenu *menu)
+{
+    QAction *fullScreen {nullptr};
+    QAction *historyAction {nullptr};
+    QAction *downloadAction {nullptr};
+    QAction *bookmarkAction {nullptr};
     menu->addAction(fullScreen = new QAction(QIcon::fromTheme("view-fullscreen"), tr("&Full screen")));
     menu->addSeparator();
     menu->addAction(historyAction = new QAction(QIcon::fromTheme("history"), tr("H&istory")));
@@ -511,57 +551,55 @@ void MainWindow::buildMenu()
     addBookmark->setText(tr("Bookmark current address"));
     addBookmark->setShortcut(Qt::CTRL | Qt::Key_D);
     bookmarks->addSeparator();
-    menu->addSeparator();
-    menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Help")));
-    menu->addAction(about = new QAction(QIcon::fromTheme("help-about"), tr("&About")));
-    menu->addSeparator();
-    menu->addAction(quit = new QAction(QIcon::fromTheme("window-close"), tr("&Exit")));
-
-    loadBookmarks();
-    addBookmarksSubmenu();
-    addHistorySubmenu();
-
-    connect(newTab, &QAction::triggered, this, [this] { addNewTab(); });
-
+    connect(fullScreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
+    connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
     connect(addBookmark, &QAction::triggered, this, [this] {
         QAction *bookmark {nullptr};
         bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), currentWebView()->title()));
         bookmark->setProperty("url", currentWebView()->url());
         connectAddress(bookmark, bookmarks);
     });
+}
 
-    connect(menuButton, &QAction::triggered, this, [this, menu] {
-        QPoint pos = mapToParent(toolBar->widgetForAction(menuButton)->pos());
-        pos.setY(pos.y() + toolBar->widgetForAction(menuButton)->size().height());
-        menu->popup(pos);
-        listHistory();
-    });
-
-    connect(fullScreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
-    connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
+void MainWindow::addHelpMenuActions(QMenu *menu)
+{
+    QAction *help {nullptr};
+    QAction *about {nullptr};
+    QAction *quit {nullptr};
+    menu->addSeparator();
+    menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Help")));
+    menu->addAction(about = new QAction(QIcon::fromTheme("help-about"), tr("&About")));
+    menu->addSeparator();
+    menu->addAction(quit = new QAction(QIcon::fromTheme("window-close"), tr("&Exit")));
     connect(help, &QAction::triggered, this, &MainWindow::openQuickInfo);
     connect(quit, &QAction::triggered, this, &MainWindow::close);
     connect(about, &QAction::triggered, this, [this] {
         QMessageBox::about(this, tr("About MX Viewer"),
                            tr("This is a VERY basic browser based on Qt WebEngine.\n\n"
-
                               "The main purpose is to provide a basic document viewer for MX documentation. "
                               "It could be used for LIMITED internet browsing, but it's not recommended to be "
                               "used for anything important or secure because it's not a fully featured browser "
                               "and its security/privacy features were not tested.\n\n"
-
                               "This program is free software: you can redistribute it and/or modify "
                               "it under the terms of the GNU General Public License as published by "
                               "the Free Software Foundation, either version 3 of the License, or "
                               "(at your option) any later version.\n\n"
-
                               "MX Viewer is distributed in the hope that it will be useful, "
                               "but WITHOUT ANY WARRANTY; without even the implied warranty of "
                               "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
                               "GNU General Public License for more details.\n\n"
-
                               "You should have received a copy of the GNU General Public License "
                               "along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>."));
+    });
+}
+
+void MainWindow::setupMenuConnections(QMenu *menu)
+{
+    connect(menuButton, &QAction::triggered, this, [this, menu] {
+        QPoint pos = mapToParent(toolBar->widgetForAction(menuButton)->pos());
+        pos.setY(pos.y() + toolBar->widgetForAction(menuButton)->size().height());
+        menu->popup(pos);
+        listHistory();
     });
 }
 
