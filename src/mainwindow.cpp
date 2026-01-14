@@ -439,6 +439,7 @@ void MainWindow::tabChanged()
     auto *stop = pageAction(QWebEnginePage::Stop);
     QMap<QString, QAction *> actionMap = {{"Back", back}, {"Forward", forward}, {"Reload", reload}, {"Stop", stop}};
     auto action_list = toolBar->actions();
+    toolBar->setUpdatesEnabled(false);
     for (int i = 0; i < action_list.size() - 1; ++i) {
         auto *currentAction = action_list.at(i);
         auto *nextAction = action_list.at(i + 1);
@@ -449,6 +450,7 @@ void MainWindow::tabChanged()
             toolBar->insertAction(nextAction, replacementAction);
         }
     }
+    toolBar->setUpdatesEnabled(true);
     addressBar->setText(currentWebView()->url().toString());
     if (addressBar->text().isEmpty()) {
         addressBar->setFocus();
