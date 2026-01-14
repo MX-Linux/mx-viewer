@@ -196,7 +196,7 @@ void MainWindow::addToolbar()
     home->setShortcut(Qt::CTRL | Qt::Key_H);
     reload->setShortcuts(QKeySequence::Refresh);
     stop->setShortcut(QKeySequence::Cancel);
-    connect(stop, &QAction::triggered, this, &MainWindow::done);
+    connect(stop, &QAction::triggered, this, [this] { done(true); });
     connect(home, &QAction::triggered, this, [this] { displaySite(); });
 
     searchBox->setPlaceholderText(tr("search in page"));
@@ -260,12 +260,6 @@ void MainWindow::displaySite(QString url, const QString &title)
             return;
         }
     }
-    disconnect(conn);
-    conn = connect(currentWebView(), &QWebEngineView::loadFinished, [url](bool ok) {
-        if (!ok) {
-            qDebug() << "Error :" << url;
-        }
-    });
     if (QFile::exists(url)) {
         url = QFileInfo(url).absoluteFilePath();
     }
@@ -658,8 +652,11 @@ void MainWindow::loading()
 }
 
 // done loading
-void MainWindow::done()
+void MainWindow::done(bool ok)
 {
+    if (!ok) {
+        qDebug() << "Error loading:" << currentWebView()->url().toString();
+    }
     timer->stop();
     timer->disconnect();
     currentWebView()->stop();

@@ -39,7 +39,7 @@ public slots:
     void findBackward();
     void findForward();
     void loading();
-    void done();
+    void done(bool ok);
     void procTime();
 
 protected:
@@ -55,7 +55,6 @@ private:
     QLineEdit *searchBox {};
     QMenu *bookmarks {};
     QMenu *history {};
-    QMetaObject::Connection conn;
     QProgressBar *progressBar {};
     QSettings settings;
     QString homeAddress;
