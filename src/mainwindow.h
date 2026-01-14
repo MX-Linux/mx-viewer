@@ -59,6 +59,7 @@ private:
     DownloadWidget *downloadWidget {};
     QAction *addBookmark {};
     QAction *menuButton {};
+    QAction *zoomPercentAction {};
     QLineEdit *searchBox {};
     QMenu *bookmarks {};
     QMenu *history {};
@@ -70,6 +71,7 @@ private:
     TabWidget *tabWidget {};
     bool showProgress {};
     bool openNewTabWithHome {};
+    int zoomPercent {100};
     const QCommandLineParser *args;
     QList<QUrl> closedTabs;
     QPointer<QMainWindow> devToolsWindow;
@@ -109,11 +111,13 @@ private:
     void displaySite(QString url = {}, const QString &title = {});
     void focusAddressBar();
     void focusAddressBarIfBlank();
+    void setZoomPercent(int percent, bool persist);
     void loadBookmarks();
     void loadHistory();
     void loadSettings();
     void openBrowseDialog();
     void openQuickInfo();
+    void openBookmarksEditor();
     void saveMenuItems(const QMenu *menu, int offset);
     void setConnections();
     void showFullScreenNotification();

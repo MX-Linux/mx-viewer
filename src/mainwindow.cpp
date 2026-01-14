@@ -21,12 +21,17 @@
  ****************************************************************************/
 #include "mainwindow.h"
 
+#include <QAbstractItemView>
 #include <QCheckBox>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QLineEdit>
+#include <QListWidget>
+#include <QPushButton>
 #include <QTimer>
+#include <QVBoxLayout>
 #include <QWebEngineView>
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
@@ -597,6 +602,7 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     QAction *historyAction {nullptr};
     QAction *downloadAction {nullptr};
     QAction *bookmarkAction {nullptr};
+    QAction *manageBookmarks {nullptr};
     menu->addAction(fullScreen = new QAction(QIcon::fromTheme("view-fullscreen"), tr("&Full screen")));
     menu->addSeparator();
     menu->addAction(devTools = new QAction(QIcon::fromTheme("applications-development"), tr("&Developer Tools")));
@@ -610,10 +616,13 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     bookmarks->addAction(addBookmark);
     addBookmark->setText(tr("Bookmark current address"));
     addBookmark->setShortcut(Qt::CTRL | Qt::Key_D);
+    bookmarks->addAction(manageBookmarks = new QAction(QIcon::fromTheme("document-edit"), tr("Manage &bookmarks")));
+    manageBookmarks->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
     bookmarks->addSeparator();
     connect(fullScreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
     connect(devTools, &QAction::triggered, this, &MainWindow::openDevTools);
     connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
+    connect(manageBookmarks, &QAction::triggered, this, &MainWindow::openBookmarksEditor);
     connect(addBookmark, &QAction::triggered, this, [this] {
         QAction *bookmark {nullptr};
         bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), currentWebView()->title()));
@@ -748,6 +757,123 @@ void MainWindow::openSettings()
         websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !disableJs);
         websettings->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
     }
+}
+
+void MainWindow::openBookmarksEditor()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Manage bookmarks"));
+    dialog.resize(520, 420);
+
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *list = new QListWidget(&dialog);
+    list->setSelectionMode(QAbstractItemView::SingleSelection);
+    layout->addWidget(list);
+
+    auto *formLayout = new QFormLayout;
+    auto *titleEdit = new QLineEdit(&dialog);
+    auto *urlEdit = new QLineEdit(&dialog);
+    formLayout->addRow(tr("Title"), titleEdit);
+    formLayout->addRow(tr("URL"), urlEdit);
+    layout->addLayout(formLayout);
+
+    auto *controlsLayout = new QHBoxLayout;
+    auto *moveUpButton = new QPushButton(QIcon::fromTheme("arrow-up"), tr("Move up"), &dialog);
+    auto *moveDownButton = new QPushButton(QIcon::fromTheme("arrow-down"), tr("Move down"), &dialog);
+    auto *removeButton = new QPushButton(QIcon::fromTheme("user-trash"), tr("Remove"), &dialog);
+    controlsLayout->addWidget(moveUpButton);
+    controlsLayout->addWidget(moveDownButton);
+    controlsLayout->addWidget(removeButton);
+    controlsLayout->addStretch();
+    layout->addLayout(controlsLayout);
+
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+    layout->addWidget(buttons);
+
+    for (int i = 2; i < bookmarks->actions().count(); ++i) {
+        QAction *action = bookmarks->actions().at(i);
+        auto *item = new QListWidgetItem(action->icon(), action->text(), list);
+        item->setData(Qt::UserRole, action->property("url").toString());
+    }
+
+    auto syncEditors = [list, titleEdit, urlEdit, moveUpButton, moveDownButton, removeButton] {
+        auto *item = list->currentItem();
+        const bool hasItem = (item != nullptr);
+        titleEdit->setEnabled(hasItem);
+        urlEdit->setEnabled(hasItem);
+        moveUpButton->setEnabled(hasItem && list->currentRow() > 0);
+        moveDownButton->setEnabled(hasItem && list->currentRow() < list->count() - 1);
+        removeButton->setEnabled(hasItem);
+        if (!hasItem) {
+            titleEdit->clear();
+            urlEdit->clear();
+            return;
+        }
+        titleEdit->setText(item->text());
+        urlEdit->setText(item->data(Qt::UserRole).toString());
+    };
+
+    connect(list, &QListWidget::currentRowChanged, &dialog, [syncEditors] { syncEditors(); });
+    connect(titleEdit, &QLineEdit::textEdited, &dialog, [list](const QString &text) {
+        if (auto *item = list->currentItem()) {
+            item->setText(text);
+        }
+    });
+    connect(urlEdit, &QLineEdit::textEdited, &dialog, [list](const QString &text) {
+        if (auto *item = list->currentItem()) {
+            item->setData(Qt::UserRole, text);
+        }
+    });
+    connect(moveUpButton, &QPushButton::clicked, &dialog, [list] {
+        const int row = list->currentRow();
+        if (row > 0) {
+            auto *item = list->takeItem(row);
+            list->insertItem(row - 1, item);
+            list->setCurrentItem(item);
+        }
+    });
+    connect(moveDownButton, &QPushButton::clicked, &dialog, [list] {
+        const int row = list->currentRow();
+        if (row >= 0 && row < list->count() - 1) {
+            auto *item = list->takeItem(row);
+            list->insertItem(row + 1, item);
+            list->setCurrentItem(item);
+        }
+    });
+    connect(removeButton, &QPushButton::clicked, &dialog, [list, syncEditors] {
+        const int row = list->currentRow();
+        if (row >= 0) {
+            delete list->takeItem(row);
+            syncEditors();
+        }
+    });
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (list->count() > 0) {
+        list->setCurrentRow(0);
+    } else {
+        syncEditors();
+    }
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    auto actions = bookmarks->actions();
+    for (int i = actions.count() - 1; i >= 2; --i) {
+        QAction *action = actions.at(i);
+        bookmarks->removeAction(action);
+        action->deleteLater();
+    }
+    for (int i = 0; i < list->count(); ++i) {
+        auto *item = list->item(i);
+        auto *bookmark = new QAction(item->icon(), item->text(), bookmarks);
+        bookmark->setProperty("url", item->data(Qt::UserRole).toString());
+        bookmarks->addAction(bookmark);
+        connectAddress(bookmark, bookmarks);
+    }
+    saveMenuItems(bookmarks, 2);
 }
 
 void MainWindow::closeCurrentTab()
