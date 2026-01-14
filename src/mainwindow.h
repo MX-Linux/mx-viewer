@@ -71,6 +71,7 @@ private:
     static constexpr int progBarWidth {20};
     static constexpr int searchWidth {150};
 
+    void init();
     QAction *pageAction(QWebEnginePage::WebAction webAction);
     WebView *currentWebView();
     void addActions();

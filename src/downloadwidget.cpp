@@ -83,7 +83,7 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download)
             [download, pushButton, progressBar] { updateDownload(download, pushButton, progressBar); });
 }
 
-inline QString DownloadWidget::withUnit(qreal bytes)
+QString DownloadWidget::withUnit(qreal bytes)
 {
     if (bytes < (1 << 10)) {
         return tr("%L1 B").arg(bytes);
@@ -96,7 +96,7 @@ inline QString DownloadWidget::withUnit(qreal bytes)
     }
 }
 
-inline QString DownloadWidget::timeUnit(int seconds)
+QString DownloadWidget::timeUnit(int seconds)
 {
     if (seconds < 60) {
         return tr("%1sec.").arg(seconds);

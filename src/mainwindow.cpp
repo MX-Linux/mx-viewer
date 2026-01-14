@@ -31,18 +31,7 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
       tabWidget {new TabWidget(this)},
       args {&arg_parser}
 {
-    setAttribute(Qt::WA_DeleteOnClose);
-    toolBar->toggleViewAction()->setVisible(false);
-    connect(tabWidget, &TabWidget::currentChanged, this, [this] { tabChanged(); });
-    auto *webView = currentWebView();
-    if (webView) {
-        websettings = webView->settings();
-    }
-    loadSettings();
-    addToolbar();
-    addActions();
-    setConnections();
-
+    init();
     if (arg_parser.isSet("full-screen")) {
         showFullScreen();
         toolBar->hide();
@@ -66,18 +55,22 @@ MainWindow::MainWindow(const QUrl &url, QWidget *parent)
       tabWidget {new TabWidget(this)},
       args {nullptr}
 {
+    init();
+    displaySite(url.toString(), QString());
+}
+
+void MainWindow::init()
+{
     setAttribute(Qt::WA_DeleteOnClose);
     toolBar->toggleViewAction()->setVisible(false);
     connect(tabWidget, &TabWidget::currentChanged, this, [this] { tabChanged(); });
-    auto *webView = currentWebView();
-    if (webView) {
+    if (auto *webView = currentWebView()) {
         websettings = webView->settings();
     }
     loadSettings();
     addToolbar();
     addActions();
     setConnections();
-    displaySite(url.toString(), QString());
 }
 
 MainWindow::~MainWindow()
@@ -126,14 +119,14 @@ void MainWindow::addBookmarksSubmenu()
             });
         }
         submenu.addAction(QIcon::fromTheme("edit-symbolic"), tr("Rename"), bookmarks, [this, pos] {
-            auto *edit = new QInputDialog(this);
-            edit->setInputMode(QInputDialog::TextInput);
-            edit->setOkButtonText(tr("Save"));
-            edit->setTextValue(bookmarks->actionAt(pos)->text());
-            edit->setLabelText(tr("Rename bookmark:"));
-            edit->resize(300, edit->height());
-            if (edit->exec() == QDialog::Accepted) {
-                bookmarks->actionAt(pos)->setText(edit->textValue());
+            QInputDialog edit(this);
+            edit.setInputMode(QInputDialog::TextInput);
+            edit.setOkButtonText(tr("Save"));
+            edit.setTextValue(bookmarks->actionAt(pos)->text());
+            edit.setLabelText(tr("Rename bookmark:"));
+            edit.resize(300, edit.height());
+            if (edit.exec() == QDialog::Accepted) {
+                bookmarks->actionAt(pos)->setText(edit.textValue());
             }
         });
         submenu.addAction(QIcon::fromTheme("user-trash"), tr("Delete"), bookmarks,
@@ -550,8 +543,6 @@ void MainWindow::buildMenu()
     });
 
     connect(fullScreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
-    QApplication::processEvents();
-
     connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
     connect(help, &QAction::triggered, this, &MainWindow::openQuickInfo);
     connect(quit, &QAction::triggered, this, &MainWindow::close);

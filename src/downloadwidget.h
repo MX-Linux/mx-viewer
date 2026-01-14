@@ -36,8 +36,8 @@ public:
     explicit DownloadWidget(QWidget* parent = nullptr);
     ~DownloadWidget() override;
 
-    inline static QString withUnit(qreal bytes);
-    inline static QString timeUnit(int seconds);
+    static QString withUnit(qreal bytes);
+    static QString timeUnit(int seconds);
     void downloadRequested(QWebEngineDownloadRequest* download);
     static void updateDownload(QWebEngineDownloadRequest* download, QPushButton* pushButton, QProgressBar* progressBar);
 
