@@ -664,6 +664,7 @@ void MainWindow::done()
     currentWebView()->stop();
     currentWebView()->setFocus();
     searchBox->clear();
+    progressBar->setValue(0);
     progressBar->hide();
     tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
     setWindowTitle(currentWebView()->title());
