@@ -209,7 +209,6 @@ void MainWindow::addToolbar()
     searchBox->setPlaceholderText(tr("search in page"));
     searchBox->setClearButtonEnabled(true);
     searchBox->setMaximumWidth(searchWidth);
-    searchBox->setClearButtonEnabled(true);
     searchBox->addAction(QIcon::fromTheme("search", QIcon(":/icons/system-search.png")), QLineEdit::LeadingPosition);
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
@@ -279,7 +278,6 @@ void MainWindow::displaySite(QString url, const QString &title)
     }
     QUrl qurl = QUrl::fromUserInput(url);
     currentWebView()->setUrl(qurl);
-    currentWebView()->load(qurl);
     currentWebView()->show();
     showProgress ? loading() : progressBar->hide();
     setWindowTitle(title);
@@ -400,8 +398,6 @@ void MainWindow::setConnections()
 {
     connect(currentWebView(), &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
     connect(currentWebView(), &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
-    connect(currentWebView(), &QWebEngineView::iconChanged, this,
-            [this] { histIcons.insert(currentWebView()->url(), currentWebView()->icon()); });
     connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested, downloadWidget,
             &DownloadWidget::downloadRequested, Qt::UniqueConnection);
     if (showProgress) {

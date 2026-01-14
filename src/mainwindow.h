@@ -51,9 +51,7 @@ private:
     AddressBar *addressBar {};
     DownloadWidget *downloadWidget {};
     QAction *addBookmark {};
-    QAction *manageBookmarks {};
     QAction *menuButton {};
-    QHash<QUrl, QIcon> histIcons;
     QLineEdit *searchBox {};
     QMenu *bookmarks {};
     QMenu *history {};
@@ -67,11 +65,11 @@ private:
     TabWidget *tabWidget {};
     bool showProgress {};
     const QCommandLineParser *args;
-    const int defaultHeight {600};
-    const int defaultWidth {800};
-    const int progBarVerticalAdj {40};
-    const int progBarWidth {20};
-    const int searchWidth {150};
+    static constexpr int defaultHeight {600};
+    static constexpr int defaultWidth {800};
+    static constexpr int progBarVerticalAdj {40};
+    static constexpr int progBarWidth {20};
+    static constexpr int searchWidth {150};
 
     QAction *pageAction(QWebEnginePage::WebAction webAction);
     WebView *currentWebView();
