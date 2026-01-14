@@ -404,20 +404,7 @@ void MainWindow::loadSettings()
     openNewTabWithHome = settings.value("OpenNewTabWithHome", true).toBool();
     zoomPercent = settings.value("ZoomPercent", 100).toInt();
 
-    websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled,
-                              settings.value("SpatialNavigation", false).toBool());
-    websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !settings.value("DisableJava", false).toBool());
-    websettings->setAttribute(QWebEngineSettings::AutoLoadImages, settings.value("LoadImages", true).toBool());
-
-    if (args && args->isSet("enable-spatial-navigation")) {
-        websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, true);
-    }
-    if (args && args->isSet("disable-js")) {
-        websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, false);
-    }
-    if (args && args->isSet("disable-images")) {
-        websettings->setAttribute(QWebEngineSettings::AutoLoadImages, false);
-    }
+    applyWebSettings();
 
     QSize size {defaultWidth, defaultHeight};
     resize(size);
@@ -487,6 +474,8 @@ void MainWindow::setConnections()
     if (!currentWebView()) {
         return;
     }
+    websettings = currentWebView()->settings();
+    applyWebSettings();
     if (loadStartedConn) {
         disconnect(loadStartedConn);
     }
@@ -785,22 +774,29 @@ void MainWindow::openSettings()
         settings.setValue("DisableJava", disableJsCheck->isChecked());
         settings.setValue("LoadImages", loadImagesCheck->isChecked());
 
-        bool spatialNav = spatialNavCheck->isChecked();
-        if (args && args->isSet("enable-spatial-navigation")) {
-            spatialNav = true;
-        }
-        bool disableJs = disableJsCheck->isChecked();
-        if (args && args->isSet("disable-js")) {
-            disableJs = true;
-        }
-        bool loadImages = loadImagesCheck->isChecked();
-        if (args && args->isSet("disable-images")) {
-            loadImages = false;
-        }
-        websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, spatialNav);
-        websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !disableJs);
-        websettings->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
+        applyWebSettings();
     }
+}
+
+void MainWindow::applyWebSettings()
+{
+    bool spatialNav = settings.value("SpatialNavigation", false).toBool();
+    bool disableJs = settings.value("DisableJava", false).toBool();
+    bool loadImages = settings.value("LoadImages", true).toBool();
+
+    if (args && args->isSet("enable-spatial-navigation")) {
+        spatialNav = true;
+    }
+    if (args && args->isSet("disable-js")) {
+        disableJs = true;
+    }
+    if (args && args->isSet("disable-images")) {
+        loadImages = false;
+    }
+
+    websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, spatialNav);
+    websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !disableJs);
+    websettings->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
 }
 
 void MainWindow::setZoomPercent(int percent, bool persist)

@@ -111,6 +111,7 @@ private:
     void displaySite(QString url = {}, const QString &title = {});
     void focusAddressBar();
     void focusAddressBarIfBlank();
+    void applyWebSettings();
     void setZoomPercent(int percent, bool persist);
     void loadBookmarks();
     void loadHistory();
