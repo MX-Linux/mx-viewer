@@ -1,7 +1,8 @@
 mx-viewer (26.01.1) mx; urgency=medium
 
   * Added cookies, 3rd party cookies, pop-up options in Settings
-  * Add + icon for opening new tab
+  * Added + icon for opening new tab
+  * Added option to save tabs on closing and resume next time the app starts
 
  -- Adrian <adrian@mxlinux.org>  Wed, 14 Jan 2026 13:41:01 -0500
 

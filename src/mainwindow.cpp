@@ -22,6 +22,7 @@
 #include "mainwindow.h"
 
 #include <QAbstractItemView>
+#include <QBuffer>
 #include <QCheckBox>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -87,6 +88,11 @@ void MainWindow::init()
     addToolbar();
     addActions();
     setConnections();
+
+    if (settings.value("SaveTabs", false).toBool()) {
+        restoreSavedTabs();
+    }
+
     auto *closeTabAction = new QAction(this);
     closeTabAction->setShortcut(QKeySequence::Close);
     connect(closeTabAction, &QAction::triggered, this, &MainWindow::closeCurrentTab);
@@ -770,6 +776,8 @@ void MainWindow::openSettings()
     thirdPartyCookiesCheck->setEnabled(cookiesCheck->isChecked());
     auto *popupCheck = new QCheckBox(tr("Allow pop-up windows"), &dialog);
     popupCheck->setChecked(settings.value("AllowPopups", true).toBool());
+    auto *saveTabsCheck = new QCheckBox(tr("Save tabs on closing"), &dialog);
+    saveTabsCheck->setChecked(settings.value("SaveTabs", false).toBool());
 
     layout->addRow(tr("Home address"), homeInput);
     layout->addRow(QString(), openNewTabCheck);
@@ -778,9 +786,10 @@ void MainWindow::openSettings()
     layout->addRow(QString(), spatialNavCheck);
     layout->addRow(QString(), enableJsCheck);
     layout->addRow(QString(), loadImagesCheck);
-    layout->addRow(QString(), cookiesCheck);
+    layout->addRow(cookiesCheck);
     layout->addRow("    ", thirdPartyCookiesCheck);
     layout->addRow(QString(), popupCheck);
+    layout->addRow(QString(), saveTabsCheck);
 
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
     layout->addRow(buttons);
@@ -807,6 +816,7 @@ void MainWindow::openSettings()
         settings.setValue("EnableCookies", cookiesCheck->isChecked());
         settings.setValue("EnableThirdPartyCookies", thirdPartyCookiesCheck->isChecked());
         settings.setValue("AllowPopups", popupCheck->isChecked());
+        settings.setValue("SaveTabs", saveTabsCheck->isChecked());
 
         applyWebSettings();
     }
@@ -1069,6 +1079,34 @@ void MainWindow::updateUrl()
     addressBar->setText(currentWebView()->url().toDisplayString());
 }
 
+void MainWindow::restoreSavedTabs()
+{
+    int size = settings.beginReadArray("SavedTabs");
+    if (size == 0) {
+        settings.endArray();
+        return;
+    }
+
+    QList<QUrl> savedUrls;
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        QString url = settings.value("url").toString();
+        if (!url.isEmpty()) {
+            savedUrls.append(QUrl::fromUserInput(url));
+        }
+    }
+    settings.endArray();
+    settings.remove("SavedTabs");
+
+    if (!savedUrls.isEmpty()) {
+        tabWidget->removeTab(0);
+    }
+
+    for (const auto &url : savedUrls) {
+        addNewTab(url, false);
+    }
+}
+
 void MainWindow::focusAddressBar()
 {
     if (addressBar) {
@@ -1131,6 +1169,26 @@ void MainWindow::resizeEvent(QResizeEvent * /*event*/)
 void MainWindow::closeEvent(QCloseEvent * /*event*/)
 {
     downloadWidget->close();
+
+    if (settings.value("SaveTabs", false).toBool()) {
+        settings.beginWriteArray("SavedTabs");
+        for (int i = 0; i < tabWidget->count(); ++i) {
+            settings.setArrayIndex(i);
+            auto *webView = qobject_cast<WebView *>(tabWidget->widget(i));
+            if (webView) {
+                settings.setValue("url", webView->url().toString());
+                settings.setValue("title", webView->title());
+                QPixmap iconPixmap = webView->icon().pixmap(QSize(22, 22));
+                QByteArray iconByteArray;
+                QBuffer buffer(&iconByteArray);
+                if (buffer.open(QIODevice::WriteOnly)) {
+                    iconPixmap.save(&buffer, "PNG");
+                }
+                settings.setValue("icon", iconByteArray);
+            }
+        }
+        settings.endArray();
+    }
 }
 
 QAction *MainWindow::pageAction(QWebEnginePage::WebAction webAction)

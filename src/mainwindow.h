@@ -51,6 +51,7 @@ public slots:
     void openLinkInNewTab(const QUrl &url);
     void openDevTools();
     void openSettings();
+    void restoreSavedTabs();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
