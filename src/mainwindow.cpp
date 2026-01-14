@@ -21,10 +21,6 @@
  ****************************************************************************/
 #include "mainwindow.h"
 
-#include <chrono>
-
-using namespace std::chrono_literals;
-
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
     : QMainWindow(parent),
       downloadWidget {new DownloadWidget},
@@ -442,7 +438,7 @@ void MainWindow::showFullScreenNotification()
     a->setEasingCurve(QEasingCurve::InBack);
     a->start(QPropertyAnimation::DeleteWhenStopped);
     label->show();
-    QTimer::singleShot(4s, this, [label, effect, end, start] {
+    QTimer::singleShot(4000, this, [label, effect, end, start] {
         auto *a = new QPropertyAnimation(effect, "opacity");
         a->setDuration(duration_ms);
         a->setStartValue(end);
@@ -670,7 +666,7 @@ void MainWindow::loading()
     progressBar->setFocus();
     progressBar->show();
     connect(timer, &QTimer::timeout, this, &MainWindow::procTime);
-    timer->start(100ms);
+    timer->start(100);
 }
 
 // done loading
