@@ -81,6 +81,7 @@ void WebView::handleIconChanged()
     }
     historyLog.setValue("icon", iconByteArray);
     historyLog.endArray();
+    historyLog.setValue("History/size", index + 1);
 }
 
 // Check if the last record is complete, if not, decrement index and go back.
