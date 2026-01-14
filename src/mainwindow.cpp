@@ -22,7 +22,6 @@
 #include "mainwindow.h"
 
 #include <QAbstractItemView>
-#include <QBuffer>
 #include <QCheckBox>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -59,7 +58,11 @@ MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
         url = args->positionalArguments().at(0);
         title = (args->positionalArguments().size() > 1) ? args->positionalArguments().at(1) : url;
     }
-    displaySite(url, title);
+    if (!restoredTabs) {
+        displaySite(url, title);
+    } else if (!url.isEmpty()) {
+        addNewTab(QUrl::fromUserInput(url), true);
+    }
 }
 
 MainWindow::MainWindow(const QUrl &url, QWidget *parent)
@@ -72,7 +75,9 @@ MainWindow::MainWindow(const QUrl &url, QWidget *parent)
       args {nullptr}
 {
     init();
-    displaySite(url.toString(), QString());
+    if (!restoredTabs) {
+        displaySite(url.toString(), QString());
+    }
 }
 
 void MainWindow::init()
@@ -89,9 +94,7 @@ void MainWindow::init()
     addActions();
     setConnections();
 
-    if (settings.value("SaveTabs", false).toBool()) {
-        restoreSavedTabs();
-    }
+    restoredTabs = settings.value("SaveTabs", false).toBool() && restoreSavedTabs();
 
     auto *closeTabAction = new QAction(this);
     closeTabAction->setShortcut(QKeySequence::Close);
@@ -1079,12 +1082,12 @@ void MainWindow::updateUrl()
     addressBar->setText(currentWebView()->url().toDisplayString());
 }
 
-void MainWindow::restoreSavedTabs()
+bool MainWindow::restoreSavedTabs()
 {
     int size = settings.beginReadArray("SavedTabs");
     if (size == 0) {
         settings.endArray();
-        return;
+        return false;
     }
 
     QList<QUrl> savedUrls;
@@ -1100,11 +1103,13 @@ void MainWindow::restoreSavedTabs()
 
     if (!savedUrls.isEmpty()) {
         tabWidget->removeTab(0);
+        addNewTab(savedUrls.first(), true);
     }
 
-    for (const auto &url : savedUrls) {
-        addNewTab(url, false);
+    for (int i = 1; i < savedUrls.size(); ++i) {
+        addNewTab(savedUrls.at(i), false);
     }
+    return !savedUrls.isEmpty();
 }
 
 void MainWindow::focusAddressBar()
@@ -1177,14 +1182,6 @@ void MainWindow::closeEvent(QCloseEvent * /*event*/)
             auto *webView = qobject_cast<WebView *>(tabWidget->widget(i));
             if (webView) {
                 settings.setValue("url", webView->url().toString());
-                settings.setValue("title", webView->title());
-                QPixmap iconPixmap = webView->icon().pixmap(QSize(22, 22));
-                QByteArray iconByteArray;
-                QBuffer buffer(&iconByteArray);
-                if (buffer.open(QIODevice::WriteOnly)) {
-                    iconPixmap.save(&buffer, "PNG");
-                }
-                settings.setValue("icon", iconByteArray);
             }
         }
         settings.endArray();

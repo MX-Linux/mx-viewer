@@ -51,7 +51,7 @@ public slots:
     void openLinkInNewTab(const QUrl &url);
     void openDevTools();
     void openSettings();
-    void restoreSavedTabs();
+    bool restoreSavedTabs();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -77,6 +77,7 @@ private:
     bool openNewTabWithHome {};
     int zoomPercent {100};
     bool cookiesEnabled {true};
+    bool restoredTabs {};
     const QCommandLineParser *args;
     QList<QUrl> closedTabs;
     QPointer<QMainWindow> devToolsWindow;
