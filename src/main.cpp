@@ -30,6 +30,7 @@
 #include <QLibraryInfo>
 #include <QLocale>
 #include <QProcess>
+#include <QStandardPaths>
 #include <QTranslator>
 #include <unistd.h>
 
@@ -146,8 +147,8 @@ int main(int argc, char *argv[])
     }
 
     QTranslator appTran;
-    if (appTran.load(QApplication::applicationName() + "_" + QLocale::system().name(),
-                     "/usr/share/" + QApplication::applicationName() + "/locale")) {
+    QString localePath = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation).at(0) + "/" + QApplication::applicationName() + "/locale";
+    if (appTran.load(QApplication::applicationName() + "_" + QLocale::system().name(), localePath)) {
         QApplication::installTranslator(&appTran);
     }
 
