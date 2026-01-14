@@ -24,6 +24,8 @@
 #include <QTabWidget>
 #include "webview.h"
 
+class QPushButton;
+
 class TabWidget : public QTabWidget
 {
     Q_OBJECT
@@ -39,7 +41,14 @@ public:
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
+signals:
+    void newTabButtonClicked();
 
 private:
+    QPushButton *newTabButton {};
     void handleCurrentChanged(int index);
+    void updateNewTabButton();
+    void positionNewTabButton();
 };

@@ -1,3 +1,10 @@
+mx-viewer (26.01.1) mx; urgency=medium
+
+  * Added cookies, 3rd party cookies, pop-up options in Settings
+  * Add + icon for opening new tab
+
+ -- Adrian <adrian@mxlinux.org>  Wed, 14 Jan 2026 13:41:01 -0500
+
 mx-viewer (26.01) mx; urgency=medium
 
   * Add close and reopen tab shortcuts

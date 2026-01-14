@@ -79,6 +79,7 @@ void MainWindow::init()
     setAttribute(Qt::WA_DeleteOnClose);
     toolBar->toggleViewAction()->setVisible(false);
     connect(tabWidget, &TabWidget::currentChanged, this, [this] { tabChanged(); });
+    connect(tabWidget, &TabWidget::newTabButtonClicked, this, [this] { addNewTab(); });
     if (auto *webView = currentWebView()) {
         websettings = webView->settings();
     }

@@ -22,12 +22,18 @@
 #include "tabwidget.h"
 
 #include <QApplication>
+#include <QEvent>
 #include <QMouseEvent>
 #include <QPointer>
+#include <QPushButton>
+#include <QSize>
 #include <QTabBar>
+#include <QTimer>
+#include <QToolButton>
 
 TabWidget::TabWidget(QWidget *parent)
-    : QTabWidget(parent)
+    : QTabWidget(parent),
+      newTabButton(new QPushButton("+", this))
 {
     setTabBarAutoHide(true);
     setTabsClosable(true);
@@ -35,6 +41,14 @@ TabWidget::TabWidget(QWidget *parent)
     createTab();
     connect(this, &QTabWidget::tabCloseRequested, this, &TabWidget::removeTab);
     connect(this, &QTabWidget::currentChanged, this, &TabWidget::handleCurrentChanged);
+
+    newTabButton->setMaximumSize(30, 30);
+    newTabButton->setParent(this);
+    newTabButton->setToolTip(tr("New tab"));
+    newTabButton->hide();
+    connect(newTabButton, &QPushButton::clicked, this, &TabWidget::newTabButtonClicked);
+    tabBar()->installEventFilter(this);
+    updateNewTabButton();
 }
 
 void TabWidget::mousePressEvent(QMouseEvent *event)
@@ -46,6 +60,14 @@ void TabWidget::mousePressEvent(QMouseEvent *event)
         }
     }
     QTabWidget::mousePressEvent(event);
+}
+
+bool TabWidget::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == tabBar() && (event->type() == QEvent::Resize || event->type() == QEvent::LayoutRequest || event->type() == QEvent::Show)) {
+        QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
+    }
+    return QTabWidget::eventFilter(obj, event);
 }
 
 void TabWidget::handleCurrentChanged(int index)
@@ -66,6 +88,7 @@ void TabWidget::removeTab(int index)
         QTabWidget::removeTab(index);
         w->deleteLater();
     }
+    updateNewTabButton();
 }
 
 WebView *TabWidget::createTab(bool makeCurrent)
@@ -94,6 +117,8 @@ void TabWidget::addNewTab(WebView *webView, bool makeCurrent)
     connect(webView, &WebView::newWebView, this, [this](WebView *view, bool makeCurrent) {
         addNewTab(view, makeCurrent);
     });
+    updateNewTabButton();
+    QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
 }
 
 void TabWidget::keyPressEvent(QKeyEvent *event)
@@ -122,4 +147,54 @@ void TabWidget::keyPressEvent(QKeyEvent *event)
 WebView *TabWidget::currentWebView()
 {
     return qobject_cast<WebView *>(currentWidget());
+}
+
+void TabWidget::updateNewTabButton()
+{
+    if (count() < 2) {
+        newTabButton->hide();
+        return;
+    }
+    newTabButton->show();
+    positionNewTabButton();
+    QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
+}
+
+void TabWidget::positionNewTabButton()
+{
+    if (count() < 2) {
+        newTabButton->hide();
+        return;
+    }
+
+    int lastIndex = count() - 1;
+    QRect tabRect = tabBar()->tabRect(lastIndex);
+    int reservedRight = 0;
+    const QRect barRect = tabBar()->rect();
+    const auto toolButtons = tabBar()->findChildren<QToolButton *>();
+    for (const auto *button : toolButtons) {
+        if (!button || !button->isVisible()) {
+            continue;
+        }
+        const QRect buttonRect = button->geometry();
+        if (buttonRect.right() >= barRect.right() - 2) {
+            reservedRight += buttonRect.width() + 2;
+        }
+    }
+
+    constexpr int scrollButtonPadding = 14;
+    int minX = tabRect.right() + 2;
+    int buttonX = minX;
+    if (reservedRight > 0) {
+        int maxX = barRect.right() - reservedRight - scrollButtonPadding - newTabButton->width();
+        if (maxX < minX) {
+            newTabButton->hide();
+            return;
+        }
+        buttonX = qMin(buttonX, maxX);
+    }
+    int buttonY = tabRect.top() + (tabRect.height() - newTabButton->height()) / 2;
+
+    newTabButton->move(buttonX, buttonY);
+    newTabButton->show();
 }
