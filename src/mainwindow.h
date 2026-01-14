@@ -28,6 +28,8 @@
 
 #include <QPointer>
 
+class QWebEngineSettings;
+class QWebEngineScript;
 class QWebEngineView;
 
 class MainWindow : public QMainWindow
@@ -73,10 +75,12 @@ private:
     bool showProgress {};
     bool openNewTabWithHome {};
     int zoomPercent {100};
+    bool cookiesEnabled {true};
     const QCommandLineParser *args;
     QList<QUrl> closedTabs;
     QPointer<QMainWindow> devToolsWindow;
     QPointer<QWebEngineView> devToolsView;
+    QWebEngineScript cookieScript;
     QMetaObject::Connection loadStartedConn;
     QMetaObject::Connection loadingConn;
     QMetaObject::Connection loadFinishedConn;

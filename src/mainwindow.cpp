@@ -34,6 +34,8 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QWebEngineCookieStore>
+#include <QWebEngineScript>
 #include <QWebEngineView>
 
 MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
@@ -408,6 +410,10 @@ void MainWindow::loadSettings()
     showProgress = settings.value("ShowProgressBar", false).toBool();
     openNewTabWithHome = settings.value("OpenNewTabWithHome", true).toBool();
     zoomPercent = settings.value("ZoomPercent", 100).toInt();
+    cookiesEnabled = settings.value("EnableCookies", true).toBool();
+    if (!settings.contains("EnableJavaScript") && settings.contains("DisableJava")) {
+        settings.setValue("EnableJavaScript", !settings.value("DisableJava", false).toBool());
+    }
 
     applyWebSettings();
 
@@ -749,21 +755,40 @@ void MainWindow::openSettings()
     zoomSpin->setValue(zoomPercent);
     auto *spatialNavCheck = new QCheckBox(tr("Enable spatial navigation"), &dialog);
     spatialNavCheck->setChecked(settings.value("SpatialNavigation", false).toBool());
-    auto *disableJsCheck = new QCheckBox(tr("Disable JavaScript"), &dialog);
-    disableJsCheck->setChecked(settings.value("DisableJava", false).toBool());
+    auto *enableJsCheck = new QCheckBox(tr("Enable JavaScript"), &dialog);
+    enableJsCheck->setChecked(settings.value("EnableJavaScript", true).toBool());
     auto *loadImagesCheck = new QCheckBox(tr("Load images"), &dialog);
     loadImagesCheck->setChecked(settings.value("LoadImages", true).toBool());
+    auto *cookiesCheck = new QCheckBox(tr("Enable cookies"), &dialog);
+    cookiesCheck->setChecked(settings.value("EnableCookies", true).toBool());
+    auto *thirdPartyCookiesCheck = new QCheckBox(tr("Enable third-party cookies"), &dialog);
+    thirdPartyCookiesCheck->setChecked(settings.value("EnableThirdPartyCookies", true).toBool());
+    if (!cookiesCheck->isChecked()) {
+        thirdPartyCookiesCheck->setChecked(false);
+    }
+    thirdPartyCookiesCheck->setEnabled(cookiesCheck->isChecked());
+    auto *popupCheck = new QCheckBox(tr("Allow pop-up windows"), &dialog);
+    popupCheck->setChecked(settings.value("AllowPopups", true).toBool());
 
     layout->addRow(tr("Home address"), homeInput);
     layout->addRow(QString(), openNewTabCheck);
     layout->addRow(QString(), showProgressCheck);
     layout->addRow(tr("Zoom level"), zoomSpin);
     layout->addRow(QString(), spatialNavCheck);
-    layout->addRow(QString(), disableJsCheck);
+    layout->addRow(QString(), enableJsCheck);
     layout->addRow(QString(), loadImagesCheck);
+    layout->addRow(QString(), cookiesCheck);
+    layout->addRow("    ", thirdPartyCookiesCheck);
+    layout->addRow(QString(), popupCheck);
 
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
     layout->addRow(buttons);
+    connect(cookiesCheck, &QCheckBox::toggled, [thirdPartyCookiesCheck](bool checked) {
+        thirdPartyCookiesCheck->setEnabled(checked);
+        if (!checked) {
+            thirdPartyCookiesCheck->setChecked(false);
+        }
+    });
     connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
@@ -776,8 +801,11 @@ void MainWindow::openSettings()
         settings.setValue("ShowProgressBar", showProgress);
         setZoomPercent(zoomSpin->value(), true);
         settings.setValue("SpatialNavigation", spatialNavCheck->isChecked());
-        settings.setValue("DisableJava", disableJsCheck->isChecked());
+        settings.setValue("EnableJavaScript", enableJsCheck->isChecked());
         settings.setValue("LoadImages", loadImagesCheck->isChecked());
+        settings.setValue("EnableCookies", cookiesCheck->isChecked());
+        settings.setValue("EnableThirdPartyCookies", thirdPartyCookiesCheck->isChecked());
+        settings.setValue("AllowPopups", popupCheck->isChecked());
 
         applyWebSettings();
     }
@@ -786,22 +814,83 @@ void MainWindow::openSettings()
 void MainWindow::applyWebSettings()
 {
     bool spatialNav = settings.value("SpatialNavigation", false).toBool();
-    bool disableJs = settings.value("DisableJava", false).toBool();
+    bool enableJs = settings.value("EnableJavaScript", true).toBool();
     bool loadImages = settings.value("LoadImages", true).toBool();
+    bool enableCookies = settings.value("EnableCookies", true).toBool();
+    bool enableThirdPartyCookies = settings.value("EnableThirdPartyCookies", true).toBool();
+    bool allowPopups = settings.value("AllowPopups", true).toBool();
 
     if (args && args->isSet("enable-spatial-navigation")) {
         spatialNav = true;
     }
     if (args && args->isSet("disable-js")) {
-        disableJs = true;
+        enableJs = false;
     }
     if (args && args->isSet("disable-images")) {
         loadImages = false;
     }
 
     websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, spatialNav);
-    websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, !disableJs);
+    websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, enableJs);
     websettings->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
+    websettings->setAttribute(QWebEngineSettings::LocalStorageEnabled, enableCookies);
+    websettings->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, allowPopups);
+
+    auto *profile = QWebEngineProfile::defaultProfile();
+    profile->setHttpAcceptLanguage(QLocale::system().name());
+
+    if (cookiesEnabled && !enableCookies) {
+        profile->cookieStore()->deleteAllCookies();
+    }
+    cookiesEnabled = enableCookies;
+
+    profile->setPersistentCookiesPolicy(enableCookies ? QWebEngineProfile::ForcePersistentCookies
+                                                     : QWebEngineProfile::NoPersistentCookies);
+
+    if (!enableCookies) {
+        profile->cookieStore()->setCookieFilter([](const QWebEngineCookieStore::FilterRequest &) {
+            return false;
+        });
+
+        QString jsCode = R"(
+            Object.defineProperty(navigator, 'cookieEnabled', {
+                value: false,
+                configurable: true
+            });
+        )";
+        cookieScript.setName("cookieDisabled");
+        cookieScript.setSourceCode(jsCode);
+        cookieScript.setInjectionPoint(QWebEngineScript::DocumentCreation);
+        cookieScript.setRunsOnSubFrames(true);
+        cookieScript.setWorldId(QWebEngineScript::MainWorld);
+    } else {
+        if (!enableThirdPartyCookies) {
+            profile->cookieStore()->setCookieFilter([](const QWebEngineCookieStore::FilterRequest &request) {
+                return !request.thirdParty;
+            });
+        } else {
+            profile->cookieStore()->setCookieFilter(nullptr);
+        }
+
+        QString jsCode = R"(
+            Object.defineProperty(navigator, 'cookieEnabled', {
+                value: true,
+                configurable: true
+            });
+        )";
+        cookieScript.setName("cookieEnabled");
+        cookieScript.setSourceCode(jsCode);
+        cookieScript.setInjectionPoint(QWebEngineScript::DocumentCreation);
+        cookieScript.setRunsOnSubFrames(true);
+        cookieScript.setWorldId(QWebEngineScript::MainWorld);
+    }
+
+    for (int i = 0; i < tabWidget->count(); ++i) {
+        if (auto *view = qobject_cast<WebView *>(tabWidget->widget(i))) {
+            view->page()->scripts().clear();
+            view->page()->scripts().insert(cookieScript);
+        }
+    }
 }
 
 void MainWindow::setZoomPercent(int percent, bool persist)
