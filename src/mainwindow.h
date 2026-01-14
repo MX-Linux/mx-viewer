@@ -65,6 +65,11 @@ private:
     bool showProgress {};
     const QCommandLineParser *args;
     QList<QUrl> closedTabs;
+    QMetaObject::Connection loadStartedConn;
+    QMetaObject::Connection loadingConn;
+    QMetaObject::Connection loadFinishedConn;
+    QMetaObject::Connection urlChangedConn;
+    QMetaObject::Connection linkHoveredConn;
     static constexpr int defaultHeight {600};
     static constexpr int defaultWidth {800};
     static constexpr int progBarVerticalAdj {40};

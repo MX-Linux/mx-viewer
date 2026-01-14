@@ -161,8 +161,10 @@ void MainWindow::addHistorySubmenu()
 void MainWindow::addNewTab(const QString &url)
 {
     tabWidget->createTab();
-    displaySite(url);
     setConnections();
+    QString finalUrl = url.isEmpty() ? homeAddress : url;
+    currentWebView()->setUrl(QUrl::fromUserInput(finalUrl));
+    currentWebView()->show();
 }
 
 void MainWindow::listHistory()
@@ -415,15 +417,33 @@ void MainWindow::saveMenuItems(const QMenu *menu, int offset)
 
 void MainWindow::setConnections()
 {
-    connect(currentWebView(), &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
-    connect(currentWebView(), &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
+    if (!currentWebView()) {
+        return;
+    }
+    if (loadStartedConn) {
+        disconnect(loadStartedConn);
+    }
+    loadStartedConn = connect(currentWebView(), &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
+    if (loadingConn) {
+        disconnect(loadingConn);
+    }
+    if (showProgress) {
+        loadingConn = connect(currentWebView(), &QWebEngineView::loadStarted, this, &MainWindow::loading);
+    }
+    if (urlChangedConn) {
+        disconnect(urlChangedConn);
+    }
+    urlChangedConn = connect(currentWebView(), &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
     connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested, downloadWidget,
             &DownloadWidget::downloadRequested, Qt::UniqueConnection);
-    if (showProgress) {
-        connect(currentWebView(), &QWebEngineView::loadStarted, this, &MainWindow::loading);
+    if (loadFinishedConn) {
+        disconnect(loadFinishedConn);
     }
-    connect(currentWebView(), &QWebEngineView::loadFinished, this, &MainWindow::done);
-    connect(currentWebView()->page(), &QWebEnginePage::linkHovered, this, [this](const QString &url) {
+    loadFinishedConn = connect(currentWebView(), &QWebEngineView::loadFinished, this, &MainWindow::done);
+    if (linkHoveredConn) {
+        disconnect(linkHoveredConn);
+    }
+    linkHoveredConn = connect(currentWebView()->page(), &QWebEnginePage::linkHovered, this, [this](const QString &url) {
         if (url.isEmpty()) {
             statusBar()->hide();
         } else {
@@ -490,6 +510,7 @@ void MainWindow::tabChanged()
         addressBar->setFocus();
     }
     setWindowTitle(currentWebView()->title());
+    setConnections();
 }
 
 // Show the address in the toolbar and also connect it to launch it
@@ -728,4 +749,3 @@ void MainWindow::done(bool ok)
     tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
     setWindowTitle(currentWebView()->title());
 }
-

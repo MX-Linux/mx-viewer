@@ -1,3 +1,9 @@
+mx-viewer (26.01) mx; urgency=medium
+
+  * Add close and reopen tab shortcuts
+
+ -- Adrian <adrian@mxlinux.org>  Tue, 13 Jan 2026 21:55:54 -0500
+
 mx-viewer (25.7) mx; urgency=medium
 
   * Change default home page to start.duckduckgo.com (might need to change
