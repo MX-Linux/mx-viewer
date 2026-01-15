@@ -62,7 +62,6 @@ protected:
 
 private slots:
     void handleLoadFinished();
-    void handleIconChanged();
 
 signals:
     void newWebView(WebView *wv, bool makeCurrent);
@@ -78,6 +77,5 @@ private:
     static bool s_middleClick;
     static bool s_consumed;  // Set when acceptNavigationRequest handles the click
 
-    void checkRecordComplete();
     void installEventFilterOnFocusProxy();
 };

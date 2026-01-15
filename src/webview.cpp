@@ -70,7 +70,6 @@ WebView::WebView(QWidget *parent)
 {
     setPage(new WebPage(this));
     connect(this, &WebView::loadFinished, this, &WebView::handleLoadFinished);
-    connect(this, &WebView::iconChanged, this, &WebView::handleIconChanged);
 }
 
 void WebView::installEventFilterOnFocusProxy()
@@ -157,40 +156,4 @@ void WebView::handleLoadFinished()
     historyLog.endArray();
 }
 
-// Assumes this trigger after loadFinished, that might not be correct all the time
-void WebView::handleIconChanged()
-{
-    if (icon().isNull()) {
-        return;
-    }
-    index = historyLog.value("History/size", 0).toInt();
-    checkRecordComplete();
-    historyLog.beginWriteArray("History");
-    historyLog.setArrayIndex(index);
-    QPixmap iconPixmap = icon().pixmap(QSize(22, 22));
-    QByteArray iconByteArray;
-    QBuffer buffer(&iconByteArray);
-    if (buffer.open(QIODevice::WriteOnly)) {
-        iconPixmap.save(&buffer, "PNG");
-    }
-    historyLog.setValue("icon", iconByteArray);
-    historyLog.endArray();
-    historyLog.setValue("History/size", index + 1);
-}
 
-// Check if the last record is complete, if not, decrement index and go back.
-// loadFinished and iconChanged trigger independently, assumption is iconChange triggers after loadFinished
-void WebView::checkRecordComplete()
-{
-    if (index <= 0) {
-        return;
-    }
-    historyLog.beginReadArray("History");
-    if (index > 0) {
-        historyLog.setArrayIndex(index - 1);
-        if (historyLog.allKeys().count() != 3) { // if not all 3 keys were written
-            --index;
-        }
-    }
-    historyLog.endArray();
-}
