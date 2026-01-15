@@ -154,6 +154,6 @@ void WebView::handleLoadFinished()
     historyLog.setValue("title", title());
     historyLog.setValue("url", url().toString());
     historyLog.endArray();
+    historyLog.setValue("History/size", index + 1);
 }
-
 
