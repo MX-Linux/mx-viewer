@@ -42,6 +42,8 @@ public:
 
 public slots:
     void listHistory();
+    void openHistoryPage();
+    bool handleHistoryRequest(const QUrl &url);
     void findBackward();
     void findForward();
     void loading();
@@ -114,8 +116,10 @@ private:
     void setupMenuConnections(QMenu *menu);
     void buildMenu();
     void centerWindow();
+    void clearHistoryEntries();
     void connectAddress(const QAction *action, const QMenu *menu);
     void displaySite(QString url = {}, const QString &title = {});
+    QString buildHistoryPageHtml();
     void focusAddressBar();
     void focusAddressBarIfBlank();
     void applyWebSettings();
@@ -126,6 +130,8 @@ private:
     void openBrowseDialog();
     void openQuickInfo();
     void openBookmarksEditor();
+    void removeHistoryEntry(int index);
+    void renderHistoryPage(WebView *view);
     void saveMenuItems(const QMenu *menu, int offset);
     void setConnections();
     void showFullScreenNotification();

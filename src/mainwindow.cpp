@@ -33,6 +33,7 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QTimer>
+#include <QUrlQuery>
 #include <QVBoxLayout>
 #include <QWebEngineCookieStore>
 #include <QWebEngineScript>
@@ -243,6 +244,10 @@ void MainWindow::addNewTab(const QUrl &url, bool makeCurrent)
 void MainWindow::listHistory()
 {
     history->clear();
+    auto *showHistory = new QAction(QIcon::fromTheme("view-list-text"), tr("Show History Page"));
+    showHistory->setShortcut(Qt::CTRL | Qt::Key_H);
+    connect(showHistory, &QAction::triggered, this, &MainWindow::openHistoryPage);
+    history->addAction(showHistory);
     auto *deleteHistory = new QAction(QIcon::fromTheme("user-trash"), tr("&Clear history"));
     connect(deleteHistory, &QAction::triggered, this, [this] {
         history->clear();
@@ -251,6 +256,221 @@ void MainWindow::listHistory()
     history->addAction(deleteHistory);
     history->addSeparator();
     loadHistory();
+}
+
+QString MainWindow::buildHistoryPageHtml()
+{
+    struct HistoryEntry {
+        QString title;
+        QString url;
+        QByteArray icon;
+    };
+
+    QList<HistoryEntry> entries;
+    int size = settings.beginReadArray("History");
+    entries.reserve(size);
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        const QString url = settings.value("url").toString();
+        if (url.isEmpty()) {
+            continue;
+        }
+        QString title = settings.value("title").toString();
+        if (title.isEmpty()) {
+            title = url;
+        }
+        entries.append({title, url, settings.value("icon").toByteArray()});
+    }
+    settings.endArray();
+
+    QStringList rows;
+    rows.reserve(entries.size());
+    for (int i = 0; i < entries.size(); ++i) {
+        const HistoryEntry &entry = entries.at(i);
+        const QString titleEscaped = entry.title.toHtmlEscaped();
+        const QString urlEscaped = entry.url.toHtmlEscaped();
+        const QString searchText = (entry.title + " " + entry.url).toLower().toHtmlEscaped();
+        QString iconHtml;
+        if (!entry.icon.isEmpty()) {
+            const QString iconBase64 = QString::fromLatin1(entry.icon.toBase64());
+            iconHtml = QStringLiteral("<img class=\"icon\" alt=\"\" src=\"data:image/png;base64,%1\">")
+                           .arg(iconBase64);
+        } else {
+            iconHtml = QStringLiteral("<span class=\"icon placeholder\"></span>");
+        }
+        rows.append(QStringLiteral(
+                        "<li class=\"entry\" data-search=\"%1\">"
+                        "%2"
+                        "<div class=\"content\">"
+                        "<div class=\"row\">"
+                        "<a class=\"title\" href=\"%3\">%4</a>"
+                        "<button class=\"delete\" data-index=\"%5\">%6</button>"
+                        "</div>"
+                        "<div class=\"url\">%7</div>"
+                        "</div>"
+                        "</li>")
+                        .arg(searchText, iconHtml, urlEscaped, titleEscaped, QString::number(i),
+                             tr("Delete").toHtmlEscaped(), urlEscaped));
+    }
+
+    const QString emptyText = tr("No history entries.");
+    const QString html = QStringLiteral(R"(<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>%1</title>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: sans-serif; margin: 24px; color: #1f2328; background: #ffffff; }
+    h1 { font-size: 22px; margin: 0 0 12px; }
+    .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .search { flex: 1 1 240px; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 6px; }
+    .clear { padding: 8px 12px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 6px; cursor: pointer; }
+    .list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+    .entry { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 10px 12px; border: 1px solid #eaeef2; border-radius: 8px; }
+    .icon { width: 20px; height: 20px; border-radius: 4px; }
+    .icon.placeholder { background: #eaeef2; }
+    .content { display: flex; flex-direction: column; gap: 4px; }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .title { color: #0969da; text-decoration: none; font-weight: 600; flex: 1 1 auto; }
+    .url { color: #57606a; font-size: 12px; word-break: break-all; }
+    .delete { padding: 4px 8px; border: 1px solid #d0d7de; background: #fff; border-radius: 6px; cursor: pointer; }
+    .empty { padding: 16px; border: 1px dashed #d0d7de; border-radius: 8px; color: #57606a; }
+  </style>
+</head>
+<body>
+  <h1>%1</h1>
+  <div class="controls">
+    <input id="search" class="search" type="search" placeholder="%2" autofocus>
+    <button id="clear" class="clear">%3</button>
+  </div>
+  %4
+  <script>
+    const search = document.getElementById('search');
+    const entries = Array.from(document.querySelectorAll('li.entry'));
+    function applyFilter() {
+      const term = search.value.trim().toLowerCase();
+      entries.forEach(entry => {
+        entry.style.display = entry.dataset.search.includes(term) ? '' : 'none';
+      });
+    }
+    search.addEventListener('input', applyFilter);
+    document.querySelectorAll('button.delete').forEach(btn => {
+      btn.addEventListener('click', event => {
+        event.preventDefault();
+        location.href = 'mx-history://delete?index=' + btn.dataset.index;
+      });
+    });
+    const clearButton = document.getElementById('clear');
+    clearButton.addEventListener('click', event => {
+      event.preventDefault();
+      if (confirm('%5')) {
+        location.href = 'mx-history://clear';
+      }
+    });
+  </script>
+</body>
+</html>)")
+                            .arg(tr("History").toHtmlEscaped(), tr("Search history").toHtmlEscaped(),
+                                 tr("Clear history").toHtmlEscaped(),
+                                 rows.isEmpty()
+                                     ? QStringLiteral("<div class=\"empty\">%1</div>").arg(emptyText.toHtmlEscaped())
+                                     : QStringLiteral("<ul class=\"list\">%1</ul>").arg(rows.join("\n")),
+                                 tr("Clear all history entries?").toHtmlEscaped());
+
+    return html;
+}
+
+void MainWindow::renderHistoryPage(WebView *view)
+{
+    if (!view) {
+        return;
+    }
+    view->setHtml(buildHistoryPageHtml(), QUrl("mx-history://list"));
+    view->show();
+    tabWidget->setTabText(tabWidget->indexOf(view), tr("History"));
+    setWindowTitle(tr("History"));
+    updateUrl();
+}
+
+void MainWindow::openHistoryPage()
+{
+    if (auto *view = currentWebView()) {
+        if (view->url().scheme() == "mx-history") {
+            renderHistoryPage(view);
+            return;
+        }
+    }
+    auto *view = tabWidget->createTab(true);
+    if (!view) {
+        return;
+    }
+    setConnections();
+    renderHistoryPage(view);
+}
+
+void MainWindow::removeHistoryEntry(int index)
+{
+    if (index < 0) {
+        return;
+    }
+    struct HistoryEntry {
+        QString title;
+        QString url;
+        QByteArray icon;
+    };
+    QList<HistoryEntry> entries;
+    int size = settings.beginReadArray("History");
+    entries.reserve(size);
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        const QString url = settings.value("url").toString();
+        if (url.isEmpty()) {
+            continue;
+        }
+        entries.append({settings.value("title").toString(), url, settings.value("icon").toByteArray()});
+    }
+    settings.endArray();
+    if (index >= entries.size()) {
+        return;
+    }
+    entries.removeAt(index);
+    settings.beginWriteArray("History");
+    for (int i = 0; i < entries.size(); ++i) {
+        settings.setArrayIndex(i);
+        settings.setValue("title", entries.at(i).title);
+        settings.setValue("url", entries.at(i).url);
+        if (!entries.at(i).icon.isEmpty()) {
+            settings.setValue("icon", entries.at(i).icon);
+        }
+    }
+    settings.endArray();
+    settings.setValue("History/size", entries.size());
+}
+
+void MainWindow::clearHistoryEntries()
+{
+    settings.remove("History");
+    settings.setValue("History/size", 0);
+}
+
+bool MainWindow::handleHistoryRequest(const QUrl &url)
+{
+    if (url.scheme() != "mx-history") {
+        return false;
+    }
+    const QString action = url.host();
+    if (action == "delete") {
+        QUrlQuery query(url);
+        removeHistoryEntry(query.queryItemValue("index").toInt());
+    } else if (action == "clear") {
+        clearHistoryEntries();
+    } else {
+        return false;
+    }
+    listHistory();
+    renderHistoryPage(currentWebView());
+    return true;
 }
 
 void MainWindow::addToolbar()
@@ -288,7 +508,7 @@ void MainWindow::addHomeAction()
 {
     auto *home {new QAction(QIcon::fromTheme("go-home", QIcon(":/icons/go-home.svg")), tr("Home"))};
     toolBar->addAction(home);
-    home->setShortcut(Qt::CTRL | Qt::Key_H);
+    home->setShortcut(Qt::ALT | Qt::Key_Home);
     connect(home, &QAction::triggered, this, [this] { displaySite(); });
 }
 
@@ -459,6 +679,7 @@ void MainWindow::openQuickInfo()
     QMessageBox::about(this, tr("Keyboard Shortcuts"),
                        tr("Ctrl-F, or F3") + "\t - " + tr("Find") + "\n" + tr("Shift-F3") + "\t - "
                            + tr("Find previous") + "\n" + tr("Ctrl-R, or F5") + "\t - " + tr("Reload") + "\n"
+                           + tr("Ctrl-H") + "\t - " + tr("History") + "\n"
                            + tr("Ctrl-O") + "\t - " + tr("Browse file to open") + "\n" + tr("Esc") + "\t - "
                            + tr("Stop loading/clear Find field") + "\n" + tr("Alt→, Alt←") + "\t - "
                            + tr("Back/Forward") + "\n" + tr("F1, or ?") + "\t - " + tr("Open this help dialog"));
@@ -1163,6 +1384,10 @@ void MainWindow::findForward()
 // process keystrokes
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
+    if (event->key() == Qt::Key_H && event->modifiers() == Qt::ControlModifier) {
+        openHistoryPage();
+        return;
+    }
     if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash) {
         findForward();
         return;

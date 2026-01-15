@@ -50,6 +50,15 @@ void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, cons
 bool WebPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame)
 {
     Q_UNUSED(isMainFrame);
+    if (url.scheme() == "mx-history") {
+        auto *mw = qobject_cast<MainWindow *>(m_webView->window());
+        if (!mw) {
+            mw = qobject_cast<MainWindow *>(QApplication::activeWindow());
+        }
+        if (mw && mw->handleHistoryRequest(url)) {
+            return false;
+        }
+    }
     // Handle Ctrl+click / middle-click on regular links
     if (type == NavigationTypeLinkClicked && WebView::consumeIfNewTabRequest()) {
         auto *mw = qobject_cast<MainWindow *>(m_webView->window());
@@ -153,7 +162,7 @@ void WebView::handleLoadFinished(bool ok)
         return;
     }
     const QUrl loadedUrl = url();
-    if (!loadedUrl.isValid() || loadedUrl.toString() == "about:blank") {
+    if (!loadedUrl.isValid() || loadedUrl.toString() == "about:blank" || loadedUrl.scheme() == "mx-history") {
         return;
     }
     QTimer::singleShot(750, this, [this, loadedUrl] {
