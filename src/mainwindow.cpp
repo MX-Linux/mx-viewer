@@ -23,7 +23,6 @@
 
 #include <QAbstractItemView>
 #include <QCheckBox>
-#include <QComboBox>
 #include <QCompleter>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -490,7 +489,7 @@ void MainWindow::refreshHistoryCompleter()
             continue;
         }
         const QUrl url = QUrl::fromUserInput(urlValue);
-        if (url.scheme() == "mx-history") {
+        if (url.scheme() == "mx-history" || url.scheme() == "mx-settings") {
             continue;
         }
         const QString host = url.host();
@@ -764,6 +763,7 @@ void MainWindow::loadSettings()
     zoomPercent = settings.value("ZoomPercent", 100).toInt();
     cookiesEnabled = settings.value("EnableCookies", true).toBool();
     searchEngine = settings.value("SearchEngine", "DuckDuckGo").toString();
+    searchEngineCustom = settings.value("SearchEngineCustom", QString()).toString();
     if (!settings.contains("EnableJavaScript") && settings.contains("DisableJava")) {
         settings.setValue("EnableJavaScript", !settings.value("DisableJava", false).toBool());
     }
@@ -824,6 +824,16 @@ bool MainWindow::isLocalHostInput(const QString &input) const
 QString MainWindow::searchUrlForQuery(const QString &query) const
 {
     const QByteArray encoded = QUrl::toPercentEncoding(query);
+    if (searchEngine == "Custom" && !searchEngineCustom.isEmpty()) {
+        const QString encodedText = QString::fromLatin1(encoded);
+        if (searchEngineCustom.contains("%s")) {
+            return QString(searchEngineCustom).replace("%s", encodedText);
+        }
+        if (searchEngineCustom.contains("?q=")) {
+            return searchEngineCustom + encodedText;
+        }
+        return searchEngineCustom;
+    }
     if (searchEngine == "Google") {
         return QString::fromLatin1("https://www.google.com/search?q=%1").arg(QString::fromLatin1(encoded));
     }
@@ -1109,7 +1119,7 @@ void MainWindow::addHelpMenuActions(QMenu *menu)
     QAction *quit {nullptr};
     menu->addSeparator();
     menu->addAction(settingsAction = new QAction(QIcon::fromTheme("preferences-system"), tr("&Settings")));
-    settingsAction->setShortcut(QKeySequence::Preferences);
+    settingsAction->setShortcuts({QKeySequence::Preferences, Qt::CTRL | Qt::Key_Comma});
     menu->addSeparator();
     menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Help")));
     menu->addAction(about = new QAction(QIcon::fromTheme("help-about"), tr("&About")));
@@ -1172,94 +1182,269 @@ void MainWindow::openDevTools()
 
 void MainWindow::openSettings()
 {
-    QDialog dialog(this);
-    dialog.setWindowTitle(tr("Settings"));
-    auto *layout = new QFormLayout(&dialog);
-    auto *homeInput = new QLineEdit(homeAddress, &dialog);
-    auto *searchCombo = new QComboBox(&dialog);
-    searchCombo->addItem(tr("DuckDuckGo"), "DuckDuckGo");
-    searchCombo->addItem(tr("Google"), "Google");
-    searchCombo->addItem(tr("Bing"), "Bing");
-    int searchIndex = searchCombo->findData(searchEngine);
-    if (searchIndex < 0) {
-        searchIndex = 0;
-    }
-    searchCombo->setCurrentIndex(searchIndex);
-    auto *openNewTabCheck = new QCheckBox(tr("Open new tabs with home page"), &dialog);
-    openNewTabCheck->setChecked(openNewTabWithHome);
-    auto *showProgressCheck = new QCheckBox(tr("Show progress bar"), &dialog);
-    showProgressCheck->setChecked(showProgress);
-    auto *zoomSpin = new QSpinBox(&dialog);
-    zoomSpin->setRange(25, 500);
-    zoomSpin->setSuffix("%");
-    zoomSpin->setValue(zoomPercent);
-    auto *spatialNavCheck = new QCheckBox(tr("Enable spatial navigation"), &dialog);
-    spatialNavCheck->setChecked(settings.value("SpatialNavigation", false).toBool());
-    auto *enableJsCheck = new QCheckBox(tr("Enable JavaScript"), &dialog);
-    enableJsCheck->setChecked(settings.value("EnableJavaScript", true).toBool());
-    auto *loadImagesCheck = new QCheckBox(tr("Load images"), &dialog);
-    loadImagesCheck->setChecked(settings.value("LoadImages", true).toBool());
-    auto *cookiesCheck = new QCheckBox(tr("Enable cookies"), &dialog);
-    cookiesCheck->setChecked(settings.value("EnableCookies", true).toBool());
-    auto *thirdPartyCookiesCheck = new QCheckBox(tr("Enable third-party cookies"), &dialog);
-    thirdPartyCookiesCheck->setChecked(settings.value("EnableThirdPartyCookies", true).toBool());
-    if (!cookiesCheck->isChecked()) {
-        thirdPartyCookiesCheck->setChecked(false);
-    }
-    thirdPartyCookiesCheck->setEnabled(cookiesCheck->isChecked());
-    auto *thirdPartyRow = new QWidget(&dialog);
-    auto *thirdPartyLayout = new QHBoxLayout(thirdPartyRow);
-    thirdPartyLayout->setContentsMargins(20, 0, 0, 0);
-    thirdPartyLayout->addWidget(thirdPartyCookiesCheck);
-    auto *popupCheck = new QCheckBox(tr("Allow pop-up windows"), &dialog);
-    popupCheck->setChecked(settings.value("AllowPopups", true).toBool());
-    auto *saveTabsCheck = new QCheckBox(tr("Save tabs on closing"), &dialog);
-    saveTabsCheck->setChecked(settings.value("SaveTabs", false).toBool());
+    openSettingsPage();
+}
 
-    layout->addRow(tr("Home address"), homeInput);
-    layout->addRow(tr("Search engine"), searchCombo);
-    layout->addRow(QString(), openNewTabCheck);
-    layout->addRow(QString(), showProgressCheck);
-    layout->addRow(tr("Zoom level"), zoomSpin);
-    layout->addRow(QString(), spatialNavCheck);
-    layout->addRow(QString(), enableJsCheck);
-    layout->addRow(QString(), loadImagesCheck);
-    layout->addRow(QString(), cookiesCheck);
-    layout->addRow(QString(), thirdPartyRow);
-    layout->addRow(QString(), popupCheck);
-    layout->addRow(QString(), saveTabsCheck);
+QString MainWindow::buildSettingsPageHtml()
+{
+    const bool spatialNav = settings.value("SpatialNavigation", false).toBool();
+    const bool enableJs = settings.value("EnableJavaScript", true).toBool();
+    const bool loadImages = settings.value("LoadImages", true).toBool();
+    const bool enableCookies = settings.value("EnableCookies", true).toBool();
+    const bool enableThirdPartyCookies = settings.value("EnableThirdPartyCookies", true).toBool();
+    const bool allowPopups = settings.value("AllowPopups", true).toBool();
+    const bool saveTabs = settings.value("SaveTabs", false).toBool();
 
-    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-    layout->addRow(buttons);
-    connect(cookiesCheck, &QCheckBox::toggled, [thirdPartyCookiesCheck](bool checked) {
-        thirdPartyCookiesCheck->setEnabled(checked);
-        if (!checked) {
-            thirdPartyCookiesCheck->setChecked(false);
+    auto check = [](bool value) { return value ? QStringLiteral("checked") : QString(); };
+    auto disabled = [](bool value) { return value ? QString() : QStringLiteral("disabled"); };
+
+    const QString html = QStringLiteral(R"(<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>%1</title>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: sans-serif; margin: 24px; color: #1f2328; background: #ffffff; }
+    h1 { font-size: 22px; margin: 0 0 12px; }
+    form { display: grid; gap: 12px; max-width: 720px; }
+    label { font-weight: 600; display: block; margin-bottom: 4px; }
+    .row { display: grid; gap: 6px; }
+    .input, select { padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 6px; }
+    .check { display: flex; gap: 8px; align-items: center; }
+    .actions { display: flex; gap: 12px; margin-top: 8px; }
+    .btn { padding: 8px 12px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 6px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>%1</h1>
+  <form id="settings">
+    <div class="row">
+      <label for="home">%2</label>
+      <input id="home" class="input" type="text" value="%3">
+    </div>
+    <div class="row">
+      <label for="search">%4</label>
+      <select id="search" class="input">
+        <option value="DuckDuckGo" %5>%6</option>
+        <option value="Google" %7>%8</option>
+        <option value="Bing" %9>%10</option>
+        <option value="Custom" %11>%12</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="customSearch">%13</label>
+      <input id="customSearch" class="input" type="text" value="%14" placeholder="https://example.com/?q=%s">
+    </div>
+    <div class="row">
+      <label for="zoom">%15</label>
+      <input id="zoom" class="input" type="number" min="25" max="500" value="%16">
+    </div>
+    <label class="check"><input id="openNewTab" type="checkbox" %17> %18</label>
+    <label class="check"><input id="showProgress" type="checkbox" %19> %20</label>
+    <label class="check"><input id="spatialNav" type="checkbox" %21> %22</label>
+    <label class="check"><input id="enableJs" type="checkbox" %23> %24</label>
+    <label class="check"><input id="loadImages" type="checkbox" %25> %26</label>
+    <label class="check"><input id="enableCookies" type="checkbox" %27> %28</label>
+    <label class="check"><input id="thirdPartyCookies" type="checkbox" %29 %30> %31</label>
+    <label class="check"><input id="allowPopups" type="checkbox" %32> %33</label>
+    <label class="check"><input id="saveTabs" type="checkbox" %34> %35</label>
+    <div class="actions">
+      <button class="btn" id="save">%36</button>
+      <button class="btn" id="reset" type="button">%37</button>
+    </div>
+  </form>
+  <script>
+    const form = document.getElementById('settings');
+    const saveBtn = document.getElementById('save');
+    const resetBtn = document.getElementById('reset');
+    const searchSelect = document.getElementById('search');
+    const customSearch = document.getElementById('customSearch');
+    function boolValue(id) {
+      return document.getElementById(id).checked ? '1' : '0';
+    }
+    function normalizeCustomUrl(url) {
+      if (!url.includes('%s') && !url.includes('?q=')) {
+        const add = confirm('%38');
+        if (add) {
+          const join = url.includes('?') ? '&' : '?';
+          return url + join + 'q=%s';
         }
-    });
-    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-
-    if (dialog.exec() == QDialog::Accepted) {
-        homeAddress = homeInput->text().trimmed();
-        searchEngine = searchCombo->currentData().toString();
-        openNewTabWithHome = openNewTabCheck->isChecked();
-        settings.setValue("Home", homeAddress);
-        settings.setValue("SearchEngine", searchEngine);
-        settings.setValue("OpenNewTabWithHome", openNewTabWithHome);
-        showProgress = showProgressCheck->isChecked();
-        settings.setValue("ShowProgressBar", showProgress);
-        setZoomPercent(zoomSpin->value(), true);
-        settings.setValue("SpatialNavigation", spatialNavCheck->isChecked());
-        settings.setValue("EnableJavaScript", enableJsCheck->isChecked());
-        settings.setValue("LoadImages", loadImagesCheck->isChecked());
-        settings.setValue("EnableCookies", cookiesCheck->isChecked());
-        settings.setValue("EnableThirdPartyCookies", thirdPartyCookiesCheck->isChecked());
-        settings.setValue("AllowPopups", popupCheck->isChecked());
-        settings.setValue("SaveTabs", saveTabsCheck->isChecked());
-
-        applyWebSettings();
+      }
+      return url;
     }
+    function syncCustom() {
+      const isCustom = searchSelect.value === 'Custom';
+      customSearch.disabled = !isCustom;
+      customSearch.parentElement.style.display = isCustom ? '' : 'none';
+    }
+    saveBtn.addEventListener('click', event => {
+      event.preventDefault();
+      let customUrl = customSearch.value.trim();
+      if (searchSelect.value === 'Custom' && customUrl.length > 0) {
+        customUrl = normalizeCustomUrl(customUrl);
+        customSearch.value = customUrl;
+      }
+      const params = new URLSearchParams();
+      params.set('home', document.getElementById('home').value);
+      params.set('search', document.getElementById('search').value);
+      params.set('customSearch', customUrl);
+      params.set('zoom', document.getElementById('zoom').value);
+      params.set('openNewTab', boolValue('openNewTab'));
+      params.set('showProgress', boolValue('showProgress'));
+      params.set('spatialNav', boolValue('spatialNav'));
+      params.set('enableJs', boolValue('enableJs'));
+      params.set('loadImages', boolValue('loadImages'));
+      params.set('enableCookies', boolValue('enableCookies'));
+      params.set('thirdPartyCookies', boolValue('thirdPartyCookies'));
+      params.set('allowPopups', boolValue('allowPopups'));
+      params.set('saveTabs', boolValue('saveTabs'));
+      location.href = 'mx-settings://save?' + params.toString();
+    });
+    resetBtn.addEventListener('click', event => {
+      event.preventDefault();
+      location.href = 'mx-settings://list';
+    });
+    searchSelect.addEventListener('change', syncCustom);
+    const cookiesToggle = document.getElementById('enableCookies');
+    const thirdPartyToggle = document.getElementById('thirdPartyCookies');
+    function syncThirdParty() {
+      thirdPartyToggle.disabled = !cookiesToggle.checked;
+      if (!cookiesToggle.checked) {
+        thirdPartyToggle.checked = false;
+      }
+    }
+    syncCustom();
+    cookiesToggle.addEventListener('change', syncThirdParty);
+    syncThirdParty();
+  </script>
+</body>
+</html>)")
+                            .arg(tr("Settings").toHtmlEscaped(),
+                                 tr("Home address").toHtmlEscaped(),
+                                 homeAddress.toHtmlEscaped(),
+                                 tr("Search engine").toHtmlEscaped(),
+                                 searchEngine == "DuckDuckGo" ? QStringLiteral("selected") : QString(),
+                                 tr("DuckDuckGo").toHtmlEscaped(),
+                                 searchEngine == "Google" ? QStringLiteral("selected") : QString(),
+                                 tr("Google").toHtmlEscaped(),
+                                 searchEngine == "Bing" ? QStringLiteral("selected") : QString(),
+                                 tr("Bing").toHtmlEscaped(),
+                                 searchEngine == "Custom" ? QStringLiteral("selected") : QString(),
+                                 tr("Custom").toHtmlEscaped(),
+                                 tr("Custom search URL").toHtmlEscaped(),
+                                 searchEngineCustom.toHtmlEscaped(),
+                                 tr("Zoom level").toHtmlEscaped(),
+                                 QString::number(zoomPercent),
+                                 check(openNewTabWithHome),
+                                 tr("Open new tabs with home page").toHtmlEscaped(),
+                                 check(showProgress),
+                                 tr("Show progress bar").toHtmlEscaped(),
+                                 check(spatialNav),
+                                 tr("Enable spatial navigation").toHtmlEscaped(),
+                                 check(enableJs),
+                                 tr("Enable JavaScript").toHtmlEscaped(),
+                                 check(loadImages),
+                                 tr("Load images").toHtmlEscaped(),
+                                 check(enableCookies),
+                                 tr("Enable cookies").toHtmlEscaped(),
+                                 check(enableThirdPartyCookies),
+                                 disabled(enableCookies),
+                                 tr("Enable third-party cookies").toHtmlEscaped(),
+                                 check(allowPopups),
+                                 tr("Allow pop-up windows").toHtmlEscaped(),
+                                 check(saveTabs),
+                                 tr("Save tabs on closing").toHtmlEscaped(),
+                                 tr("Save settings").toHtmlEscaped(),
+                                 tr("Reset").toHtmlEscaped(),
+                                 tr("Custom URL has no ?q= or %s placeholder. Append ?q=%s automatically?")
+                                     .toHtmlEscaped());
+
+    return html;
+}
+
+void MainWindow::renderSettingsPage(WebView *view)
+{
+    if (!view) {
+        return;
+    }
+    view->setHtml(buildSettingsPageHtml(), QUrl("mx-settings://list"));
+    view->show();
+    tabWidget->setTabText(tabWidget->indexOf(view), tr("Settings"));
+    setWindowTitle(tr("Settings"));
+    updateUrl();
+}
+
+void MainWindow::openSettingsPage()
+{
+    if (auto *view = currentWebView()) {
+        if (view->url().scheme() == "mx-settings") {
+            renderSettingsPage(view);
+            return;
+        }
+    }
+    auto *view = tabWidget->createTab(true);
+    if (!view) {
+        return;
+    }
+    setConnections();
+    renderSettingsPage(view);
+}
+
+bool MainWindow::handleSettingsRequest(const QUrl &url)
+{
+    if (url.scheme() != "mx-settings") {
+        return false;
+    }
+    const QString action = url.host();
+    if (action != "save") {
+        renderSettingsPage(currentWebView());
+        return true;
+    }
+    QUrlQuery query(url);
+    const QString newHome = QUrl::fromPercentEncoding(query.queryItemValue("home").toUtf8()).trimmed();
+    const QString newSearch = query.queryItemValue("search").trimmed();
+    const QString newCustomSearch = QUrl::fromPercentEncoding(query.queryItemValue("customSearch").toUtf8()).trimmed();
+    const int newZoom = query.queryItemValue("zoom").toInt();
+    const bool newOpenNewTab = query.queryItemValue("openNewTab") == "1";
+    const bool newShowProgress = query.queryItemValue("showProgress") == "1";
+    const bool newSpatialNav = query.queryItemValue("spatialNav") == "1";
+    const bool newEnableJs = query.queryItemValue("enableJs") == "1";
+    const bool newLoadImages = query.queryItemValue("loadImages") == "1";
+    const bool newEnableCookies = query.queryItemValue("enableCookies") == "1";
+    bool newThirdParty = query.queryItemValue("thirdPartyCookies") == "1";
+    const bool newAllowPopups = query.queryItemValue("allowPopups") == "1";
+    const bool newSaveTabs = query.queryItemValue("saveTabs") == "1";
+    if (!newEnableCookies) {
+        newThirdParty = false;
+    }
+
+    homeAddress = newHome.isEmpty() ? homeAddress : newHome;
+    if (!newSearch.isEmpty()) {
+        searchEngine = newSearch;
+    }
+    searchEngineCustom = newCustomSearch;
+    settings.setValue("SearchEngineCustom", searchEngineCustom);
+    openNewTabWithHome = newOpenNewTab;
+    showProgress = newShowProgress;
+    settings.setValue("Home", homeAddress);
+    settings.setValue("SearchEngine", searchEngine);
+    settings.setValue("OpenNewTabWithHome", openNewTabWithHome);
+    settings.setValue("ShowProgressBar", showProgress);
+    settings.setValue("SpatialNavigation", newSpatialNav);
+    settings.setValue("EnableJavaScript", newEnableJs);
+    settings.setValue("LoadImages", newLoadImages);
+    settings.setValue("EnableCookies", newEnableCookies);
+    settings.setValue("EnableThirdPartyCookies", newThirdParty);
+    settings.setValue("AllowPopups", newAllowPopups);
+    settings.setValue("SaveTabs", newSaveTabs);
+    if (newZoom > 0) {
+        setZoomPercent(newZoom, true);
+    }
+
+    applyWebSettings();
+    renderSettingsPage(currentWebView());
+    return true;
 }
 
 void MainWindow::applyWebSettings()
@@ -1546,13 +1731,40 @@ bool MainWindow::restoreSavedTabs()
 
     if (!savedUrls.isEmpty()) {
         tabWidget->removeTab(0);
-        addNewTab(savedUrls.first(), true);
+        openSavedTab(savedUrls.first(), true);
     }
 
     for (int i = 1; i < savedUrls.size(); ++i) {
-        addNewTab(savedUrls.at(i), false);
+        openSavedTab(savedUrls.at(i), false);
     }
     return !savedUrls.isEmpty();
+}
+
+void MainWindow::openSavedTab(const QUrl &url, bool makeCurrent)
+{
+    if (url.scheme() == "mx-history") {
+        auto *view = tabWidget->createTab(makeCurrent);
+        if (!view) {
+            return;
+        }
+        if (makeCurrent) {
+            setConnections();
+        }
+        renderHistoryPage(view);
+        return;
+    }
+    if (url.scheme() == "mx-settings") {
+        auto *view = tabWidget->createTab(makeCurrent);
+        if (!view) {
+            return;
+        }
+        if (makeCurrent) {
+            setConnections();
+        }
+        renderSettingsPage(view);
+        return;
+    }
+    addNewTab(url, makeCurrent);
 }
 
 void MainWindow::focusAddressBar()

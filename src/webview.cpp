@@ -59,6 +59,15 @@ bool WebPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool
             return false;
         }
     }
+    if (url.scheme() == "mx-settings") {
+        auto *mw = qobject_cast<MainWindow *>(m_webView->window());
+        if (!mw) {
+            mw = qobject_cast<MainWindow *>(QApplication::activeWindow());
+        }
+        if (mw && mw->handleSettingsRequest(url)) {
+            return false;
+        }
+    }
     // Handle Ctrl+click / middle-click on regular links
     if (type == NavigationTypeLinkClicked && WebView::consumeIfNewTabRequest()) {
         auto *mw = qobject_cast<MainWindow *>(m_webView->window());
@@ -162,7 +171,8 @@ void WebView::handleLoadFinished(bool ok)
         return;
     }
     const QUrl loadedUrl = url();
-    if (!loadedUrl.isValid() || loadedUrl.toString() == "about:blank" || loadedUrl.scheme() == "mx-history") {
+    if (!loadedUrl.isValid() || loadedUrl.toString() == "about:blank" || loadedUrl.scheme() == "mx-history"
+        || loadedUrl.scheme() == "mx-settings") {
         return;
     }
     QTimer::singleShot(750, this, [this, loadedUrl] {

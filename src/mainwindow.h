@@ -55,6 +55,7 @@ public slots:
     void openLinkInNewTab(const QUrl &url);
     void openDevTools();
     void openSettings();
+    bool handleSettingsRequest(const QUrl &url);
     bool restoreSavedTabs();
 
 protected:
@@ -76,6 +77,7 @@ private:
     QStringList historyCompletionHosts;
     QProgressBar *progressBar {};
     QString searchEngine;
+    QString searchEngineCustom;
     QString lastAddressInput;
     QUrl lastAddressUrl;
     bool lastAddressMaySearch {};
@@ -134,6 +136,7 @@ private:
     void displaySite(QString url = {}, const QString &title = {});
     void displaySearchResults(const QString &query);
     void openFromAddressBarText(const QString &input);
+    QString buildSettingsPageHtml();
     QString buildHistoryPageHtml();
     void focusAddressBar();
     void focusAddressBarIfBlank();
@@ -147,9 +150,12 @@ private:
     void openBookmarksEditor();
     void openFromAddressBar();
     bool isLocalHostInput(const QString &input) const;
+    void openSettingsPage();
+    void openSavedTab(const QUrl &url, bool makeCurrent);
     void removeHistoryEntry(int index);
     void refreshHistoryCompleter();
     void renderHistoryPage(WebView *view);
+    void renderSettingsPage(WebView *view);
     QString searchUrlForQuery(const QString &query) const;
     void saveMenuItems(const QMenu *menu, int offset);
     void setConnections();
