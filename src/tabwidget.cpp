@@ -85,6 +85,9 @@ void TabWidget::removeTab(int index)
     }
     auto *w = widget(index);
     if (w) {
+        if (auto *webView = qobject_cast<WebView *>(w)) {
+            emit tabClosed(webView->url());
+        }
         QTabWidget::removeTab(index);
         w->deleteLater();
     }

@@ -45,6 +45,7 @@ protected:
 
 signals:
     void newTabButtonClicked();
+    void tabClosed(const QUrl &url);
 
 private:
     QPushButton *newTabButton {};

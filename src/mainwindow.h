@@ -97,7 +97,7 @@ private:
     bool cookiesEnabled {true};
     bool restoredTabs {};
     const QCommandLineParser *args;
-    QList<QUrl> closedTabs;
+    QList<QPair<QUrl, QIcon>> closedTabs;
     QPointer<QMainWindow> devToolsWindow;
     QPointer<QWebEngineView> devToolsView;
     QWebEngineScript cookieScript;

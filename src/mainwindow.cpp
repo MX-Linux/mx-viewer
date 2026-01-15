@@ -89,6 +89,27 @@ void MainWindow::init()
     toolBar->toggleViewAction()->setVisible(false);
     connect(tabWidget, &TabWidget::currentChanged, this, [this] { tabChanged(); });
     connect(tabWidget, &TabWidget::newTabButtonClicked, this, [this] { addNewTab(); });
+    connect(tabWidget, &TabWidget::tabClosed, this, [this](const QUrl &url) {
+        if (url.isValid()) {
+            QIcon icon;
+            if (auto *view = currentWebView()) {
+                if (view->url() == url) {
+                    icon = view->icon();
+                }
+            }
+            if (icon.isNull()) {
+                for (int i = 0; i < tabWidget->count(); ++i) {
+                    if (auto *view = qobject_cast<WebView *>(tabWidget->widget(i))) {
+                        if (view->url() == url) {
+                            icon = view->icon();
+                            break;
+                        }
+                    }
+                }
+            }
+            closedTabs.append({url, icon});
+        }
+    });
     if (auto *webView = currentWebView()) {
         websettings = webView->settings();
     }
@@ -244,18 +265,38 @@ void MainWindow::addNewTab(const QUrl &url, bool makeCurrent)
 void MainWindow::listHistory()
 {
     history->clear();
-    auto *showHistory = new QAction(QIcon::fromTheme("view-list-text"), tr("Show History Page"));
+    auto *showHistory = new QAction(QIcon::fromTheme("view-list-text"), tr("History"));
     showHistory->setShortcut(Qt::CTRL | Qt::Key_H);
     connect(showHistory, &QAction::triggered, this, &MainWindow::openHistoryPage);
     history->addAction(showHistory);
-    auto *deleteHistory = new QAction(QIcon::fromTheme("user-trash"), tr("&Clear history"));
-    connect(deleteHistory, &QAction::triggered, this, [this] {
-        history->clear();
-        saveMenuItems(history, 2);
-    });
-    history->addAction(deleteHistory);
     history->addSeparator();
-    loadHistory();
+    auto *recentTitle = new QWidgetAction(history);
+    auto *recentLabel = new QLabel(tr("Recent tabs"), history);
+    QFont recentFont = recentLabel->font();
+    recentFont.setUnderline(true);
+    recentFont.setBold(true);
+    recentLabel->setFont(recentFont);
+    recentLabel->setStyleSheet("color: #4a4a4a; padding: 4px 18px 4px 18px;");
+    recentTitle->setDefaultWidget(recentLabel);
+    history->addAction(recentTitle);
+    if (closedTabs.isEmpty()) {
+        auto *emptyAction = history->addAction(tr("No recent tabs"));
+        emptyAction->setEnabled(false);
+    } else {
+        for (int i = closedTabs.size() - 1; i >= 0; --i) {
+            const int tabIndex = i;
+            const auto entry = closedTabs.at(i);
+            const QUrl url = entry.first;
+            auto *action = history->addAction(entry.second, url.toDisplayString());
+            connect(action, &QAction::triggered, this, [this, tabIndex] {
+                if (tabIndex < 0 || tabIndex >= closedTabs.size()) {
+                    return;
+                }
+                const auto entry = closedTabs.takeAt(tabIndex);
+                openSavedTab(entry.first, true);
+            });
+        }
+    }
     refreshHistoryCompleter();
 }
 
@@ -1087,8 +1128,7 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     menu->addAction(devTools = new QAction(QIcon::fromTheme("applications-development"), tr("&Developer Tools")));
     devTools->setShortcut(Qt::Key_F12);
     menu->addAction(historyAction = new QAction(QIcon::fromTheme("history"), tr("H&istory")));
-    historyAction->setShortcut(Qt::CTRL | Qt::Key_H);
-    connect(historyAction, &QAction::triggered, this, &MainWindow::openHistoryPage);
+    historyAction->setMenu(history);
     menu->addAction(downloadAction = new QAction(QIcon::fromTheme("folder-download"), tr("&Downloads")));
     downloadAction->setShortcut(Qt::CTRL | Qt::Key_J);
     menu->addAction(bookmarkAction = new QAction(QIcon::fromTheme("emblem-favorite"), tr("&Bookmarks")));
@@ -1154,6 +1194,7 @@ void MainWindow::setupMenuConnections(QMenu *menu)
         QPoint pos = mapToParent(toolBar->widgetForAction(menuButton)->pos());
         pos.setY(pos.y() + toolBar->widgetForAction(menuButton)->size().height());
         menu->popup(pos);
+        listHistory();
     });
 }
 
@@ -1667,7 +1708,6 @@ void MainWindow::openBookmarksEditor()
 void MainWindow::closeCurrentTab()
 {
     if (tabWidget->count() > 1) {
-        closedTabs.append(currentWebView()->url());
         tabWidget->removeTab(tabWidget->currentIndex());
     } else {
         close();
@@ -1677,7 +1717,7 @@ void MainWindow::closeCurrentTab()
 void MainWindow::reopenClosedTab()
 {
     if (!closedTabs.isEmpty()) {
-        addNewTab(closedTabs.takeLast());
+        openSavedTab(closedTabs.takeLast().first, true);
     }
 }
 
