@@ -38,17 +38,17 @@
 #include <QWebEngineScript>
 #include <QWebEngineView>
 
-MainWindow::MainWindow(const QCommandLineParser &arg_parser, QWidget *parent)
+MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
     : QMainWindow(parent),
       downloadWidget {new DownloadWidget},
       searchBox {new QLineEdit(this)},
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},
       tabWidget {new TabWidget(this)},
-      args {&arg_parser}
+      args {&argParser}
 {
     init();
-    if (arg_parser.isSet("full-screen")) {
+    if (argParser.isSet("full-screen")) {
         showFullScreen();
         toolBar->hide();
     }
