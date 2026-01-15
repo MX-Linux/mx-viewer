@@ -354,7 +354,7 @@ void MainWindow::openBrowseDialog()
     }
 }
 
-// pop up a window and display website
+// Display a URL in the current view.
 void MainWindow::displaySite(QString url, const QString &title)
 {
     if (url.isEmpty()) {
@@ -534,8 +534,8 @@ void MainWindow::setConnections()
 
 void MainWindow::showFullScreenNotification()
 {
-    constexpr int distance_top = 100;
-    constexpr int duration_ms = 800;
+    constexpr int distanceTop = 100;
+    constexpr int durationMs = 800;
     constexpr double start = 0;
     constexpr double end = 0.85;
     auto *label = new QLabel(this);
@@ -544,9 +544,9 @@ void MainWindow::showFullScreenNotification()
     label->setStyleSheet("padding: 15px; background-color:#787878; color:white");
     label->setText(tr("Press [F11] to exit full screen"));
     label->adjustSize();
-    label->move(QApplication::primaryScreen()->geometry().width() / 2 - label->width() / 2, distance_top);
+    label->move(QApplication::primaryScreen()->geometry().width() / 2 - label->width() / 2, distanceTop);
     auto *a = new QPropertyAnimation(effect, "opacity");
-    a->setDuration(duration_ms);
+    a->setDuration(durationMs);
     a->setStartValue(start);
     a->setEndValue(end);
     a->setEasingCurve(QEasingCurve::InBack);
@@ -554,7 +554,7 @@ void MainWindow::showFullScreenNotification()
     label->show();
     QTimer::singleShot(4000, this, [label, effect, end, start] {
         auto *a = new QPropertyAnimation(effect, "opacity");
-        a->setDuration(duration_ms);
+        a->setDuration(durationMs);
         a->setStartValue(end);
         a->setEndValue(start);
         a->setEasingCurve(QEasingCurve::OutBack);
@@ -565,17 +565,19 @@ void MainWindow::showFullScreenNotification()
 
 void MainWindow::tabChanged()
 {
-    if (!currentWebView()) return;
+    if (!currentWebView()) {
+        return;
+    }
     auto *back = pageAction(QWebEnginePage::Back);
     auto *forward = pageAction(QWebEnginePage::Forward);
     auto *reload = pageAction(QWebEnginePage::Reload);
     auto *stop = pageAction(QWebEnginePage::Stop);
     QMap<QString, QAction *> actionMap = {{"Back", back}, {"Forward", forward}, {"Reload", reload}, {"Stop", stop}};
-    auto action_list = toolBar->actions();
+    auto actionList = toolBar->actions();
     toolBar->setUpdatesEnabled(false);
-    for (int i = 0; i < action_list.size() - 1; ++i) {
-        auto *currentAction = action_list.at(i);
-        auto *nextAction = action_list.at(i + 1);
+    for (int i = 0; i < actionList.size() - 1; ++i) {
+        auto *currentAction = actionList.at(i);
+        auto *nextAction = actionList.at(i + 1);
         auto it = actionMap.find(currentAction->text());
         if (it != actionMap.end()) {
             QAction *replacementAction = it.value();
@@ -595,7 +597,7 @@ void MainWindow::tabChanged()
     }
 }
 
-// Show the address in the toolbar and also connect it to launch it
+// Show the hovered URL in the status bar and connect it to launch it.
 void MainWindow::connectAddress(const QAction *action, const QMenu *menu)
 {
     connect(action, &QAction::hovered, this, [this, action] {
