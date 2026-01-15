@@ -42,7 +42,6 @@ public:
     static void updateDownload(QWebEngineDownloadRequest* download, QPushButton* pushButton, QProgressBar* progressBar);
 
 protected:
-    inline static QElapsedTimer timerDownload;
     void closeEvent(QCloseEvent* event) override;
 
 private:

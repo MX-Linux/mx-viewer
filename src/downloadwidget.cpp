@@ -37,7 +37,6 @@ DownloadWidget::~DownloadWidget()
 
 void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download)
 {
-    timerDownload.start();
     QString path = QFileDialog::getSaveFileName(
         this, tr("Save as"), QDir(download->downloadDirectory()).filePath(download->downloadFileName()));
     if (path.isEmpty()) {
@@ -57,6 +56,7 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download)
     ui->gridLayout->addWidget(pushButton, row, 3);
     ui->gridLayout->addItem(ui->verticalSpacer, row + 1, 1);
 
+    progressBar->setProperty("startTime", QDateTime::currentDateTime());
     if (!isVisible()) {
         restoreGeometry(settings.value("DownloadGeometry").toByteArray());
         show();
@@ -108,11 +108,12 @@ QString DownloadWidget::timeUnit(int seconds)
 }
 
 void DownloadWidget::updateDownload(QWebEngineDownloadRequest* download, QPushButton* pushButton,
-                                    QProgressBar* progressBar)
+                                     QProgressBar* progressBar)
 {
     auto totalBytes = static_cast<qreal>(download->totalBytes());
     auto receivedBytes = static_cast<qreal>(download->receivedBytes());
-    auto elapsed = DownloadWidget::timerDownload.elapsed();
+    auto startTime = progressBar->property("startTime").toDateTime();
+    auto elapsed = startTime.msecsTo(QDateTime::currentDateTime());
     auto bytesPerSecond = elapsed > 0 ? receivedBytes / static_cast<qreal>(elapsed) * 1000 : 0;
 
     auto state = download->state();
