@@ -85,6 +85,7 @@ private:
     bool completingHistory {};
     int lastAddressEditLength {};
     bool lastAddressEditWasDeletion {};
+    QByteArray normalGeometry;
     QSettings settings;
     QString homeAddress;
     QToolBar *toolBar {};

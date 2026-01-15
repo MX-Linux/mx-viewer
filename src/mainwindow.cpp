@@ -1119,7 +1119,7 @@ void MainWindow::addHelpMenuActions(QMenu *menu)
     QAction *quit {nullptr};
     menu->addSeparator();
     menu->addAction(settingsAction = new QAction(QIcon::fromTheme("preferences-system"), tr("&Settings")));
-    settingsAction->setShortcuts({QKeySequence::Preferences, Qt::CTRL | Qt::Key_Comma});
+    settingsAction->setShortcuts({Qt::CTRL | Qt::Key_Comma, QKeySequence::Preferences});
     menu->addSeparator();
     menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Help")));
     menu->addAction(about = new QAction(QIcon::fromTheme("help-about"), tr("&About")));
@@ -1690,8 +1690,12 @@ void MainWindow::toggleFullScreen()
 {
     if (isFullScreen()) {
         showNormal();
+        if (!normalGeometry.isEmpty()) {
+            restoreGeometry(normalGeometry);
+        }
         toolBar->show();
     } else {
+        normalGeometry = saveGeometry();
         showFullScreen();
         toolBar->hide();
         showFullScreenNotification();
@@ -1822,6 +1826,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     }
     if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
         searchBox->clear();
+        return;
+    }
+    if (event->key() == Qt::Key_Escape && isFullScreen()) {
+        toggleFullScreen();
         return;
     }
     if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
