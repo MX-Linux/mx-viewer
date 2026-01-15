@@ -62,6 +62,7 @@ protected:
 
 private slots:
     void handleLoadFinished();
+    void handleIconChanged();
 
 signals:
     void newWebView(WebView *wv, bool makeCurrent);
@@ -69,6 +70,8 @@ signals:
 private:
     QSettings historyLog;
     int index;
+    int lastHistoryIndex = -1;
+    QUrl lastHistoryUrl;
     QWidget *m_currentProxy = nullptr;
 
     // Static because Chromium creates new WebViews for navigation,

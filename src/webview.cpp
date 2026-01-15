@@ -70,6 +70,7 @@ WebView::WebView(QWidget *parent)
 {
     setPage(new WebPage(this));
     connect(this, &WebView::loadFinished, this, &WebView::handleLoadFinished);
+    connect(this, &WebView::iconChanged, this, &WebView::handleIconChanged);
 }
 
 void WebView::installEventFilterOnFocusProxy()
@@ -155,5 +156,27 @@ void WebView::handleLoadFinished()
     historyLog.setValue("url", url().toString());
     historyLog.endArray();
     historyLog.setValue("History/size", index + 1);
+    lastHistoryIndex = index;
+    lastHistoryUrl = url();
+    handleIconChanged();
 }
 
+void WebView::handleIconChanged()
+{
+    if (icon().isNull() || lastHistoryIndex < 0) {
+        return;
+    }
+    if (url() != lastHistoryUrl) {
+        return;
+    }
+    QPixmap iconPixmap = icon().pixmap(QSize(22, 22));
+    QByteArray iconByteArray;
+    QBuffer buffer(&iconByteArray);
+    if (buffer.open(QIODevice::WriteOnly)) {
+        iconPixmap.save(&buffer, "PNG");
+    }
+    historyLog.beginWriteArray("History");
+    historyLog.setArrayIndex(lastHistoryIndex);
+    historyLog.setValue("icon", iconByteArray);
+    historyLog.endArray();
+}
