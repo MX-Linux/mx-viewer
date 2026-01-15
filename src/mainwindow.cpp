@@ -368,8 +368,12 @@ void MainWindow::displaySite(QString url, const QString &title)
         url = QFileInfo(url).absoluteFilePath();
     }
     QUrl qurl = QUrl::fromUserInput(url);
-    currentWebView()->setUrl(qurl);
-    currentWebView()->show();
+    auto *view = currentWebView();
+    if (!view) {
+        return;
+    }
+    view->setUrl(qurl);
+    view->show();
     showProgress ? loading() : progressBar->hide();
     setWindowTitle(title);
 }
@@ -1079,8 +1083,12 @@ void MainWindow::toggleFullScreen()
 
 void MainWindow::updateUrl()
 {
+    auto *view = currentWebView();
+    if (!view) {
+        return;
+    }
     addressBar->show();
-    addressBar->setText(currentWebView()->url().toDisplayString());
+    addressBar->setText(view->url().toDisplayString());
 }
 
 bool MainWindow::restoreSavedTabs()
@@ -1167,7 +1175,9 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
     if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
-        currentWebView()->setFocus();
+        if (auto *view = currentWebView()) {
+            view->setFocus();
+        }
         return;
     }
     if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
@@ -1243,15 +1253,19 @@ void MainWindow::loading()
 // done loading
 void MainWindow::done(bool ok)
 {
-    if (!ok) {
-        qDebug() << "Error loading:" << currentWebView()->url().toString();
+    auto *view = currentWebView();
+    if (!view) {
+        return;
     }
-    currentWebView()->stop();
-    currentWebView()->setFocus();
+    if (!ok) {
+        qDebug() << "Error loading:" << view->url().toString();
+    }
+    view->stop();
+    view->setFocus();
     searchBox->clear();
     progressBar->setRange(0, 100);
     progressBar->setValue(0);
     progressBar->hide();
-    tabWidget->setTabText(tabWidget->currentIndex(), currentWebView()->title());
-    setWindowTitle(currentWebView()->title());
+    tabWidget->setTabText(tabWidget->currentIndex(), view->title());
+    setWindowTitle(view->title());
 }
