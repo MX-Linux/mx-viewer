@@ -1,3 +1,14 @@
+mx-viewer (26.01.2) mx; urgency=medium
+
+  * Added Ctrl-R, Alt <- and Alt -> navigation keys
+  * Added a History page accessible with Ctrl-H
+  * Added a Settings page accessible with Ctrl-,
+  * Added address bar autocompletion from history
+  * Added default search when the address bar doesn't contain a valid domain
+  * Save/restore window geometry
+
+ -- Adrian <adrian@mxlinux.org>  Wed, 14 Jan 2026 22:42:23 -0500
+
 mx-viewer (26.01.1) mx; urgency=medium
 
   * Added cookies, 3rd party cookies, pop-up options in Settings
