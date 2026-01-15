@@ -113,8 +113,6 @@ void MainWindow::init()
 MainWindow::~MainWindow()
 {
     settings.setValue("Geometry", saveGeometry());
-    listHistory();
-    saveMenuItems(history, 2);
     saveMenuItems(bookmarks, 2);
 }
 
@@ -472,7 +470,7 @@ bool MainWindow::handleHistoryRequest(const QUrl &url)
     } else {
         return false;
     }
-    listHistory();
+    refreshHistoryCompleter();
     renderHistoryPage(currentWebView());
     return true;
 }
@@ -1053,7 +1051,6 @@ void MainWindow::buildMenu()
 
     loadBookmarks();
     addBookmarksSubmenu();
-    addHistorySubmenu();
 
     setupMenuConnections(menu);
 }
@@ -1079,7 +1076,8 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     menu->addAction(devTools = new QAction(QIcon::fromTheme("applications-development"), tr("&Developer Tools")));
     devTools->setShortcut(Qt::Key_F12);
     menu->addAction(historyAction = new QAction(QIcon::fromTheme("history"), tr("H&istory")));
-    historyAction->setMenu(history);
+    historyAction->setShortcut(Qt::CTRL | Qt::Key_H);
+    connect(historyAction, &QAction::triggered, this, &MainWindow::openHistoryPage);
     menu->addAction(downloadAction = new QAction(QIcon::fromTheme("folder-download"), tr("&Downloads")));
     downloadAction->setShortcut(Qt::CTRL | Qt::Key_J);
     menu->addAction(bookmarkAction = new QAction(QIcon::fromTheme("emblem-favorite"), tr("&Bookmarks")));
@@ -1145,7 +1143,6 @@ void MainWindow::setupMenuConnections(QMenu *menu)
         QPoint pos = mapToParent(toolBar->widgetForAction(menuButton)->pos());
         pos.setY(pos.y() + toolBar->widgetForAction(menuButton)->size().height());
         menu->popup(pos);
-        listHistory();
     });
 }
 
@@ -1655,6 +1652,7 @@ void MainWindow::resizeEvent(QResizeEvent * /*event*/)
 void MainWindow::closeEvent(QCloseEvent * /*event*/)
 {
     downloadWidget->close();
+    settings.setValue("Geometry", saveGeometry());
 
     if (settings.value("SaveTabs", false).toBool()) {
         settings.beginWriteArray("SavedTabs");
