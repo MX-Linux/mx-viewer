@@ -370,6 +370,8 @@ void MainWindow::displaySite(QString url, const QString &title)
     QUrl qurl = QUrl::fromUserInput(url);
     auto *view = currentWebView();
     if (!view) {
+        progressBar->hide();
+        setWindowTitle(title);
         return;
     }
     view->setUrl(qurl);
