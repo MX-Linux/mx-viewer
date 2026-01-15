@@ -1261,6 +1261,10 @@ void MainWindow::done(bool ok)
 {
     auto *view = currentWebView();
     if (!view) {
+        searchBox->clear();
+        progressBar->setRange(0, 100);
+        progressBar->setValue(0);
+        progressBar->hide();
         return;
     }
     if (!ok) {
