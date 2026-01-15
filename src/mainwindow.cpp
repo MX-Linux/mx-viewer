@@ -1712,6 +1712,7 @@ void MainWindow::updateUrl()
     }
     addressBar->show();
     addressBar->setText(view->url().toDisplayString());
+    addressBar->setCursorPosition(0);
 }
 
 bool MainWindow::restoreSavedTabs()
