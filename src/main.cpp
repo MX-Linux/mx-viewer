@@ -45,6 +45,10 @@ QPair<uint, uint> getUserIDs()
     proc.start("logname", {}, QIODevice::ReadOnly);
     proc.waitForFinished();
     QString logname = QString::fromLatin1(proc.readAllStandardOutput().trimmed());
+    if (proc.exitCode() != 0 || logname.isEmpty()) {
+        qDebug() << "Failed to get logname, dropping privileges to nobody";
+        return {0, 0};
+    }
     proc.start("id", {"-u", logname}, QIODevice::ReadOnly);
     proc.waitForFinished();
     id.first = proc.readAllStandardOutput().trimmed().toUInt();
