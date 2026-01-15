@@ -23,11 +23,13 @@
 
 #include <QAbstractItemView>
 #include <QCheckBox>
+#include <QCompleter>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
+#include <QSet>
 #include <QSpinBox>
 #include <QtGlobal>
 #include <QListWidget>
@@ -256,6 +258,7 @@ void MainWindow::listHistory()
     history->addAction(deleteHistory);
     history->addSeparator();
     loadHistory();
+    refreshHistoryCompleter();
 }
 
 QString MainWindow::buildHistoryPageHtml()
@@ -473,6 +476,46 @@ bool MainWindow::handleHistoryRequest(const QUrl &url)
     return true;
 }
 
+void MainWindow::refreshHistoryCompleter()
+{
+    QStringList completions;
+    QStringList hosts;
+    QSet<QString> seenUrls;
+    QSet<QString> seenHosts;
+    int size = settings.beginReadArray("History");
+    completions.reserve(size);
+    for (int i = size - 1; i >= 0; --i) {
+        settings.setArrayIndex(i);
+        const QString urlValue = settings.value("url").toString();
+        if (urlValue.isEmpty() || urlValue == "about:blank") {
+            continue;
+        }
+        const QUrl url = QUrl::fromUserInput(urlValue);
+        if (url.scheme() == "mx-history") {
+            continue;
+        }
+        const QString host = url.host();
+        if (!host.isEmpty() && !seenHosts.contains(host)) {
+            seenHosts.insert(host);
+            hosts.append(host);
+            if (host.startsWith("www.", Qt::CaseInsensitive)) {
+                const QString stripped = host.mid(4);
+                if (!seenHosts.contains(stripped)) {
+                    seenHosts.insert(stripped);
+                    hosts.append(stripped);
+                }
+            }
+        }
+        if (!seenUrls.contains(urlValue)) {
+            seenUrls.insert(urlValue);
+            completions.append(urlValue);
+        }
+    }
+    settings.endArray();
+    historyCompletionModel->setStringList(completions);
+    historyCompletionHosts = hosts;
+}
+
 void MainWindow::addToolbar()
 {
     addToolBar(toolBar);
@@ -517,6 +560,75 @@ void MainWindow::setupAddressBar()
     addressBar = new AddressBar(this);
     addressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     addressBar->setClearButtonEnabled(true);
+    historyCompletionModel = new QStringListModel(this);
+    historyCompleter = new QCompleter(historyCompletionModel, this);
+    historyCompleter->setCaseSensitivity(Qt::CaseInsensitive);
+    historyCompleter->setCompletionMode(QCompleter::PopupCompletion);
+    historyCompleter->setFilterMode(Qt::MatchContains);
+    addressBar->setCompleter(historyCompleter);
+    connect(addressBar, &AddressBar::focused, this, [this] {
+        lastAddressEditLength = addressBar->text().size();
+        refreshHistoryCompleter();
+    });
+    connect(addressBar, &AddressBar::keyPressed, this, [this](int key) {
+        lastAddressEditWasDeletion = (key == Qt::Key_Backspace || key == Qt::Key_Delete);
+    });
+    connect(addressBar, &QLineEdit::textEdited, this, [this](const QString &text) {
+        if (completingHistory) {
+            return;
+        }
+        if (addressBar->cursorPosition() < text.size()) {
+            return;
+        }
+        if (lastAddressEditWasDeletion) {
+            lastAddressEditLength = text.size();
+            lastAddressEditWasDeletion = false;
+            return;
+        }
+        const QString trimmed = text.trimmed();
+        if (trimmed.isEmpty() || trimmed.contains(' ')) {
+            lastAddressEditLength = text.size();
+            lastAddressEditWasDeletion = false;
+            return;
+        }
+        if (historyCompletionHosts.isEmpty()) {
+            lastAddressEditLength = text.size();
+            lastAddressEditWasDeletion = false;
+            return;
+        }
+        QString prefix;
+        QString hostInput = trimmed;
+        const int schemeIndex = trimmed.indexOf("://");
+        if (schemeIndex >= 0) {
+            prefix = trimmed.left(schemeIndex + 3);
+            hostInput = trimmed.mid(schemeIndex + 3);
+        }
+        const int pathIndex = hostInput.indexOf('/');
+        if (pathIndex >= 0) {
+            lastAddressEditLength = text.size();
+            lastAddressEditWasDeletion = false;
+            return;
+        }
+        QString match;
+        for (const QString &entry : historyCompletionHosts) {
+            if (entry.startsWith(hostInput, Qt::CaseInsensitive)) {
+                match = entry;
+                break;
+            }
+        }
+        if (match.isEmpty() || match.compare(hostInput, Qt::CaseInsensitive) == 0) {
+            lastAddressEditLength = text.size();
+            lastAddressEditWasDeletion = false;
+            return;
+        }
+        completingHistory = true;
+        addressBar->setText(prefix + match);
+        addressBar->setSelection(prefix.size() + hostInput.size(), match.size() - hostInput.size());
+        lastAddressEditLength = addressBar->text().size();
+        completingHistory = false;
+        lastAddressEditWasDeletion = false;
+    });
+    refreshHistoryCompleter();
     addBookmark = addressBar->addAction(QIcon::fromTheme("emblem-favorite", QIcon(":/icons/emblem-favorite.png")),
                                         QLineEdit::TrailingPosition);
     addBookmark->setToolTip(tr("Add bookmark"));

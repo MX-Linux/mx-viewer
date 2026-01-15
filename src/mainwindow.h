@@ -31,6 +31,8 @@
 class QWebEngineSettings;
 class QWebEngineScript;
 class QWebEngineView;
+class QCompleter;
+class QStringListModel;
 
 class MainWindow : public QMainWindow
 {
@@ -69,7 +71,13 @@ private:
     QLineEdit *searchBox {};
     QMenu *bookmarks {};
     QMenu *history {};
+    QCompleter *historyCompleter {};
+    QStringListModel *historyCompletionModel {};
+    QStringList historyCompletionHosts;
     QProgressBar *progressBar {};
+    bool completingHistory {};
+    int lastAddressEditLength {};
+    bool lastAddressEditWasDeletion {};
     QSettings settings;
     QString homeAddress;
     QToolBar *toolBar {};
@@ -131,6 +139,7 @@ private:
     void openQuickInfo();
     void openBookmarksEditor();
     void removeHistoryEntry(int index);
+    void refreshHistoryCompleter();
     void renderHistoryPage(WebView *view);
     void saveMenuItems(const QMenu *menu, int offset);
     void setConnections();

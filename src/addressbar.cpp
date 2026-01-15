@@ -20,6 +20,7 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include "addressbar.h"
+#include <QKeyEvent>
 #include <QTimer>
 
 AddressBar::AddressBar(QWidget *parent)
@@ -30,5 +31,21 @@ AddressBar::AddressBar(QWidget *parent)
 void AddressBar::focusInEvent(QFocusEvent *event)
 {
     QLineEdit::focusInEvent(event);
-    QTimer::singleShot(0, this, &QLineEdit::selectAll);
+    emit focused();
+    if (event->reason() == Qt::PopupFocusReason) {
+        return;
+    }
+    selectAllPending = true;
+    QTimer::singleShot(0, this, [this] {
+        if (selectAllPending) {
+            selectAll();
+        }
+    });
+}
+
+void AddressBar::keyPressEvent(QKeyEvent *event)
+{
+    selectAllPending = false;
+    emit keyPressed(event->key());
+    QLineEdit::keyPressEvent(event);
 }

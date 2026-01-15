@@ -30,6 +30,14 @@ class AddressBar : public QLineEdit
 public:
     explicit AddressBar(QWidget *parent = nullptr);
 
+signals:
+    void focused();
+    void keyPressed(int key);
+
 protected:
     void focusInEvent(QFocusEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+
+private:
+    bool selectAllPending {};
 };
