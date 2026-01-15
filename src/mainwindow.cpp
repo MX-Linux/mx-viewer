@@ -1148,31 +1148,49 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash) {
         findForward();
+        return;
     }
     if (event->matches(QKeySequence::FindPrevious)) {
         findBackward();
-    } else if (event->matches(QKeySequence::Open)) {
+        return;
+    }
+    if (event->matches(QKeySequence::Open)) {
         openBrowseDialog();
-    } else if (event->matches(QKeySequence::HelpContents) || event->key() == Qt::Key_Question) {
+        return;
+    }
+    if (event->matches(QKeySequence::HelpContents) || event->key() == Qt::Key_Question) {
         openQuickInfo();
-    } else if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
+        return;
+    }
+    if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
         searchBox->clear();
-    } else if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
+        return;
+    }
+    if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
         currentWebView()->setFocus();
-    } else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
+        return;
+    }
+    if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
         focusAddressBar();
-    } else if (event->key() == Qt::Key_R && event->modifiers() == Qt::ControlModifier) {
+        return;
+    }
+    if (event->key() == Qt::Key_R && event->modifiers() == Qt::ControlModifier) {
         if (auto *view = currentWebView()) {
             view->reload();
         }
-    } else if (event->key() == Qt::Key_Left && event->modifiers() == Qt::AltModifier) {
+        return;
+    }
+    if (event->key() == Qt::Key_Left && event->modifiers() == Qt::AltModifier) {
         if (auto *view = currentWebView()) {
             view->back();
         }
-    } else if (event->key() == Qt::Key_Right && event->modifiers() == Qt::AltModifier) {
+        return;
+    }
+    if (event->key() == Qt::Key_Right && event->modifiers() == Qt::AltModifier) {
         if (auto *view = currentWebView()) {
             view->forward();
         }
+        return;
     }
 }
 
