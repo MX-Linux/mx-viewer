@@ -61,7 +61,7 @@ protected:
     bool event(QEvent *event) override;
 
 private slots:
-    void handleLoadFinished();
+    void handleLoadFinished(bool ok);
     void handleIconChanged();
 
 signals:

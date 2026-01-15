@@ -147,18 +147,33 @@ WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
     return newView;
 }
 
-void WebView::handleLoadFinished()
+void WebView::handleLoadFinished(bool ok)
 {
-    index = historyLog.value("History/size", 0).toInt();
-    historyLog.beginWriteArray("History");
-    historyLog.setArrayIndex(index);
-    historyLog.setValue("title", title());
-    historyLog.setValue("url", url().toString());
-    historyLog.endArray();
-    historyLog.setValue("History/size", index + 1);
-    lastHistoryIndex = index;
-    lastHistoryUrl = url();
-    handleIconChanged();
+    if (!ok) {
+        return;
+    }
+    const QUrl loadedUrl = url();
+    if (!loadedUrl.isValid() || loadedUrl.toString() == "about:blank") {
+        return;
+    }
+    QTimer::singleShot(750, this, [this, loadedUrl] {
+        if (page()->isLoading()) {
+            return;
+        }
+        if (url() != loadedUrl) {
+            return;
+        }
+        index = historyLog.value("History/size", 0).toInt();
+        historyLog.beginWriteArray("History");
+        historyLog.setArrayIndex(index);
+        historyLog.setValue("title", title());
+        historyLog.setValue("url", loadedUrl.toString());
+        historyLog.endArray();
+        historyLog.setValue("History/size", index + 1);
+        lastHistoryIndex = index;
+        lastHistoryUrl = loadedUrl;
+        handleIconChanged();
+    });
 }
 
 void WebView::handleIconChanged()
