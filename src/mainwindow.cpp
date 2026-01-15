@@ -1089,6 +1089,8 @@ void MainWindow::updateUrl()
 {
     auto *view = currentWebView();
     if (!view) {
+        addressBar->clear();
+        addressBar->hide();
         return;
     }
     addressBar->show();
