@@ -567,6 +567,11 @@ void MainWindow::setupAddressBar()
     historyCompleter->setCompletionMode(QCompleter::PopupCompletion);
     historyCompleter->setFilterMode(Qt::MatchContains);
     addressBar->setCompleter(historyCompleter);
+    connect(historyCompleter, QOverload<const QString &>::of(&QCompleter::activated), this,
+            [this](const QString &text) {
+                addressBar->setText(text);
+                openFromAddressBarText(text);
+            });
     connect(addressBar, &AddressBar::focused, this, [this] {
         lastAddressEditLength = addressBar->text().size();
         refreshHistoryCompleter();
@@ -838,8 +843,21 @@ void MainWindow::displaySearchResults(const QString &query)
 
 void MainWindow::openFromAddressBar()
 {
-    const QString input = addressBar->text().trimmed();
+    openFromAddressBarText(addressBar->text());
+}
+
+void MainWindow::openFromAddressBarText(const QString &inputText)
+{
+    const QString input = inputText.trimmed();
     if (input.isEmpty()) {
+        return;
+    }
+    if (input.startsWith("http://", Qt::CaseInsensitive) || input.startsWith("https://", Qt::CaseInsensitive)) {
+        lastAddressInput = input;
+        lastAddressUrl = QUrl::fromUserInput(input);
+        lastAddressMaySearch = false;
+        lastAddressExplicitScheme = true;
+        displaySite(input);
         return;
     }
     if (QFile::exists(input)) {
@@ -857,6 +875,7 @@ void MainWindow::openFromAddressBar()
     lastAddressInput = input;
     lastAddressUrl = qurl;
     lastAddressMaySearch = true;
+    lastAddressExplicitScheme = hasExplicitScheme;
     displaySite(input);
 }
 
@@ -1682,7 +1701,8 @@ void MainWindow::done(bool ok)
         progressBar->hide();
         return;
     }
-    if (!ok && lastAddressMaySearch && view->url() == lastAddressUrl && !lastAddressInput.isEmpty()) {
+    if (!ok && lastAddressMaySearch && !lastAddressExplicitScheme && view->url() == lastAddressUrl
+        && !lastAddressInput.isEmpty()) {
         displaySearchResults(lastAddressInput);
         return;
     }

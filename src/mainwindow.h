@@ -79,6 +79,7 @@ private:
     QString lastAddressInput;
     QUrl lastAddressUrl;
     bool lastAddressMaySearch {};
+    bool lastAddressExplicitScheme {};
     bool completingHistory {};
     int lastAddressEditLength {};
     bool lastAddressEditWasDeletion {};
@@ -132,6 +133,7 @@ private:
     void connectAddress(const QAction *action, const QMenu *menu);
     void displaySite(QString url = {}, const QString &title = {});
     void displaySearchResults(const QString &query);
+    void openFromAddressBarText(const QString &input);
     QString buildHistoryPageHtml();
     void focusAddressBar();
     void focusAddressBarIfBlank();
