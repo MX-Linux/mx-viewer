@@ -75,6 +75,10 @@ private:
     QStringListModel *historyCompletionModel {};
     QStringList historyCompletionHosts;
     QProgressBar *progressBar {};
+    QString searchEngine;
+    QString lastAddressInput;
+    QUrl lastAddressUrl;
+    bool lastAddressMaySearch {};
     bool completingHistory {};
     int lastAddressEditLength {};
     bool lastAddressEditWasDeletion {};
@@ -127,6 +131,7 @@ private:
     void clearHistoryEntries();
     void connectAddress(const QAction *action, const QMenu *menu);
     void displaySite(QString url = {}, const QString &title = {});
+    void displaySearchResults(const QString &query);
     QString buildHistoryPageHtml();
     void focusAddressBar();
     void focusAddressBarIfBlank();
@@ -138,9 +143,12 @@ private:
     void openBrowseDialog();
     void openQuickInfo();
     void openBookmarksEditor();
+    void openFromAddressBar();
+    bool isLocalHostInput(const QString &input) const;
     void removeHistoryEntry(int index);
     void refreshHistoryCompleter();
     void renderHistoryPage(WebView *view);
+    QString searchUrlForQuery(const QString &query) const;
     void saveMenuItems(const QMenu *menu, int offset);
     void setConnections();
     void showFullScreenNotification();

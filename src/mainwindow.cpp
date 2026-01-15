@@ -23,6 +23,7 @@
 
 #include <QAbstractItemView>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QCompleter>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -632,7 +633,7 @@ void MainWindow::setupAddressBar()
     addBookmark = addressBar->addAction(QIcon::fromTheme("emblem-favorite", QIcon(":/icons/emblem-favorite.png")),
                                         QLineEdit::TrailingPosition);
     addBookmark->setToolTip(tr("Add bookmark"));
-    connect(addressBar, &QLineEdit::returnPressed, this, [this] { displaySite(addressBar->text()); });
+    connect(addressBar, &QLineEdit::returnPressed, this, &MainWindow::openFromAddressBar);
     toolBar->addWidget(addressBar);
 }
 
@@ -759,6 +760,7 @@ void MainWindow::loadSettings()
     openNewTabWithHome = settings.value("OpenNewTabWithHome", true).toBool();
     zoomPercent = settings.value("ZoomPercent", 100).toInt();
     cookiesEnabled = settings.value("EnableCookies", true).toBool();
+    searchEngine = settings.value("SearchEngine", "DuckDuckGo").toString();
     if (!settings.contains("EnableJavaScript") && settings.contains("DisableJava")) {
         settings.setValue("EnableJavaScript", !settings.value("DisableJava", false).toBool());
     }
@@ -795,6 +797,67 @@ void MainWindow::openQuickInfo()
                            + tr("Ctrl-O") + "\t - " + tr("Browse file to open") + "\n" + tr("Esc") + "\t - "
                            + tr("Stop loading/clear Find field") + "\n" + tr("Alt→, Alt←") + "\t - "
                            + tr("Back/Forward") + "\n" + tr("F1, or ?") + "\t - " + tr("Open this help dialog"));
+}
+
+bool MainWindow::isLocalHostInput(const QString &input) const
+{
+    const QString lower = input.toLower();
+    if (lower == "localhost") {
+        return true;
+    }
+    if (lower == "localhost.localdomain") {
+        return true;
+    }
+    if (lower.endsWith(".local")) {
+        return true;
+    }
+    if (lower == "127.0.0.1" || lower == "::1") {
+        return true;
+    }
+    return false;
+}
+
+QString MainWindow::searchUrlForQuery(const QString &query) const
+{
+    const QByteArray encoded = QUrl::toPercentEncoding(query);
+    if (searchEngine == "Google") {
+        return QString::fromLatin1("https://www.google.com/search?q=%1").arg(QString::fromLatin1(encoded));
+    }
+    if (searchEngine == "Bing") {
+        return QString::fromLatin1("https://www.bing.com/search?q=%1").arg(QString::fromLatin1(encoded));
+    }
+    return QString::fromLatin1("https://duckduckgo.com/?q=%1").arg(QString::fromLatin1(encoded));
+}
+
+void MainWindow::displaySearchResults(const QString &query)
+{
+    const QString searchUrl = searchUrlForQuery(query);
+    lastAddressMaySearch = false;
+    displaySite(searchUrl, query);
+}
+
+void MainWindow::openFromAddressBar()
+{
+    const QString input = addressBar->text().trimmed();
+    if (input.isEmpty()) {
+        return;
+    }
+    if (QFile::exists(input)) {
+        displaySite(input, input);
+        return;
+    }
+    const bool hasExplicitScheme = input.contains("://");
+    const bool hasSpace = input.contains(' ');
+    const bool hasDot = input.contains('.');
+    if (hasSpace || (!hasDot && !hasExplicitScheme && !isLocalHostInput(input))) {
+        displaySearchResults(input);
+        return;
+    }
+    QUrl qurl = QUrl::fromUserInput(input);
+    lastAddressInput = input;
+    lastAddressUrl = qurl;
+    lastAddressMaySearch = true;
+    displaySite(input);
 }
 
 void MainWindow::saveMenuItems(const QMenu *menu, int offset)
@@ -1096,6 +1159,15 @@ void MainWindow::openSettings()
     dialog.setWindowTitle(tr("Settings"));
     auto *layout = new QFormLayout(&dialog);
     auto *homeInput = new QLineEdit(homeAddress, &dialog);
+    auto *searchCombo = new QComboBox(&dialog);
+    searchCombo->addItem(tr("DuckDuckGo"), "DuckDuckGo");
+    searchCombo->addItem(tr("Google"), "Google");
+    searchCombo->addItem(tr("Bing"), "Bing");
+    int searchIndex = searchCombo->findData(searchEngine);
+    if (searchIndex < 0) {
+        searchIndex = 0;
+    }
+    searchCombo->setCurrentIndex(searchIndex);
     auto *openNewTabCheck = new QCheckBox(tr("Open new tabs with home page"), &dialog);
     openNewTabCheck->setChecked(openNewTabWithHome);
     auto *showProgressCheck = new QCheckBox(tr("Show progress bar"), &dialog);
@@ -1128,6 +1200,7 @@ void MainWindow::openSettings()
     saveTabsCheck->setChecked(settings.value("SaveTabs", false).toBool());
 
     layout->addRow(tr("Home address"), homeInput);
+    layout->addRow(tr("Search engine"), searchCombo);
     layout->addRow(QString(), openNewTabCheck);
     layout->addRow(QString(), showProgressCheck);
     layout->addRow(tr("Zoom level"), zoomSpin);
@@ -1152,8 +1225,10 @@ void MainWindow::openSettings()
 
     if (dialog.exec() == QDialog::Accepted) {
         homeAddress = homeInput->text().trimmed();
+        searchEngine = searchCombo->currentData().toString();
         openNewTabWithHome = openNewTabCheck->isChecked();
         settings.setValue("Home", homeAddress);
+        settings.setValue("SearchEngine", searchEngine);
         settings.setValue("OpenNewTabWithHome", openNewTabWithHome);
         showProgress = showProgressCheck->isChecked();
         settings.setValue("ShowProgressBar", showProgress);
@@ -1605,6 +1680,10 @@ void MainWindow::done(bool ok)
         progressBar->setRange(0, 100);
         progressBar->setValue(0);
         progressBar->hide();
+        return;
+    }
+    if (!ok && lastAddressMaySearch && view->url() == lastAddressUrl && !lastAddressInput.isEmpty()) {
+        displaySearchResults(lastAddressInput);
         return;
     }
     if (!ok) {
