@@ -771,14 +771,15 @@ void MainWindow::loadSettings()
     applyWebSettings();
 
     QSize size {defaultWidth, defaultHeight};
-    resize(size);
-    if (settings.contains("Geometry") && (!args || !args->isSet("full-screen"))) {
-        restoreGeometry(settings.value("Geometry").toByteArray());
-        if (isMaximized()) { // add option to resize if maximized
+    const bool canRestore = settings.contains("Geometry") && (!args || !args->isSet("full-screen"));
+    if (canRestore) {
+        const bool restored = restoreGeometry(settings.value("Geometry").toByteArray());
+        if (!restored) {
             resize(size);
             centerWindow();
         }
     } else {
+        resize(size);
         centerWindow();
     }
 }
