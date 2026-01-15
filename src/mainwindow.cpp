@@ -400,11 +400,14 @@ void MainWindow::loadHistory()
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
         QAction *histItem {nullptr};
-        QByteArray iconByteArray = settings.value("icon").toByteArray();
-        QPixmap restoredIconPixmap;
-        restoredIconPixmap.loadFromData(iconByteArray);
         QIcon restoredIcon;
-        restoredIcon.addPixmap(restoredIconPixmap);
+        QByteArray iconByteArray = settings.value("icon").toByteArray();
+        if (!iconByteArray.isEmpty()) {
+            QPixmap restoredIconPixmap;
+            if (restoredIconPixmap.loadFromData(iconByteArray)) {
+                restoredIcon.addPixmap(restoredIconPixmap);
+            }
+        }
         history->addAction(histItem = new QAction(restoredIcon, settings.value("title").toString()));
         histItem->setProperty("url", settings.value("url"));
         connectAddress(histItem, history);
