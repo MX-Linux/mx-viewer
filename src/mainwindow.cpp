@@ -323,16 +323,13 @@ void MainWindow::addZoomActions()
     toolBar->addAction(zoomout);
     toolBar->addAction(zoomPercentAction);
     toolBar->addAction(zoomin);
-    constexpr auto step = 0.1;
     zoomin->setShortcuts({QKeySequence::ZoomIn, Qt::CTRL | Qt::Key_Equal});
     zoomout->setShortcut(QKeySequence::ZoomOut);
     zoomPercentAction->setShortcut(Qt::CTRL | Qt::Key_0);
-    connect(zoomout, &QAction::triggered, this, [this, step] {
-        Q_UNUSED(step);
+    connect(zoomout, &QAction::triggered, this, [this] {
         setZoomPercent(zoomPercent - 10, true);
     });
-    connect(zoomin, &QAction::triggered, this, [this, step] {
-        Q_UNUSED(step);
+    connect(zoomin, &QAction::triggered, this, [this] {
         setZoomPercent(zoomPercent + 10, true);
     });
     connect(zoomPercentAction, &QAction::triggered, this, [this] {

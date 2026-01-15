@@ -87,7 +87,10 @@ bool dropElevatedPrivileges(bool force_nobody)
         return false; // and the calling fn should EXIT/abort the program
     }
 
-    // change cwd, for good measure (if unable to, treat as overall failure)
+    // Change working directory to /tmp for security and compatibility reasons.
+    // After dropping privileges, the original cwd might not be accessible to the new user,
+    // potentially causing issues with file operations or signals. /tmp is world-writable
+    // and a standard location for temporary operations.
     if (chdir("/tmp") != 0) {
         qDebug() << "Can't change working directory to /tmp";
         return false;
