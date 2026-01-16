@@ -24,6 +24,7 @@
 #include <QAbstractItemView>
 #include <QCheckBox>
 #include <QCompleter>
+#include <QDateTime>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
@@ -82,62 +83,15 @@ qint64 totalDirectorySize(const QStringList &paths)
 
 QStringList collectCachePaths(const QWebEngineProfile *profile)
 {
-    QSet<QString> paths;
-    auto addPath = [&paths](const QString &path) {
-        if (!path.isEmpty()) {
-            paths.insert(path);
-        }
-    };
-    auto addCacheRoots = [&addPath](const QString &root) {
-        if (root.isEmpty()) {
-            return;
-        }
-        addPath(root + "/Cache");
-        addPath(root + "/Code Cache");
-        addPath(root + "/GPUCache");
-        addPath(root + "/Service Worker");
-    };
-    if (profile) {
-        const QString cachePath = profile->cachePath();
-        if (!cachePath.isEmpty()) {
-            addPath(cachePath);
-            addCacheRoots(cachePath);
-        }
-        addCacheRoots(profile->persistentStoragePath());
+    if (!profile) return {};
+    const QString cachePath = profile->cachePath();
+    if (cachePath.isEmpty()) return {};
+    QDir dir(cachePath);
+    QStringList subdirs;
+    for (const QString &entry : dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+        subdirs << cachePath + "/" + entry;
     }
-    auto addQtWebEngineRoot = [&addCacheRoots](const QString &base) {
-        if (base.isEmpty()) {
-            return;
-        }
-        addCacheRoots(base + "/QtWebEngine/Default");
-    };
-    const auto cacheLocations = QStandardPaths::standardLocations(QStandardPaths::CacheLocation);
-    for (const auto &location : cacheLocations) {
-        addQtWebEngineRoot(location);
-    }
-    const auto genericCacheLocations = QStandardPaths::standardLocations(QStandardPaths::GenericCacheLocation);
-    for (const auto &location : genericCacheLocations) {
-        addQtWebEngineRoot(location);
-    }
-    const auto appLocalLocations = QStandardPaths::standardLocations(QStandardPaths::AppLocalDataLocation);
-    for (const auto &location : appLocalLocations) {
-        addQtWebEngineRoot(location);
-    }
-    const auto appDataLocations = QStandardPaths::standardLocations(QStandardPaths::AppDataLocation);
-    for (const auto &location : appDataLocations) {
-        addQtWebEngineRoot(location);
-    }
-    const auto genericDataLocations = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
-    for (const auto &location : genericDataLocations) {
-        addQtWebEngineRoot(location);
-    }
-    const QString homePath = QDir::homePath();
-    if (!homePath.isEmpty()) {
-        addCacheRoots(homePath + "/.cache/QtWebEngine/Default");
-        addCacheRoots(homePath + "/.local/share/QtWebEngine/Default");
-        addCacheRoots(homePath + "/.config/QtWebEngine/Default");
-    }
-    return paths.values();
+    return subdirs;
 }
 
 bool removeCachePath(const QString &path)
@@ -473,6 +427,7 @@ QString MainWindow::buildHistoryPageHtml()
 <html>
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="cache-control" content="no-cache">
   <title>%1</title>
   <style>
     :root { color-scheme: light; }
@@ -690,12 +645,15 @@ void MainWindow::addNavigationActions()
     auto *stop = pageAction(QWebEnginePage::Stop);
     toolBar->addAction(back);
     toolBar->addAction(forward);
-    toolBar->addAction(reload);
+    reloadAction = new QAction(reload->icon(), reload->text(), this);
+    reloadAction->setShortcutContext(Qt::ApplicationShortcut);
+    toolBar->addAction(reloadAction);
     toolBar->addAction(stop);
     back->setShortcut(QKeySequence::Back);
     forward->setShortcut(QKeySequence::Forward);
-    reload->setShortcuts(QKeySequence::Refresh);
+    reloadAction->setShortcuts(QKeySequence::Refresh);
     stop->setShortcut(QKeySequence::Cancel);
+    connect(reloadAction, &QAction::triggered, this, &MainWindow::reloadCurrentView);
     connect(stop, &QAction::triggered, this, [this] { done(true); });
 }
 
@@ -1155,7 +1113,7 @@ void MainWindow::tabChanged()
     auto *forward = pageAction(QWebEnginePage::Forward);
     auto *reload = pageAction(QWebEnginePage::Reload);
     auto *stop = pageAction(QWebEnginePage::Stop);
-    QMap<QString, QAction *> actionMap = {{"Back", back}, {"Forward", forward}, {"Reload", reload}, {"Stop", stop}};
+    QMap<QString, QAction *> actionMap = {{"Back", back}, {"Forward", forward}, {"Reload", reloadAction}, {"Stop", stop}};
     auto actionList = toolBar->actions();
     toolBar->setUpdatesEnabled(false);
     for (int i = 0; i < actionList.size() - 1; ++i) {
@@ -1169,6 +1127,12 @@ void MainWindow::tabChanged()
         }
     }
     toolBar->setUpdatesEnabled(true);
+    if (reloadAction) {
+        reloadAction->setIcon(reload->icon());
+        reloadAction->setText(reload->text());
+        reloadAction->setToolTip(reload->toolTip());
+        reloadAction->setEnabled(reload->isEnabled());
+    }
     addressBar->setText(currentWebView()->url().toString());
     if (addressBar->text().isEmpty()) {
         addressBar->setFocus();
@@ -1352,20 +1316,25 @@ QString MainWindow::buildSettingsPageHtml()
     auto check = [](bool value) { return value ? QStringLiteral("checked") : QString(); };
     auto disabled = [](bool value) { return value ? QString() : QStringLiteral("disabled"); };
 
-    QString cacheSizeText = tr("unknown");
-    const auto *profile = webProfile;
-    const QStringList cacheCandidates = collectCachePaths(profile);
-    const qint64 cacheBytes = totalDirectorySize(cacheCandidates);
-    if (cacheBytes >= 0) {
-        cacheSizeText = DownloadWidget::withUnit(cacheBytes);
-    } else if (!cacheCandidates.isEmpty()) {
-        cacheSizeText = DownloadWidget::withUnit(0);
+    QString cacheSizeText = clearingCache ? tr("Clearing...") : tr("unknown");
+    if (!clearingCache) {
+        const auto *profile = webProfile;
+        const QStringList cacheCandidates = collectCachePaths(profile);
+        const qint64 cacheBytes = totalDirectorySize(cacheCandidates);
+        if (cacheBytes >= 0) {
+            if (cacheBytes < 1024) {
+                cacheSizeText = tr("Cleared");
+            } else {
+                cacheSizeText = DownloadWidget::withUnit(cacheBytes);
+            }
+        }
     }
 
     const QString html = QStringLiteral(R"(<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="cache-control" content="no-cache">
   <title>%1</title>
   <style>
     :root { color-scheme: light; }
@@ -1593,7 +1562,8 @@ void MainWindow::renderSettingsPage(WebView *view)
     if (!view) {
         return;
     }
-    view->setHtml(buildSettingsPageHtml(), QUrl("mx-settings://list"));
+    const QString ts = QString::number(QDateTime::currentMSecsSinceEpoch());
+    view->setHtml(buildSettingsPageHtml(), QUrl("mx-settings://list?ts=" + ts));
     view->show();
     tabWidget->setTabText(tabWidget->indexOf(view), tr("Settings"));
     setWindowTitle(tr("Settings"));
@@ -1622,23 +1592,22 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
         return false;
     }
     const QString action = url.host();
-    if (action == "clearCookies") {
+    if (action == "clearcookies") {
         webProfile->cookieStore()->deleteAllCookies();
         renderSettingsPage(currentWebView());
         return true;
-    } else if (action == "clearCache") {
-        auto *profile = webProfile;
-        if (profile) {
-            profile->clearHttpCache();
-            const auto cachePaths = collectCachePaths(profile);
-            for (const auto &path : cachePaths) {
-                removeCachePath(path);
+    } else if (action == "clearcache") {
+        clearingCache = true;
+        renderSettingsPage(currentWebView());
+        webProfile->clearHttpCache();
+        connect(webProfile, &QWebEngineProfile::clearHttpCacheCompleted, this, [this]() {
+            clearingCache = false;
+            if (auto *view = currentWebView()) {
+                if (view->url().scheme() == "mx-settings") {
+                    renderSettingsPage(view);
+                }
             }
-        }
-        renderSettingsPage(currentWebView());
-        return true;
-    } else if (action != "save") {
-        renderSettingsPage(currentWebView());
+        }, Qt::SingleShotConnection);
         return true;
     }
     QUrlQuery query(url);
@@ -2083,9 +2052,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
     if (event->key() == Qt::Key_R && event->modifiers() == Qt::ControlModifier) {
-        if (auto *view = currentWebView()) {
-            view->reload();
-        }
+        reloadCurrentView();
         return;
     }
     if (event->key() == Qt::Key_Left && event->modifiers() == Qt::AltModifier) {
@@ -2136,6 +2103,19 @@ QAction *MainWindow::pageAction(QWebEnginePage::WebAction webAction)
 WebView *MainWindow::currentWebView()
 {
     return tabWidget->currentWebView();
+}
+
+void MainWindow::reloadCurrentView()
+{
+    auto *view = currentWebView();
+    if (!view) {
+        return;
+    }
+    if (view->url().scheme() == "mx-settings") {
+        renderSettingsPage(view);
+        return;
+    }
+    view->reload();
 }
 
 // display progressbar while loading page

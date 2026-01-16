@@ -68,6 +68,7 @@ private:
     DownloadWidget *downloadWidget {};
     QAction *addBookmark {};
     QAction *menuButton {};
+    QAction *reloadAction {};
     QAction *zoomPercentAction {};
     QLineEdit *searchBox {};
     QMenu *bookmarks {};
@@ -97,6 +98,7 @@ private:
     int zoomPercent {100};
     bool cookiesEnabled {true};
     bool restoredTabs {};
+    bool clearingCache {};
     const QCommandLineParser *args;
     QList<QPair<QUrl, QIcon>> closedTabs;
     QPointer<QMainWindow> devToolsWindow;
@@ -116,6 +118,7 @@ private:
     void init();
     QAction *pageAction(QWebEnginePage::WebAction webAction);
     WebView *currentWebView();
+    void reloadCurrentView();
     void addActions();
     void addBookmarksSubmenu();
     void addHistorySubmenu();
