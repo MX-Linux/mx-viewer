@@ -1,3 +1,10 @@
+mx-viewer (26.01.3) mx; urgency=medium
+
+  * Add button to clear cookies and cache
+  * Preserve cookies between sessions
+
+ -- Adrian <adrian@mxlinux.org>  Fri, 16 Jan 2026 18:11:33 -0500
+
 mx-viewer (26.01.2) mx; urgency=medium
 
   * Added Ctrl-R, Alt <- and Alt -> navigation keys
