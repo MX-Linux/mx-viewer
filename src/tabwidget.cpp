@@ -24,6 +24,7 @@
 #include <QApplication>
 #include <QEvent>
 #include <QMouseEvent>
+#include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
 #include <QSize>
@@ -85,12 +86,62 @@ void TabWidget::removeTab(int index)
     }
     auto *w = widget(index);
     if (w) {
-        if (auto *webView = qobject_cast<WebView *>(w)) {
-            emit tabClosed(webView->url());
+        auto *webView = qobject_cast<WebView *>(w);
+        if (!webView || webView->url().scheme() != "mx-settings") {
+            finalizeRemoveTab(index);
+            return;
         }
-        QTabWidget::removeTab(index);
-        w->deleteLater();
+        setCurrentIndex(index);
+        QPointer<WebView> settingsView = webView;
+        webView->page()->runJavaScript("window.mxSettingsDirty === true", [this, index, settingsView](const QVariant &result) {
+            if (!settingsView || index < 0 || index >= count()) {
+                return;
+            }
+            if (!result.toBool()) {
+                finalizeRemoveTab(index);
+                return;
+            }
+            QMessageBox box(this);
+            box.setIcon(QMessageBox::Question);
+            box.setWindowTitle(tr("Unsaved settings"));
+            box.setText(tr("Save changes before closing?"));
+            box.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+            box.setDefaultButton(QMessageBox::Save);
+            const auto choice = box.exec();
+            if (choice == QMessageBox::Save) {
+                settingsView->page()->runJavaScript("document.getElementById('save').click();",
+                                                    [this, index, settingsView](const QVariant &) {
+                                                        if (!settingsView || index < 0 || index >= count()) {
+                                                            return;
+                                                        }
+                                                        finalizeRemoveTab(index);
+                                                    });
+                return;
+            }
+            if (choice == QMessageBox::Discard) {
+                finalizeRemoveTab(index);
+            }
+        });
+        return;
     }
+    updateNewTabButton();
+}
+
+void TabWidget::finalizeRemoveTab(int index)
+{
+    if (index < 0 || index >= count()) {
+        return;
+    }
+    auto *w = widget(index);
+    if (!w) {
+        updateNewTabButton();
+        return;
+    }
+    if (auto *webView = qobject_cast<WebView *>(w)) {
+        emit tabClosed(webView->url());
+    }
+    QTabWidget::removeTab(index);
+    w->deleteLater();
     updateNewTabButton();
 }
 

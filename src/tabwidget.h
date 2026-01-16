@@ -50,6 +50,7 @@ signals:
 private:
     QPushButton *newTabButton {};
     void handleCurrentChanged(int index);
+    void finalizeRemoveTab(int index);
     void updateNewTabButton();
     void positionNewTabButton();
 };

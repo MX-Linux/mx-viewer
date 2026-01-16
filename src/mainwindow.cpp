@@ -26,6 +26,10 @@
 #include <QCompleter>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QDir>
+#include <QDirIterator>
+#include <QFile>
+#include <QFileInfo>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
@@ -38,8 +42,117 @@
 #include <QUrlQuery>
 #include <QVBoxLayout>
 #include <QWebEngineCookieStore>
+#include <QWebEngineProfile>
 #include <QWebEngineScript>
 #include <QWebEngineView>
+#include <QStandardPaths>
+
+namespace {
+qint64 directorySize(const QString &path)
+{
+    QDir dir(path);
+    if (!dir.exists()) {
+        return -1;
+    }
+    qint64 total = 0;
+    QDirIterator it(path, QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        it.next();
+        total += it.fileInfo().size();
+    }
+    return total;
+}
+
+qint64 totalDirectorySize(const QStringList &paths)
+{
+    qint64 total = 0;
+    bool found = false;
+    for (const auto &path : paths) {
+        if (!QDir(path).exists()) {
+            continue;
+        }
+        const qint64 size = directorySize(path);
+        if (size >= 0) {
+            total += size;
+            found = true;
+        }
+    }
+    return found ? total : -1;
+}
+
+QStringList collectCachePaths(const QWebEngineProfile *profile)
+{
+    QSet<QString> paths;
+    auto addPath = [&paths](const QString &path) {
+        if (!path.isEmpty()) {
+            paths.insert(path);
+        }
+    };
+    auto addCacheRoots = [&addPath](const QString &root) {
+        if (root.isEmpty()) {
+            return;
+        }
+        addPath(root + "/Cache");
+        addPath(root + "/Code Cache");
+        addPath(root + "/GPUCache");
+        addPath(root + "/Service Worker");
+    };
+    if (profile) {
+        const QString cachePath = profile->cachePath();
+        if (!cachePath.isEmpty()) {
+            addPath(cachePath);
+            addCacheRoots(cachePath);
+        }
+        addCacheRoots(profile->persistentStoragePath());
+    }
+    auto addQtWebEngineRoot = [&addCacheRoots](const QString &base) {
+        if (base.isEmpty()) {
+            return;
+        }
+        addCacheRoots(base + "/QtWebEngine/Default");
+    };
+    const auto cacheLocations = QStandardPaths::standardLocations(QStandardPaths::CacheLocation);
+    for (const auto &location : cacheLocations) {
+        addQtWebEngineRoot(location);
+    }
+    const auto genericCacheLocations = QStandardPaths::standardLocations(QStandardPaths::GenericCacheLocation);
+    for (const auto &location : genericCacheLocations) {
+        addQtWebEngineRoot(location);
+    }
+    const auto appLocalLocations = QStandardPaths::standardLocations(QStandardPaths::AppLocalDataLocation);
+    for (const auto &location : appLocalLocations) {
+        addQtWebEngineRoot(location);
+    }
+    const auto appDataLocations = QStandardPaths::standardLocations(QStandardPaths::AppDataLocation);
+    for (const auto &location : appDataLocations) {
+        addQtWebEngineRoot(location);
+    }
+    const auto genericDataLocations = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
+    for (const auto &location : genericDataLocations) {
+        addQtWebEngineRoot(location);
+    }
+    const QString homePath = QDir::homePath();
+    if (!homePath.isEmpty()) {
+        addCacheRoots(homePath + "/.cache/QtWebEngine/Default");
+        addCacheRoots(homePath + "/.local/share/QtWebEngine/Default");
+        addCacheRoots(homePath + "/.config/QtWebEngine/Default");
+    }
+    return paths.values();
+}
+
+bool removeCachePath(const QString &path)
+{
+    QFileInfo info(path);
+    if (!info.exists()) {
+        return false;
+    }
+    if (info.isFile() || info.isSymLink()) {
+        return QFile::remove(path);
+    }
+    QDir dir(path);
+    return dir.removeRecursively();
+}
+} // namespace
 
 MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
     : QMainWindow(parent),
@@ -1239,6 +1352,16 @@ QString MainWindow::buildSettingsPageHtml()
     auto check = [](bool value) { return value ? QStringLiteral("checked") : QString(); };
     auto disabled = [](bool value) { return value ? QString() : QStringLiteral("disabled"); };
 
+    QString cacheSizeText = tr("unknown");
+    const auto *profile = QWebEngineProfile::defaultProfile();
+    const QStringList cacheCandidates = collectCachePaths(profile);
+    const qint64 cacheBytes = totalDirectorySize(cacheCandidates);
+    if (cacheBytes >= 0) {
+        cacheSizeText = DownloadWidget::withUnit(cacheBytes);
+    } else if (!cacheCandidates.isEmpty()) {
+        cacheSizeText = DownloadWidget::withUnit(0);
+    }
+
     const QString html = QStringLiteral(R"(<!doctype html>
 <html>
 <head>
@@ -1253,8 +1376,11 @@ QString MainWindow::buildSettingsPageHtml()
     .row { display: grid; gap: 6px; }
     .input, select { padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 6px; }
     .check { display: flex; gap: 8px; align-items: center; }
+    .check-row { display: flex; gap: 12px; align-items: center; }
+    .cache-label { font-weight: 600; }
     .actions { display: flex; gap: 12px; margin-top: 8px; }
     .btn { padding: 8px 12px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 6px; cursor: pointer; }
+    .btn-inline { padding: 4px 8px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -1286,10 +1412,17 @@ QString MainWindow::buildSettingsPageHtml()
     <label class="check"><input id="spatialNav" type="checkbox" %21> %22</label>
     <label class="check"><input id="enableJs" type="checkbox" %23> %24</label>
     <label class="check"><input id="loadImages" type="checkbox" %25> %26</label>
-    <label class="check"><input id="enableCookies" type="checkbox" %27> %28</label>
+    <div class="check-row">
+      <label class="check"><input id="enableCookies" type="checkbox" %27> %28</label>
+      <button class="btn btn-inline" id="clearCookies" type="button">%39</button>
+    </div>
     <label class="check"><input id="thirdPartyCookies" type="checkbox" %29 %30> %31</label>
     <label class="check"><input id="allowPopups" type="checkbox" %32> %33</label>
     <label class="check"><input id="saveTabs" type="checkbox" %34> %35</label>
+    <div class="check-row">
+      <div class="cache-label">%40</div>
+      <button class="btn btn-inline" id="clearCache" type="button">%41</button>
+    </div>
     <div class="actions">
       <button class="btn" id="save">%36</button>
       <button class="btn" id="reset" type="button">%37</button>
@@ -1301,6 +1434,27 @@ QString MainWindow::buildSettingsPageHtml()
     const resetBtn = document.getElementById('reset');
     const searchSelect = document.getElementById('search');
     const customSearch = document.getElementById('customSearch');
+    const inputs = Array.from(form.querySelectorAll('input, select'));
+    saveBtn.disabled = true;
+    resetBtn.disabled = true;
+    window.mxSettingsDirty = false;
+    function snapshot() {
+      const data = {};
+      inputs.forEach(el => {
+        if (!el.id) {
+          return;
+        }
+        data[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+      });
+      return JSON.stringify(data);
+    }
+    let baseline = snapshot();
+    function updateDirtyState() {
+      const dirty = snapshot() !== baseline;
+      window.mxSettingsDirty = dirty;
+      saveBtn.disabled = !dirty;
+      resetBtn.disabled = !dirty;
+    }
     function boolValue(id) {
       return document.getElementById(id).checked ? '1' : '0';
     }
@@ -1321,6 +1475,9 @@ QString MainWindow::buildSettingsPageHtml()
     }
     saveBtn.addEventListener('click', event => {
       event.preventDefault();
+      if (saveBtn.disabled) {
+        return;
+      }
       let customUrl = customSearch.value.trim();
       if (searchSelect.value === 'Custom' && customUrl.length > 0) {
         customUrl = normalizeCustomUrl(customUrl);
@@ -1340,13 +1497,33 @@ QString MainWindow::buildSettingsPageHtml()
       params.set('thirdPartyCookies', boolValue('thirdPartyCookies'));
       params.set('allowPopups', boolValue('allowPopups'));
       params.set('saveTabs', boolValue('saveTabs'));
+      baseline = snapshot();
+      updateDirtyState();
       location.href = 'mx-settings://save?' + params.toString();
     });
     resetBtn.addEventListener('click', event => {
       event.preventDefault();
       location.href = 'mx-settings://list';
     });
+    const clearCookiesBtn = document.getElementById('clearCookies');
+    clearCookiesBtn.addEventListener('click', event => {
+      event.preventDefault();
+      if (confirm('%42')) {
+        location.href = 'mx-settings://clearCookies';
+      }
+    });
+    const clearCacheBtn = document.getElementById('clearCache');
+    clearCacheBtn.addEventListener('click', event => {
+      event.preventDefault();
+      if (confirm('%43')) {
+        location.href = 'mx-settings://clearCache';
+      }
+    });
     searchSelect.addEventListener('change', syncCustom);
+    inputs.forEach(el => {
+      el.addEventListener('input', updateDirtyState);
+      el.addEventListener('change', updateDirtyState);
+    });
     const cookiesToggle = document.getElementById('enableCookies');
     const thirdPartyToggle = document.getElementById('thirdPartyCookies');
     function syncThirdParty() {
@@ -1358,6 +1535,8 @@ QString MainWindow::buildSettingsPageHtml()
     syncCustom();
     cookiesToggle.addEventListener('change', syncThirdParty);
     syncThirdParty();
+    baseline = snapshot();
+    updateDirtyState();
   </script>
 </body>
 </html>)")
@@ -1399,7 +1578,12 @@ QString MainWindow::buildSettingsPageHtml()
                                  tr("Save settings").toHtmlEscaped(),
                                  tr("Reset").toHtmlEscaped(),
                                  tr("Custom URL has no ?q= or %s placeholder. Append ?q=%s automatically?")
-                                     .toHtmlEscaped());
+                                     .toHtmlEscaped(),
+                                 tr("Clear cookies").toHtmlEscaped(),
+                                 tr("Cache size: %1").arg(cacheSizeText).toHtmlEscaped(),
+                                 tr("Clear cache").toHtmlEscaped(),
+                                 tr("Clear all cookies?").toHtmlEscaped(),
+                                 tr("Clear the cache?").toHtmlEscaped());
 
     return html;
 }
@@ -1438,7 +1622,22 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
         return false;
     }
     const QString action = url.host();
-    if (action != "save") {
+    if (action == "clearCookies") {
+        QWebEngineProfile::defaultProfile()->cookieStore()->deleteAllCookies();
+        renderSettingsPage(currentWebView());
+        return true;
+    } else if (action == "clearCache") {
+        auto *profile = QWebEngineProfile::defaultProfile();
+        if (profile) {
+            profile->clearHttpCache();
+            const auto cachePaths = collectCachePaths(profile);
+            for (const auto &path : cachePaths) {
+                removeCachePath(path);
+            }
+        }
+        renderSettingsPage(currentWebView());
+        return true;
+    } else if (action != "save") {
         renderSettingsPage(currentWebView());
         return true;
     }
