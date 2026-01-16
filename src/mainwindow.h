@@ -89,6 +89,7 @@ private:
     QSettings settings;
     QString homeAddress;
     QToolBar *toolBar {};
+    QWebEngineProfile *webProfile {};
     QWebEngineSettings *websettings {};
     TabWidget *tabWidget {};
     bool showProgress {};

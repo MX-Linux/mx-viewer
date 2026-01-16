@@ -32,7 +32,7 @@ class WebPage : public QWebEnginePage
 {
     Q_OBJECT
 public:
-    explicit WebPage(WebView *parent);
+    explicit WebPage(QWebEngineProfile *profile, WebView *parent);
 
 protected:
     bool acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame) override;
@@ -48,7 +48,7 @@ class WebView : public QWebEngineView
     Q_OBJECT
 
 public:
-    explicit WebView(QWidget *parent = nullptr);
+    explicit WebView(QWebEngineProfile *profile, QWidget *parent = nullptr);
     WebView *createWindow(QWebEnginePage::WebWindowType type) override;
 
     static bool lastClickWasNewTabRequest();
@@ -73,6 +73,7 @@ private:
     int lastHistoryIndex = -1;
     QUrl lastHistoryUrl;
     QWidget *m_currentProxy = nullptr;
+    QWebEngineProfile *profile {};
 
     // Static because Chromium creates new WebViews for navigation,
     // but the click is captured on the original view

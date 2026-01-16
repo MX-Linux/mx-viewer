@@ -160,7 +160,8 @@ MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
       searchBox {new QLineEdit(this)},
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},
-      tabWidget {new TabWidget(this)},
+      webProfile {new QWebEngineProfile("mx-viewer", this)},
+      tabWidget {new TabWidget(webProfile, this)},
       args {&argParser}
 {
     init();
@@ -187,7 +188,8 @@ MainWindow::MainWindow(const QUrl &url, QWidget *parent)
       searchBox {new QLineEdit(this)},
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},
-      tabWidget {new TabWidget(this)},
+      webProfile {new QWebEngineProfile("mx-viewer", this)},
+      tabWidget {new TabWidget(webProfile, this)},
       args {nullptr}
 {
     init();
@@ -223,9 +225,7 @@ void MainWindow::init()
             closedTabs.append({url, icon});
         }
     });
-    if (auto *webView = currentWebView()) {
-        websettings = webView->settings();
-    }
+    websettings = webProfile->settings();
     loadSettings();
     addToolbar();
     addActions();
@@ -909,7 +909,7 @@ void MainWindow::loadSettings()
     // Load first from system .conf file and then overwrite with CLI switches where available
     websettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
     websettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
-    QWebEngineProfile::defaultProfile()->setHttpAcceptLanguage(QLocale::system().name());
+    webProfile->setHttpAcceptLanguage(QLocale::system().name());
 
     homeAddress = settings.value("Home", "https://start.duckduckgo.com").toString();
     showProgress = settings.value("ShowProgressBar", false).toBool();
@@ -1095,7 +1095,7 @@ void MainWindow::setConnections()
         disconnect(urlChangedConn);
     }
     urlChangedConn = connect(currentWebView(), &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
-    connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested, downloadWidget,
+    connect(webProfile, &QWebEngineProfile::downloadRequested, downloadWidget,
             &DownloadWidget::downloadRequested, Qt::UniqueConnection);
     if (loadFinishedConn) {
         disconnect(loadFinishedConn);
@@ -1353,7 +1353,7 @@ QString MainWindow::buildSettingsPageHtml()
     auto disabled = [](bool value) { return value ? QString() : QStringLiteral("disabled"); };
 
     QString cacheSizeText = tr("unknown");
-    const auto *profile = QWebEngineProfile::defaultProfile();
+    const auto *profile = webProfile;
     const QStringList cacheCandidates = collectCachePaths(profile);
     const qint64 cacheBytes = totalDirectorySize(cacheCandidates);
     if (cacheBytes >= 0) {
@@ -1623,11 +1623,11 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
     }
     const QString action = url.host();
     if (action == "clearCookies") {
-        QWebEngineProfile::defaultProfile()->cookieStore()->deleteAllCookies();
+        webProfile->cookieStore()->deleteAllCookies();
         renderSettingsPage(currentWebView());
         return true;
     } else if (action == "clearCache") {
-        auto *profile = QWebEngineProfile::defaultProfile();
+        auto *profile = webProfile;
         if (profile) {
             profile->clearHttpCache();
             const auto cachePaths = collectCachePaths(profile);
@@ -1712,7 +1712,7 @@ void MainWindow::applyWebSettings()
     websettings->setAttribute(QWebEngineSettings::LocalStorageEnabled, enableCookies);
     websettings->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, allowPopups);
 
-    auto *profile = QWebEngineProfile::defaultProfile();
+    auto *profile = webProfile;
     profile->setHttpAcceptLanguage(QLocale::system().name());
 
     if (cookiesEnabled && !enableCookies) {

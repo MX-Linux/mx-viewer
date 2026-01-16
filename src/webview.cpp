@@ -26,14 +26,15 @@
 #include <QBuffer>
 #include <QMouseEvent>
 #include <QTimer>
+#include <QWebEngineProfile>
 
 // Static member definitions
 bool WebView::s_ctrlHeld = false;
 bool WebView::s_middleClick = false;
 bool WebView::s_consumed = false;
 
-WebPage::WebPage(WebView *parent)
-    : QWebEnginePage(parent),
+WebPage::WebPage(QWebEngineProfile *profile, WebView *parent)
+    : QWebEnginePage(profile, parent),
       m_webView(parent)
 {
 }
@@ -82,11 +83,12 @@ bool WebPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool
     return QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);
 }
 
-WebView::WebView(QWidget *parent)
-    : QWebEngineView(parent),
-      index(historyLog.value("History/size", 0).toInt())
+WebView::WebView(QWebEngineProfile *profile, QWidget *parent)
+    : QWebEngineView(profile, parent),
+      index(historyLog.value("History/size", 0).toInt()),
+      profile(profile)
 {
-    setPage(new WebPage(this));
+    setPage(new WebPage(profile, this));
     connect(this, &WebView::loadFinished, this, &WebView::handleLoadFinished);
     connect(this, &WebView::iconChanged, this, &WebView::handleIconChanged);
 }
@@ -150,7 +152,7 @@ bool WebView::wasClickConsumed()
 
 WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
 {
-    auto *newView = new WebView;
+    auto *newView = new WebView(profile);
     if (type == QWebEnginePage::WebBrowserTab) {
         // Check if acceptNavigationRequest already handled this click
         bool background = !wasClickConsumed() && lastClickWasNewTabRequest();

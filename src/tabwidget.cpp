@@ -32,9 +32,10 @@
 #include <QTimer>
 #include <QToolButton>
 
-TabWidget::TabWidget(QWidget *parent)
+TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
     : QTabWidget(parent),
-      newTabButton(new QPushButton("+", this))
+      newTabButton(new QPushButton("+", this)),
+      profile(profile)
 {
     setTabBarAutoHide(true);
     setTabsClosable(true);
@@ -147,7 +148,7 @@ void TabWidget::finalizeRemoveTab(int index)
 
 WebView *TabWidget::createTab(bool makeCurrent)
 {
-    QPointer<WebView> webView = new WebView;
+    QPointer<WebView> webView = new WebView(profile);
     addNewTab(webView, makeCurrent);
     return webView.data();
 }

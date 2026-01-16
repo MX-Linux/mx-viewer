@@ -22,6 +22,7 @@
 #pragma once
 
 #include <QTabWidget>
+#include <QWebEngineProfile>
 #include "webview.h"
 
 class QPushButton;
@@ -31,7 +32,7 @@ class TabWidget : public QTabWidget
     Q_OBJECT
 
 public:
-    explicit TabWidget(QWidget *parent = nullptr);
+    explicit TabWidget(QWebEngineProfile *profile, QWidget *parent = nullptr);
     WebView *currentWebView();
 
     WebView *createTab(bool makeCurrent = true);
@@ -49,6 +50,7 @@ signals:
 
 private:
     QPushButton *newTabButton {};
+    QWebEngineProfile *profile {};
     void handleCurrentChanged(int index);
     void finalizeRemoveTab(int index);
     void updateNewTabButton();
