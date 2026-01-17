@@ -97,6 +97,7 @@ private:
     bool openNewTabWithHome {};
     int zoomPercent {100};
     bool cookiesEnabled {true};
+    bool clearCookiesAtExit {false};
     bool restoredTabs {};
     bool clearingCache {};
     const QCommandLineParser *args;

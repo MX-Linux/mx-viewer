@@ -874,6 +874,7 @@ void MainWindow::loadSettings()
     openNewTabWithHome = settings.value("OpenNewTabWithHome", true).toBool();
     zoomPercent = settings.value("ZoomPercent", 100).toInt();
     cookiesEnabled = settings.value("EnableCookies", true).toBool();
+    clearCookiesAtExit = settings.value("ClearCookiesAtExit", false).toBool();
     searchEngine = settings.value("SearchEngine", "DuckDuckGo").toString();
     searchEngineCustom = settings.value("SearchEngineCustom", QString()).toString();
     if (!settings.contains("EnableJavaScript") && settings.contains("DisableJava")) {
@@ -1312,6 +1313,7 @@ QString MainWindow::buildSettingsPageHtml()
     const bool enableThirdPartyCookies = settings.value("EnableThirdPartyCookies", true).toBool();
     const bool allowPopups = settings.value("AllowPopups", true).toBool();
     const bool saveTabs = settings.value("SaveTabs", false).toBool();
+    const bool clearCookiesAtExit = settings.value("ClearCookiesAtExit", false).toBool();
 
     auto check = [](bool value) { return value ? QStringLiteral("checked") : QString(); };
     auto disabled = [](bool value) { return value ? QString() : QStringLiteral("disabled"); };
@@ -1383,18 +1385,19 @@ QString MainWindow::buildSettingsPageHtml()
     <label class="check"><input id="loadImages" type="checkbox" %25> %26</label>
     <div class="check-row">
       <label class="check"><input id="enableCookies" type="checkbox" %27> %28</label>
-      <button class="btn btn-inline" id="clearCookies" type="button">%39</button>
+      <button class="btn btn-inline" id="clearCookies" type="button">%41</button>
     </div>
     <label class="check"><input id="thirdPartyCookies" type="checkbox" %29 %30> %31</label>
-    <label class="check"><input id="allowPopups" type="checkbox" %32> %33</label>
-    <label class="check"><input id="saveTabs" type="checkbox" %34> %35</label>
+    <label class="check"><input id="clearCookiesAtExit" type="checkbox" %32> %33</label>
+    <label class="check"><input id="allowPopups" type="checkbox" %34> %35</label>
+    <label class="check"><input id="saveTabs" type="checkbox" %36> %37</label>
     <div class="check-row">
-      <div class="cache-label">%40</div>
-      <button class="btn btn-inline" id="clearCache" type="button">%41</button>
+      <div class="cache-label">%42</div>
+      <button class="btn btn-inline" id="clearCache" type="button">%43</button>
     </div>
     <div class="actions">
-      <button class="btn" id="save">%36</button>
-      <button class="btn" id="reset" type="button">%37</button>
+      <button class="btn" id="save">%38</button>
+      <button class="btn" id="reset" type="button">%39</button>
     </div>
   </form>
   <script>
@@ -1429,7 +1432,7 @@ QString MainWindow::buildSettingsPageHtml()
     }
     function normalizeCustomUrl(url) {
       if (!url.includes('%s') && !url.includes('?q=')) {
-        const add = confirm('%38');
+        const add = confirm('%40');
         if (add) {
           const join = url.includes('?') ? '&' : '?';
           return url + join + 'q=%s';
@@ -1466,6 +1469,7 @@ QString MainWindow::buildSettingsPageHtml()
       params.set('thirdPartyCookies', boolValue('thirdPartyCookies'));
       params.set('allowPopups', boolValue('allowPopups'));
       params.set('saveTabs', boolValue('saveTabs'));
+      params.set('clearCookiesAtExit', boolValue('clearCookiesAtExit'));
       baseline = snapshot();
       updateDirtyState();
       location.href = 'mx-settings://save?' + params.toString();
@@ -1477,14 +1481,14 @@ QString MainWindow::buildSettingsPageHtml()
     const clearCookiesBtn = document.getElementById('clearCookies');
     clearCookiesBtn.addEventListener('click', event => {
       event.preventDefault();
-      if (confirm('%42')) {
+      if (confirm('%44')) {
         location.href = 'mx-settings://clearCookies';
       }
     });
     const clearCacheBtn = document.getElementById('clearCache');
     clearCacheBtn.addEventListener('click', event => {
       event.preventDefault();
-      if (confirm('%43')) {
+      if (confirm('%45')) {
         location.href = 'mx-settings://clearCache';
       }
     });
@@ -1540,6 +1544,8 @@ QString MainWindow::buildSettingsPageHtml()
                                  check(enableThirdPartyCookies),
                                  disabled(enableCookies),
                                  tr("Enable third-party cookies").toHtmlEscaped(),
+                                 check(clearCookiesAtExit),
+                                 tr("Clear cookies at exit").toHtmlEscaped(),
                                  check(allowPopups),
                                  tr("Allow pop-up windows").toHtmlEscaped(),
                                  check(saveTabs),
@@ -1624,6 +1630,7 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
     bool newThirdParty = query.queryItemValue("thirdPartyCookies") == "1";
     const bool newAllowPopups = query.queryItemValue("allowPopups") == "1";
     const bool newSaveTabs = query.queryItemValue("saveTabs") == "1";
+    const bool newClearCookiesAtExit = query.queryItemValue("clearCookiesAtExit") == "1";
     if (!newEnableCookies) {
         newThirdParty = false;
     }
@@ -1647,6 +1654,8 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
     settings.setValue("EnableThirdPartyCookies", newThirdParty);
     settings.setValue("AllowPopups", newAllowPopups);
     settings.setValue("SaveTabs", newSaveTabs);
+    clearCookiesAtExit = newClearCookiesAtExit;
+    settings.setValue("ClearCookiesAtExit", newClearCookiesAtExit);
     if (newZoom > 0) {
         setZoomPercent(newZoom, true);
     }
@@ -2080,6 +2089,9 @@ void MainWindow::resizeEvent(QResizeEvent * /*event*/)
 void MainWindow::closeEvent(QCloseEvent * /*event*/)
 {
     downloadWidget->close();
+    if (clearCookiesAtExit) {
+        webProfile->cookieStore()->deleteAllCookies();
+    }
     settings.setValue("Geometry", saveGeometry());
 
     if (settings.value("SaveTabs", false).toBool()) {
