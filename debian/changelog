@@ -1,4 +1,4 @@
-mx-viewer (26.01.3) mx; urgency=medium
+mx-viewer (26.01.4) mx; urgency=medium
 
   * Add button to clear cookies and cache
   * Preserve cookies between sessions
