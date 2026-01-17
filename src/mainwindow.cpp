@@ -1606,6 +1606,7 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
         clearingCache = true;
         renderSettingsPage(currentWebView());
         webProfile->clearHttpCache();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
         connect(webProfile, &QWebEngineProfile::clearHttpCacheCompleted, this, [this]() {
             clearingCache = false;
             if (auto *view = currentWebView()) {
@@ -1614,6 +1615,17 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
                 }
             }
         }, Qt::SingleShotConnection);
+#else
+        // Qt < 6.7 doesn't have clearHttpCacheCompleted signal, use timer fallback
+        QTimer::singleShot(500, this, [this]() {
+            clearingCache = false;
+            if (auto *view = currentWebView()) {
+                if (view->url().scheme() == "mx-settings") {
+                    renderSettingsPage(view);
+                }
+            }
+        });
+#endif
         return true;
     }
     QUrlQuery query(url);
