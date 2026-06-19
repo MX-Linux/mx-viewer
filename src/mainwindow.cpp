@@ -1025,9 +1025,10 @@ void MainWindow::saveMenuItems(const QMenu *menu, int offset)
             QPixmap iconPixmap = menu->actions().at(i)->icon().pixmap(QSize(16, 16));
             QByteArray iconByteArray;
             QBuffer buffer(&iconByteArray);
-            buffer.open(QIODevice::WriteOnly);
-            iconPixmap.save(&buffer, "PNG");
-            settings.setValue("icon", iconByteArray);
+            if (buffer.open(QIODevice::WriteOnly)) {
+                iconPixmap.save(&buffer, "PNG");
+                settings.setValue("icon", iconByteArray);
+            }
         }
     }
     settings.endArray();
@@ -2148,7 +2149,6 @@ void MainWindow::loading()
     progressBar->setFixedHeight(progBarWidth);
     progressBar->setTextVisible(false);
     progressBar->move(geometry().width() / 2 - progressBar->width() / 2, geometry().height() - progBarVerticalAdj);
-    progressBar->setFocus();
     progressBar->show();
     progressBar->setRange(0, 0);
 }
