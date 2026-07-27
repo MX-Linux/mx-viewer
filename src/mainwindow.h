@@ -69,6 +69,9 @@ private:
     QAction *addBookmark {};
     QAction *menuButton {};
     QAction *reloadAction {};
+    QAction *backAction {};
+    QAction *forwardAction {};
+    QAction *stopAction {};
     QAction *zoomPercentAction {};
     QLineEdit *searchBox {};
     QMenu *bookmarks {};

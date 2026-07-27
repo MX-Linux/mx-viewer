@@ -639,22 +639,22 @@ void MainWindow::addToolbar()
 
 void MainWindow::addNavigationActions()
 {
-    auto *back = pageAction(QWebEnginePage::Back);
-    auto *forward = pageAction(QWebEnginePage::Forward);
+    backAction = pageAction(QWebEnginePage::Back);
+    forwardAction = pageAction(QWebEnginePage::Forward);
     auto *reload = pageAction(QWebEnginePage::Reload);
-    auto *stop = pageAction(QWebEnginePage::Stop);
-    toolBar->addAction(back);
-    toolBar->addAction(forward);
+    stopAction = pageAction(QWebEnginePage::Stop);
+    toolBar->addAction(backAction);
+    toolBar->addAction(forwardAction);
     reloadAction = new QAction(reload->icon(), reload->text(), this);
     reloadAction->setShortcutContext(Qt::ApplicationShortcut);
     toolBar->addAction(reloadAction);
-    toolBar->addAction(stop);
-    back->setShortcut(QKeySequence::Back);
-    forward->setShortcut(QKeySequence::Forward);
+    toolBar->addAction(stopAction);
+    backAction->setShortcut(QKeySequence::Back);
+    forwardAction->setShortcut(QKeySequence::Forward);
     reloadAction->setShortcuts(QKeySequence::Refresh);
-    stop->setShortcut(QKeySequence::Cancel);
+    stopAction->setShortcut(QKeySequence::Cancel);
     connect(reloadAction, &QAction::triggered, this, &MainWindow::reloadCurrentView);
-    connect(stop, &QAction::triggered, this, [this] { done(true); });
+    connect(stopAction, &QAction::triggered, this, [this] { done(true); });
 }
 
 void MainWindow::addHomeAction()
@@ -1111,19 +1111,21 @@ void MainWindow::tabChanged()
     auto *forward = pageAction(QWebEnginePage::Forward);
     auto *reload = pageAction(QWebEnginePage::Reload);
     auto *stop = pageAction(QWebEnginePage::Stop);
-    QMap<QString, QAction *> actionMap = {{"Back", back}, {"Forward", forward}, {"Reload", reloadAction}, {"Stop", stop}};
-    auto actionList = toolBar->actions();
+    back->setShortcut(QKeySequence::Back);
+    forward->setShortcut(QKeySequence::Forward);
+    stop->setShortcut(QKeySequence::Cancel);
     toolBar->setUpdatesEnabled(false);
-    for (int i = 0; i < actionList.size() - 1; ++i) {
-        auto *currentAction = actionList.at(i);
-        auto *nextAction = actionList.at(i + 1);
-        auto it = actionMap.find(currentAction->text());
-        if (it != actionMap.end()) {
-            QAction *replacementAction = it.value();
-            toolBar->removeAction(currentAction);
-            toolBar->insertAction(nextAction, replacementAction);
-        }
-    }
+    toolBar->insertAction(backAction, back);
+    toolBar->removeAction(backAction);
+    backAction = back;
+    toolBar->insertAction(forwardAction, forward);
+    toolBar->removeAction(forwardAction);
+    forwardAction = forward;
+    toolBar->insertAction(stopAction, stop);
+    toolBar->removeAction(stopAction);
+    stopAction = stop;
+    disconnect(stopAction, &QAction::triggered, this, nullptr);
+    connect(stopAction, &QAction::triggered, this, [this] { done(true); });
     toolBar->setUpdatesEnabled(true);
     if (reloadAction) {
         reloadAction->setIcon(reload->icon());
