@@ -43,7 +43,9 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download)
         return;
     }
     download->setDownloadDirectory(QFileInfo(path).path());
-    QWebEngineProfile::defaultProfile()->setDownloadPath(download->downloadDirectory());
+    if (auto* profile = qobject_cast<QWebEngineProfile*>(sender())) {
+        profile->setDownloadPath(download->downloadDirectory());
+    }
     download->setDownloadFileName(QFileInfo(path).fileName());
     auto* downloadLabel = new QLabel;
     auto* pushButton = new QPushButton(QIcon::fromTheme("cancel"), tr("cancel"));
