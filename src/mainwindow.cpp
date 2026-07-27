@@ -805,11 +805,7 @@ void MainWindow::openBrowseDialog()
 void MainWindow::displaySite(QString url, const QString &title)
 {
     if (url.isEmpty()) {
-        if (tabWidget->currentIndex() == 0) {
-            url = homeAddress;
-        } else {
-            return;
-        }
+        url = homeAddress;
     }
     if (QFile::exists(url)) {
         url = QFileInfo(url).absoluteFilePath();
