@@ -659,10 +659,10 @@ void MainWindow::addNavigationActions()
 
 void MainWindow::addHomeAction()
 {
-    auto *home {new QAction(QIcon::fromTheme("go-home", QIcon(":/icons/go-home.svg")), tr("Home"))};
-    toolBar->addAction(home);
-    home->setShortcut(Qt::ALT | Qt::Key_Home);
-    connect(home, &QAction::triggered, this, [this] { displaySite(); });
+    homeAction = new QAction(QIcon::fromTheme("go-home", QIcon(":/icons/go-home.svg")), tr("Home"));
+    toolBar->addAction(homeAction);
+    homeAction->setShortcut(Qt::ALT | Qt::Key_Home);
+    connect(homeAction, &QAction::triggered, this, [this] { displaySite(); });
 }
 
 void MainWindow::setupAddressBar()
@@ -1105,6 +1105,9 @@ void MainWindow::showFullScreenNotification()
 void MainWindow::tabChanged()
 {
     if (!currentWebView()) {
+        // The last tab just closed; its page (and these actions) will be
+        // deleted shortly, so drop the references before they dangle.
+        backAction = forwardAction = stopAction = nullptr;
         return;
     }
     auto *back = pageAction(QWebEnginePage::Back);
@@ -1115,14 +1118,23 @@ void MainWindow::tabChanged()
     forward->setShortcut(QKeySequence::Forward);
     stop->setShortcut(QKeySequence::Cancel);
     toolBar->setUpdatesEnabled(false);
-    toolBar->insertAction(backAction, back);
-    toolBar->removeAction(backAction);
+    // Anchor inserts on the permanent reloadAction/homeAction rather than the
+    // previous tab's (about-to-be-replaced) actions, so this stays correct
+    // even right after the last tab closed and backAction/etc. were nulled.
+    toolBar->insertAction(reloadAction, back);
+    toolBar->insertAction(reloadAction, forward);
+    toolBar->insertAction(homeAction, stop);
+    if (backAction) {
+        toolBar->removeAction(backAction);
+    }
+    if (forwardAction) {
+        toolBar->removeAction(forwardAction);
+    }
+    if (stopAction) {
+        toolBar->removeAction(stopAction);
+    }
     backAction = back;
-    toolBar->insertAction(forwardAction, forward);
-    toolBar->removeAction(forwardAction);
     forwardAction = forward;
-    toolBar->insertAction(stopAction, stop);
-    toolBar->removeAction(stopAction);
     stopAction = stop;
     disconnect(stopAction, &QAction::triggered, this, nullptr);
     connect(stopAction, &QAction::triggered, this, [this] { done(true); });

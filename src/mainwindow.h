@@ -69,6 +69,7 @@ private:
     QAction *addBookmark {};
     QAction *menuButton {};
     QAction *reloadAction {};
+    QAction *homeAction {};
     QAction *backAction {};
     QAction *forwardAction {};
     QAction *stopAction {};
