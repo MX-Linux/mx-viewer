@@ -56,6 +56,5 @@ Comment=Basic document viewer and browser
 Exec=mx-viewer %U
 Icon=mx-viewer
 NoDisplay=false
-Categories=Network;Utilities;
+Categories=Network;WebBrowser;
 Type=Application
-
