@@ -108,6 +108,13 @@ bool dropElevatedPrivileges(bool force_nobody)
 
 int main(int argc, char *argv[])
 {
+    if (qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY")
+        && qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
+        qWarning("mx-viewer: no display available (DISPLAY and WAYLAND_DISPLAY are both unset); "
+                "a graphical session is required to run this program.");
+        return EXIT_FAILURE;
+    }
+
     QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
     QGuiApplication::setQuitOnLastWindowClosed(true);
     // Set Qt platform to XCB (X11) if not already set and we're in X11 environment
