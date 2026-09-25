@@ -51,6 +51,12 @@ void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, cons
 bool WebPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame)
 {
     Q_UNUSED(isMainFrame);
+    // Internal actions may only come from the internal page itself or from the address bar,
+    // never from a remote page navigating to an mx-history:// or mx-settings:// URL.
+    const bool internalScheme = url.scheme() == "mx-history" || url.scheme() == "mx-settings";
+    if (internalScheme && type != NavigationTypeTyped && this->url().scheme() != url.scheme()) {
+        return false;
+    }
     if (url.scheme() == "mx-history") {
         auto *mw = qobject_cast<MainWindow *>(m_webView->window());
         if (!mw) {
