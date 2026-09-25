@@ -22,14 +22,18 @@
 #include "webview.h"
 #include "mainwindow.h"
 
+#include <algorithm>
+
 #include <QApplication>
 #include <QAuthenticator>
 #include <QBuffer>
+#include <QContextMenuEvent>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPointer>
@@ -282,6 +286,29 @@ void WebView::handleRenderProcessTerminated(QWebEnginePage::RenderProcessTermina
         // Keep the original URL as base so the address bar still shows it.
         setHtml(html, crashedUrl);
     });
+}
+
+void WebView::contextMenuEvent(QContextMenuEvent *event)
+{
+    auto *menu = createStandardContextMenu();
+    // "Open link in new window" also ends up as a tab here, so it would just duplicate "new tab".
+    menu->removeAction(pageAction(QWebEnginePage::OpenLinkInNewWindow));
+    const QString selection = selectedText().simplified();
+    if (!selection.isEmpty()) {
+        const QString shown = selection.size() > 30 ? selection.left(30) + QChar(0x2026) : selection;
+        auto *search = new QAction(tr("Search the web for \"%1\"").arg(shown), menu);
+        connect(search, &QAction::triggered, this, [this, selection] {
+            if (auto *mw = qobject_cast<MainWindow *>(window())) {
+                mw->searchInNewTab(selection);
+            }
+        });
+        const auto actions = menu->actions();
+        const auto copy = std::find(actions.cbegin(), actions.cend(), pageAction(QWebEnginePage::Copy));
+        QAction *before = (copy != actions.cend() && std::next(copy) != actions.cend()) ? *std::next(copy) : nullptr;
+        menu->insertAction(before, search);
+    }
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+    menu->popup(event->globalPos());
 }
 
 void WebView::installEventFilterOnFocusProxy()

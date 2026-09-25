@@ -54,6 +54,7 @@ public slots:
     void closeCurrentTab();
     void reopenClosedTab();
     void openLinkInNewTab(const QUrl &url);
+    void searchInNewTab(const QString &text);
     void handleFullScreenRequest(QWebEngineFullScreenRequest request, WebView *view);
     void printPage(WebView *view);
     void openDevTools();

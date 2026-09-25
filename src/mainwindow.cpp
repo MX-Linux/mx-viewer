@@ -1954,6 +1954,11 @@ void MainWindow::openLinkInNewTab(const QUrl &url)
     addNewTab(url, false);
 }
 
+void MainWindow::searchInNewTab(const QString &text)
+{
+    addNewTab(QUrl(searchUrlForQuery(text)), true);
+}
+
 void MainWindow::handleFullScreenRequest(QWebEngineFullScreenRequest request, WebView *view)
 {
     if (request.toggleOn()) {

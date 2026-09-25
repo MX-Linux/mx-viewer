@@ -66,6 +66,7 @@ public:
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
     bool event(QEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
 
 private slots:
     void handleLoadFinished(bool ok);
