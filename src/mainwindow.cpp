@@ -1069,6 +1069,9 @@ void MainWindow::showFullScreenNotification()
 
 void MainWindow::tabChanged()
 {
+    if (pageFullScreen && currentWebView() != pageFullScreenView) {
+        exitPageFullScreen();
+    }
     if (!currentWebView()) {
         // The last tab just closed; its page (and these actions) will be
         // deleted shortly, so drop the references before they dangle.
@@ -1900,8 +1903,67 @@ void MainWindow::openLinkInNewTab(const QUrl &url)
     addNewTab(url, false);
 }
 
+void MainWindow::handleFullScreenRequest(QWebEngineFullScreenRequest request, WebView *view)
+{
+    if (request.toggleOn()) {
+        if (pageFullScreen || view != currentWebView()) {
+            request.reject();
+            return;
+        }
+        request.accept();
+        pageFullScreen = true;
+        pageFullScreenView = view;
+        fullScreenBeforePage = isFullScreen();
+        if (!fullScreenBeforePage) {
+            normalGeometry = saveGeometry();
+            showFullScreen();
+        }
+        toolBar->hide();
+        tabWidget->tabBar()->hide();
+        statusBar()->hide();
+    } else {
+        request.accept();
+        restoreFromPageFullScreen();
+    }
+}
+
+// Leave HTML5 fullscreen. The window is restored right away rather than waiting for the page's
+// toggle-off request, which never arrives if the tab is being closed.
+void MainWindow::exitPageFullScreen()
+{
+    if (!pageFullScreen) {
+        return;
+    }
+    QPointer<WebView> view = pageFullScreenView;
+    restoreFromPageFullScreen();
+    if (view) {
+        view->triggerPageAction(QWebEnginePage::ExitFullScreen);
+    }
+}
+
+void MainWindow::restoreFromPageFullScreen()
+{
+    if (!pageFullScreen) {
+        return;
+    }
+    pageFullScreen = false;
+    pageFullScreenView = nullptr;
+    tabWidget->tabBar()->setVisible(tabWidget->count() > 1);
+    if (!fullScreenBeforePage) {
+        showNormal();
+        if (!normalGeometry.isEmpty()) {
+            restoreGeometry(normalGeometry);
+        }
+        toolBar->show();
+    }
+}
+
 void MainWindow::toggleFullScreen()
 {
+    if (pageFullScreen) {
+        exitPageFullScreen();
+        return;
+    }
     if (isFullScreen()) {
         showNormal();
         if (!normalGeometry.isEmpty()) {
@@ -2041,6 +2103,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     }
     if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
         searchBox->clear();
+        return;
+    }
+    if (event->key() == Qt::Key_Escape && pageFullScreen) {
+        exitPageFullScreen();
         return;
     }
     if (event->key() == Qt::Key_Escape && isFullScreen()) {

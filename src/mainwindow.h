@@ -27,6 +27,7 @@
 #include "webview.h"
 
 #include <QPointer>
+#include <QWebEngineFullScreenRequest>
 
 class QWebEngineSettings;
 class QWebEngineScript;
@@ -53,6 +54,7 @@ public slots:
     void closeCurrentTab();
     void reopenClosedTab();
     void openLinkInNewTab(const QUrl &url);
+    void handleFullScreenRequest(QWebEngineFullScreenRequest request, WebView *view);
     void openDevTools();
     void openSettings();
     bool handleSettingsRequest(const QUrl &url);
@@ -103,6 +105,9 @@ private:
     bool cookiesEnabled {true};
     bool clearCookiesAtExit {false};
     bool restoredTabs {};
+    bool pageFullScreen {};
+    bool fullScreenBeforePage {};
+    QPointer<WebView> pageFullScreenView;
     bool clearingCache {};
     const QCommandLineParser *args;
     QList<QPair<QUrl, QIcon>> closedTabs;
@@ -170,5 +175,7 @@ private:
     void showFullScreenNotification();
     void tabChanged();
     void toggleFullScreen();
+    void exitPageFullScreen();
+    void restoreFromPageFullScreen();
     void updateUrl();
 };

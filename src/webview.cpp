@@ -37,6 +37,14 @@ WebPage::WebPage(QWebEngineProfile *profile, WebView *parent)
     : QWebEnginePage(profile, parent),
       m_webView(parent)
 {
+    connect(this, &QWebEnginePage::fullScreenRequested, this, [this](QWebEngineFullScreenRequest request) {
+        auto *mw = qobject_cast<MainWindow *>(m_webView->window());
+        if (!mw) {
+            request.reject();
+            return;
+        }
+        mw->handleFullScreenRequest(std::move(request), m_webView);
+    });
 }
 
 void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message, int lineNumber,
