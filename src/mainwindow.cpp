@@ -40,6 +40,8 @@
 #include <QLineEdit>
 #include <QSet>
 #include <QSpinBox>
+#include <QTableWidget>
+#include <QHeaderView>
 #include <QtGlobal>
 #include <memory>
 #include <QListWidget>
@@ -237,6 +239,29 @@ void MainWindow::addActions()
     full->setShortcut(Qt::Key_F11);
     addAction(full);
     connect(full, &QAction::triggered, this, &MainWindow::toggleFullScreen);
+
+    // Window-wide so they also work while the page has focus.
+    auto *addressAction = new QAction(this);
+    addressAction->setShortcuts({Qt::CTRL | Qt::Key_L, Qt::Key_F6, Qt::ALT | Qt::Key_D});
+    addAction(addressAction);
+    connect(addressAction, &QAction::triggered, this, &MainWindow::focusAddressBar);
+
+    auto *nextTabAction = new QAction(this);
+    nextTabAction->setShortcut(Qt::CTRL | Qt::Key_PageDown);
+    addAction(nextTabAction);
+    connect(nextTabAction, &QAction::triggered, this, [this] { cycleTab(1); });
+    auto *previousTabAction = new QAction(this);
+    previousTabAction->setShortcuts({Qt::CTRL | Qt::Key_PageUp, Qt::CTRL | Qt::SHIFT | Qt::Key_Backtab});
+    addAction(previousTabAction);
+    connect(previousTabAction, &QAction::triggered, this, [this] { cycleTab(-1); });
+}
+
+void MainWindow::cycleTab(int step)
+{
+    const int count = tabWidget->count();
+    if (count > 1) {
+        tabWidget->setCurrentIndex((tabWidget->currentIndex() + step + count) % count);
+    }
 }
 
 void MainWindow::addBookmarksSubmenu()
@@ -1031,14 +1056,59 @@ void MainWindow::centerWindow()
 
 void MainWindow::openQuickInfo()
 {
-    QMessageBox::about(this, tr("Keyboard Shortcuts"),
-                       tr("Ctrl-F, or F3") + "\t - " + tr("Find") + "\n" + tr("Shift-F3") + "\t - "
-                           + tr("Find previous") + "\n" + tr("Ctrl-R, or F5") + "\t - " + tr("Reload") + "\n"
-                           + tr("Ctrl-H") + "\t - " + tr("History") + "\n"
-                           + tr("Ctrl-O") + "\t - " + tr("Browse file to open") + "\n" + tr("Ctrl-S") + "\t - "
-                           + tr("Save page") + "\n" + tr("Ctrl-P") + "\t - " + tr("Print") + "\n" + tr("Esc") + "\t - "
-                           + tr("Stop loading/clear Find field") + "\n" + tr("Alt→, Alt←") + "\t - "
-                           + tr("Back/Forward") + "\n" + tr("F1, or ?") + "\t - " + tr("Open this help dialog"));
+    const QList<std::pair<QString, QString>> shortcuts {
+        {tr("Ctrl+T"), tr("New tab")},
+        {tr("Ctrl+Shift+N"), tr("New private window")},
+        {tr("Ctrl+W"), tr("Close tab")},
+        {tr("Ctrl+Shift+T"), tr("Reopen closed tab")},
+        {tr("Ctrl+Tab, Ctrl+PgDn"), tr("Next tab")},
+        {tr("Ctrl+Shift+Tab, Ctrl+PgUp"), tr("Previous tab")},
+        {tr("Ctrl+1 … Ctrl+9"), tr("Go to tab 1 … 9")},
+        {tr("Ctrl+L, Alt+D, F6"), tr("Focus the address bar")},
+        {tr("Alt+←, Alt+→"), tr("Back/Forward")},
+        {tr("Alt+Home"), tr("Home page")},
+        {tr("Ctrl+R, F5"), tr("Reload")},
+        {tr("Esc"), tr("Stop loading/clear Find field")},
+        {tr("Ctrl+F, F3, /"), tr("Find")},
+        {tr("Shift+F3"), tr("Find previous")},
+        {tr("Ctrl++, Ctrl+-"), tr("Zoom in/out")},
+        {tr("Ctrl+0"), tr("Reset zoom")},
+        {tr("Ctrl+D"), tr("Bookmark current address")},
+        {tr("Ctrl+Shift+O"), tr("Manage bookmarks")},
+        {tr("Ctrl+H"), tr("History")},
+        {tr("Ctrl+J"), tr("Downloads")},
+        {tr("Ctrl+O"), tr("Browse file to open")},
+        {tr("Ctrl+S"), tr("Save page")},
+        {tr("Ctrl+P"), tr("Print")},
+        {tr("Ctrl+,"), tr("Settings")},
+        {tr("F10"), tr("Menu")},
+        {tr("F11"), tr("Full screen")},
+        {tr("F12"), tr("Developer Tools")},
+        {tr("F1, ?"), tr("Open this help dialog")},
+    };
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Keyboard Shortcuts"));
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *table = new QTableWidget(static_cast<int>(shortcuts.size()), 2, &dialog);
+    table->setHorizontalHeaderLabels({tr("Shortcut"), tr("Action")});
+    table->verticalHeader()->hide();
+    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    table->setSelectionMode(QAbstractItemView::NoSelection);
+    table->setFocusPolicy(Qt::NoFocus);
+    table->setShowGrid(false);
+    table->setAlternatingRowColors(true);
+    for (int row = 0; row < shortcuts.size(); ++row) {
+        table->setItem(row, 0, new QTableWidgetItem(shortcuts.at(row).first));
+        table->setItem(row, 1, new QTableWidgetItem(shortcuts.at(row).second));
+    }
+    table->resizeColumnsToContents();
+    table->horizontalHeader()->setStretchLastSection(true);
+    layout->addWidget(table);
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    layout->addWidget(buttons);
+    dialog.resize(480, 560);
+    dialog.exec();
 }
 
 bool MainWindow::isLocalHostInput(const QString &input) const
@@ -1451,7 +1521,8 @@ void MainWindow::addHelpMenuActions(QMenu *menu)
     menu->addAction(settingsAction = new QAction(QIcon::fromTheme("preferences-system"), tr("&Settings")));
     settingsAction->setShortcuts({Qt::CTRL | Qt::Key_Comma, QKeySequence::Preferences});
     menu->addSeparator();
-    menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Help")));
+    menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Keyboard shortcuts")));
+    help->setShortcut(QKeySequence::HelpContents);
     menu->addAction(about = new QAction(QIcon::fromTheme("help-about"), tr("&About")));
     menu->addSeparator();
     menu->addAction(quit = new QAction(QIcon::fromTheme("window-close"), tr("&Exit")));
@@ -2378,7 +2449,8 @@ void MainWindow::openSavedTab(const QUrl &url, bool makeCurrent)
 void MainWindow::focusAddressBar()
 {
     if (addressBar) {
-        addressBar->setFocus();
+        addressBar->setFocus(Qt::ShortcutFocusReason);
+        addressBar->selectAll();
     }
 }
 
@@ -2471,10 +2543,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         if (auto *view = currentWebView()) {
             view->setFocus();
         }
-        return;
-    }
-    if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier) {
-        focusAddressBar();
         return;
     }
     if (event->key() == Qt::Key_R && event->modifiers() == Qt::ControlModifier) {
