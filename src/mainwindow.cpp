@@ -26,6 +26,7 @@
 #include <QAbstractItemView>
 #include <QBuffer>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QCompleter>
 #include <QDateTime>
 #include <QDialog>
@@ -116,6 +117,55 @@ bool removeCachePath(const QString &path)
     }
     QDir dir(path);
     return dir.removeRecursively();
+}
+} // namespace
+
+namespace
+{
+struct HistoryRecord {
+    QString title;
+    QString url;
+    QByteArray icon;
+    qint64 time {}; // seconds since epoch; 0 for entries logged before timestamps were recorded
+};
+
+QList<HistoryRecord> readHistory(QSettings &settings)
+{
+    QList<HistoryRecord> entries;
+    const int size = settings.beginReadArray("History");
+    entries.reserve(size);
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        const QString url = settings.value("url").toString();
+        if (url.isEmpty()) {
+            continue;
+        }
+        entries.append({settings.value("title").toString(), url, settings.value("icon").toByteArray(),
+                        settings.value("time").toLongLong()});
+    }
+    settings.endArray();
+    return entries;
+}
+
+void writeHistory(QSettings &settings, const QList<HistoryRecord> &entries)
+{
+    // Clear the old array first; otherwise an entry without an icon would keep the icon of the entry
+    // previously stored at its index.
+    settings.remove("History");
+    settings.beginWriteArray("History");
+    for (int i = 0; i < entries.size(); ++i) {
+        settings.setArrayIndex(i);
+        settings.setValue("title", entries.at(i).title);
+        settings.setValue("url", entries.at(i).url);
+        if (!entries.at(i).icon.isEmpty()) {
+            settings.setValue("icon", entries.at(i).icon);
+        }
+        if (entries.at(i).time > 0) {
+            settings.setValue("time", entries.at(i).time);
+        }
+    }
+    settings.endArray();
+    settings.setValue("History/size", entries.size());
 }
 } // namespace
 
@@ -254,6 +304,93 @@ void MainWindow::addActions()
     previousTabAction->setShortcuts({Qt::CTRL | Qt::Key_PageUp, Qt::CTRL | Qt::SHIFT | Qt::Key_Backtab});
     addAction(previousTabAction);
     connect(previousTabAction, &QAction::triggered, this, [this] { cycleTab(-1); });
+
+    auto *clearDataAction = new QAction(this);
+    clearDataAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_Delete);
+    addAction(clearDataAction);
+    connect(clearDataAction, &QAction::triggered, this, &MainWindow::openClearDataDialog);
+}
+
+void MainWindow::openClearDataDialog()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Clear browsing data"));
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *form = new QFormLayout;
+    auto *range = new QComboBox(&dialog);
+    // Values are ages in seconds; 0 means everything.
+    range->addItem(tr("Last hour"), 3600);
+    range->addItem(tr("Last 24 hours"), 24 * 3600);
+    range->addItem(tr("Last 7 days"), 7 * 24 * 3600);
+    range->addItem(tr("Last 4 weeks"), 28 * 24 * 3600);
+    range->addItem(tr("All time"), 0);
+    range->setCurrentIndex(range->count() - 1);
+    form->addRow(tr("Time range:"), range);
+    layout->addLayout(form);
+
+    auto *historyBox = new QCheckBox(tr("Browsing history and recently closed tabs"), &dialog);
+    auto *cookiesBox = new QCheckBox(tr("Cookies"), &dialog);
+    auto *cacheBox = new QCheckBox(tr("Cached images and files"), &dialog);
+    auto *permissionsBox = new QCheckBox(tr("Site permissions"), &dialog);
+    historyBox->setChecked(true);
+    cookiesBox->setChecked(true);
+    cacheBox->setChecked(true);
+    for (auto *box : {historyBox, cookiesBox, cacheBox, permissionsBox}) {
+        layout->addWidget(box);
+    }
+    // QtWebEngine can only clear these completely.
+    auto *note = new QLabel(tr("Cookies, cache and site permissions are always cleared for all time."), &dialog);
+    note->setWordWrap(true);
+    note->setEnabled(false);
+    layout->addWidget(note);
+
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Cancel, &dialog);
+    auto *clear = buttons->addButton(tr("Clear data"), QDialogButtonBox::AcceptRole);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    layout->addWidget(buttons);
+    auto updateButton = [=] {
+        clear->setEnabled(historyBox->isChecked() || cookiesBox->isChecked() || cacheBox->isChecked()
+                          || permissionsBox->isChecked());
+    };
+    for (auto *box : {historyBox, cookiesBox, cacheBox, permissionsBox}) {
+        connect(box, &QCheckBox::toggled, &dialog, updateButton);
+    }
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    const qint64 age = range->currentData().toLongLong();
+    if (historyBox->isChecked()) {
+        if (age == 0) {
+            clearHistoryEntries();
+            webProfile->clearAllVisitedLinks();
+            closedTabs.clear();
+        } else {
+            // Entries without a timestamp predate this feature, so they are older than any range offered.
+            const qint64 cutoff = QDateTime::currentSecsSinceEpoch() - age;
+            auto entries = readHistory(settings);
+            entries.removeIf([cutoff](const HistoryRecord &entry) { return entry.time >= cutoff; });
+            writeHistory(settings, entries);
+            // Closed tabs carry no time; they are all from this session, which is usually recent.
+            closedTabs.clear();
+        }
+        if (auto *view = currentWebView(); view && view->url().scheme() == "mx-history") {
+            renderHistoryPage(view);
+        }
+    }
+    if (cookiesBox->isChecked()) {
+        webProfile->cookieStore()->deleteAllCookies();
+    }
+    if (cacheBox->isChecked()) {
+        webProfile->clearHttpCache();
+    }
+    if (permissionsBox->isChecked()) {
+        const auto permissions = webProfile->listAllPermissions();
+        for (const auto &permission : permissions) {
+            permission.reset();
+        }
+    }
 }
 
 void MainWindow::cycleTab(int step)
@@ -495,6 +632,10 @@ void MainWindow::listHistory()
     showHistory->setShortcut(Qt::CTRL | Qt::Key_H);
     connect(showHistory, &QAction::triggered, this, &MainWindow::openHistoryPage);
     history->addAction(showHistory);
+    auto *clearData = new QAction(QIcon::fromTheme("edit-clear-history"), tr("Clear browsing data..."), history);
+    clearData->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_Delete);
+    connect(clearData, &QAction::triggered, this, &MainWindow::openClearDataDialog);
+    history->addAction(clearData);
     history->addSeparator();
     auto *recentTitle = new QWidgetAction(history);
     auto *recentLabel = new QLabel(tr("Recent tabs"), history);
@@ -683,41 +824,12 @@ void MainWindow::removeHistoryEntry(int index)
     if (index < 0) {
         return;
     }
-    struct HistoryEntry {
-        QString title;
-        QString url;
-        QByteArray icon;
-    };
-    QList<HistoryEntry> entries;
-    int size = settings.beginReadArray("History");
-    entries.reserve(size);
-    for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
-        const QString url = settings.value("url").toString();
-        if (url.isEmpty()) {
-            continue;
-        }
-        entries.append({settings.value("title").toString(), url, settings.value("icon").toByteArray()});
-    }
-    settings.endArray();
+    auto entries = readHistory(settings);
     if (index >= entries.size()) {
         return;
     }
     entries.removeAt(index);
-    // Clear the old array first; otherwise an entry without an icon would keep the icon of the entry
-    // previously stored at its index.
-    settings.remove("History");
-    settings.beginWriteArray("History");
-    for (int i = 0; i < entries.size(); ++i) {
-        settings.setArrayIndex(i);
-        settings.setValue("title", entries.at(i).title);
-        settings.setValue("url", entries.at(i).url);
-        if (!entries.at(i).icon.isEmpty()) {
-            settings.setValue("icon", entries.at(i).icon);
-        }
-    }
-    settings.endArray();
-    settings.setValue("History/size", entries.size());
+    writeHistory(settings, entries);
 }
 
 void MainWindow::clearHistoryEntries()
@@ -1076,6 +1188,7 @@ void MainWindow::openQuickInfo()
         {tr("Ctrl+D"), tr("Bookmark current address")},
         {tr("Ctrl+Shift+O"), tr("Manage bookmarks")},
         {tr("Ctrl+H"), tr("History")},
+        {tr("Ctrl+Shift+Del"), tr("Clear browsing data")},
         {tr("Ctrl+J"), tr("Downloads")},
         {tr("Ctrl+O"), tr("Browse file to open")},
         {tr("Ctrl+S"), tr("Save page")},

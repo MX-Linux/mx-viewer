@@ -28,6 +28,7 @@
 #include <QAuthenticator>
 #include <QBuffer>
 #include <QContextMenuEvent>
+#include <QDateTime>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -433,6 +434,7 @@ void WebView::handleLoadFinished(bool ok)
         historyLog.setArrayIndex(index);
         historyLog.setValue("title", title());
         historyLog.setValue("url", loadedUrl.toString());
+        historyLog.setValue("time", QDateTime::currentSecsSinceEpoch());
         historyLog.endArray();
         historyLog.setValue("History/size", index + 1);
         lastHistoryIndex = index;

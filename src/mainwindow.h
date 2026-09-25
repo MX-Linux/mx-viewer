@@ -184,6 +184,7 @@ private:
     void openBrowseDialog();
     void openQuickInfo();
     void cycleTab(int step);
+    void openClearDataDialog();
     void openBookmarksEditor();
     void openFromAddressBar();
     bool isLocalHostInput(const QString &input) const;
