@@ -34,6 +34,8 @@ class QWebEngineScript;
 class QWebEngineView;
 class QCompleter;
 class QStringListModel;
+class QLabel;
+class QToolButton;
 
 class MainWindow : public QMainWindow
 {
@@ -79,6 +81,9 @@ private:
     QAction *stopAction {};
     QAction *zoomPercentAction {};
     QLineEdit *searchBox {};
+    QToolButton *findMatchCase {};
+    QLabel *findMatches {};
+    QAction *findMatchesAction {};
     QMenu *bookmarks {};
     QMenu *history {};
     QCompleter *historyCompleter {};
@@ -157,6 +162,7 @@ private:
     void openFromAddressBarText(const QString &input);
     QString buildSettingsPageHtml();
     QString buildHistoryPageHtml();
+    void findInPage(QWebEnginePage::FindFlags flags);
     void focusAddressBar();
     void focusAddressBarIfBlank();
     void applyWebSettings();

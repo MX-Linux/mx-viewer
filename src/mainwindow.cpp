@@ -33,6 +33,7 @@
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QSet>
 #include <QSpinBox>
@@ -44,7 +45,9 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QUrlQuery>
+#include <QToolButton>
 #include <QVBoxLayout>
+#include <QWebEngineFindTextResult>
 #include <QWebEngineCookieStore>
 #include <QWebEngineProfile>
 #include <QWebEngineScript>
@@ -749,6 +752,16 @@ void MainWindow::setupSearchBox()
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
     connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
     toolBar->addWidget(searchBox);
+    findMatchCase = new QToolButton(this);
+    findMatchCase->setText(QStringLiteral("Aa"));
+    findMatchCase->setToolTip(tr("Match case"));
+    findMatchCase->setCheckable(true);
+    findMatchCase->setAutoRaise(true);
+    connect(findMatchCase, &QToolButton::toggled, this, &MainWindow::findForward);
+    toolBar->addWidget(findMatchCase);
+    findMatches = new QLabel(this);
+    findMatchesAction = toolBar->addWidget(findMatches);
+    findMatchesAction->setVisible(false);
 }
 
 void MainWindow::addZoomActions()
@@ -1074,6 +1087,10 @@ void MainWindow::showFullScreenNotification()
 
 void MainWindow::tabChanged()
 {
+    // The match count belongs to the previous tab's search.
+    if (findMatchesAction) {
+        findMatchesAction->setVisible(false);
+    }
     if (pageFullScreen && currentWebView() != pageFullScreenView) {
         exitPageFullScreen();
     }
@@ -2174,14 +2191,41 @@ void MainWindow::focusAddressBarIfBlank()
 
 void MainWindow::findBackward()
 {
-    searchBox->setFocus();
-    currentWebView()->findText(searchBox->text(), QWebEnginePage::FindBackward);
+    findInPage(QWebEnginePage::FindBackward);
 }
 
 void MainWindow::findForward()
 {
+    findInPage({});
+}
+
+void MainWindow::findInPage(QWebEnginePage::FindFlags flags)
+{
     searchBox->setFocus();
-    currentWebView()->findText(searchBox->text());
+    auto *view = currentWebView();
+    if (!view) {
+        return;
+    }
+    if (findMatchCase->isChecked()) {
+        flags |= QWebEnginePage::FindCaseSensitively;
+    }
+    const QString text = searchBox->text();
+    QPointer<MainWindow> self = this;
+    QPointer<WebView> guard = view;
+    view->findText(text, flags, [this, self, guard, text](const QWebEngineFindTextResult &result) {
+        // Ignore results for a tab that is no longer shown or a search that was replaced.
+        if (!self || !guard || guard != currentWebView() || text != searchBox->text()) {
+            return;
+        }
+        if (text.isEmpty()) {
+            findMatchesAction->setVisible(false);
+            return;
+        }
+        findMatches->setText(result.numberOfMatches() == 0
+                                 ? tr("No matches")
+                                 : tr("%1 of %2").arg(result.activeMatch()).arg(result.numberOfMatches()));
+        findMatchesAction->setVisible(true);
+    });
 }
 
 // process keystrokes
