@@ -284,10 +284,18 @@ void WebView::handleRenderProcessTerminated(QWebEnginePage::RenderProcessTermina
                              "<h2>%1</h2><p>%2</p><p><a href=\"%3\">%4</a></p></body></html>")
                   .arg(tr("This tab crashed").toHtmlEscaped(),
                        tr("The page stopped unexpectedly.").toHtmlEscaped(), link, tr("Reload").toHtmlEscaped());
-        crashPageShown = true;
+        generatedPageShown = true;
+        readerMode = false;
         // Keep the original URL as base so the address bar still shows it.
         setHtml(html, crashedUrl);
     });
+}
+
+void WebView::showReaderPage(const QString &html)
+{
+    generatedPageShown = true;
+    readerMode = true;
+    setHtml(html, url());
 }
 
 void WebView::contextMenuEvent(QContextMenuEvent *event)
@@ -410,10 +418,12 @@ WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
 
 void WebView::handleLoadFinished(bool ok)
 {
-    if (crashPageShown) {
-        crashPageShown = false;
+    // Generated pages (crash notice, reader view) are not visits; any other load leaves reader view.
+    if (generatedPageShown) {
+        generatedPageShown = false;
         return;
     }
+    readerMode = false;
     if (!ok || page()->profile()->isOffTheRecord()) {
         return;
     }

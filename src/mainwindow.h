@@ -188,6 +188,7 @@ private:
     void openBrowseDialog();
     void openQuickInfo();
     void cycleTab(int step);
+    void toggleReaderMode();
     void openClearDataDialog();
     void openBookmarksEditor();
     void openFromAddressBar();

@@ -63,6 +63,10 @@ public:
     static void clearClickState();
     static bool wasClickConsumed();
 
+    // Reader view is generated HTML shown in place of the page, with the page's URL kept as base.
+    [[nodiscard]] bool isReaderMode() const { return readerMode; }
+    void showReaderPage(const QString &html);
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
     bool event(QEvent *event) override;
@@ -81,7 +85,8 @@ private:
     int index;
     int lastHistoryIndex = -1;
     QUrl lastHistoryUrl;
-    bool crashPageShown {};
+    bool generatedPageShown {};
+    bool readerMode {};
     QWidget *m_currentProxy = nullptr;
     QWebEngineProfile *profile {};
 
