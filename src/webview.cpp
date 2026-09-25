@@ -255,6 +255,12 @@ WebView::WebView(QWebEngineProfile *profile, QWidget *parent)
     connect(this, &WebView::loadFinished, this, &WebView::handleLoadFinished);
     connect(this, &WebView::iconChanged, this, &WebView::handleIconChanged);
     connect(this, &WebView::renderProcessTerminated, this, &WebView::handleRenderProcessTerminated);
+    // window.print() from the page
+    connect(this, &WebView::printRequested, this, [this] {
+        if (auto *mw = qobject_cast<MainWindow *>(window())) {
+            mw->printPage(this);
+        }
+    });
 }
 
 void WebView::handleRenderProcessTerminated(QWebEnginePage::RenderProcessTerminationStatus status)

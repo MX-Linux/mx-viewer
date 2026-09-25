@@ -55,6 +55,7 @@ public slots:
     void reopenClosedTab();
     void openLinkInNewTab(const QUrl &url);
     void handleFullScreenRequest(QWebEngineFullScreenRequest request, WebView *view);
+    void printPage(WebView *view);
     void openDevTools();
     void openSettings();
     bool handleSettingsRequest(const QUrl &url);
@@ -108,6 +109,7 @@ private:
     bool pageFullScreen {};
     bool fullScreenBeforePage {};
     QPointer<WebView> pageFullScreenView;
+    QPointer<WebView> printingView;
     bool clearingCache {};
     const QCommandLineParser *args;
     QList<QPair<QUrl, QIcon>> closedTabs;

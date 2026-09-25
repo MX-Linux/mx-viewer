@@ -72,6 +72,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Core
     Gui
     Widgets
+    PrintSupport
     WebEngineWidgets
     LinguistTools
 )
@@ -124,6 +125,7 @@ target_link_libraries(mx-viewer
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::PrintSupport
     Qt6::WebEngineWidgets
 )
 

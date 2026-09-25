@@ -37,7 +37,10 @@
 #include <QSet>
 #include <QSpinBox>
 #include <QtGlobal>
+#include <memory>
 #include <QListWidget>
+#include <QPrintDialog>
+#include <QPrinter>
 #include <QPushButton>
 #include <QTimer>
 #include <QUrlQuery>
@@ -872,7 +875,8 @@ void MainWindow::openQuickInfo()
                        tr("Ctrl-F, or F3") + "\t - " + tr("Find") + "\n" + tr("Shift-F3") + "\t - "
                            + tr("Find previous") + "\n" + tr("Ctrl-R, or F5") + "\t - " + tr("Reload") + "\n"
                            + tr("Ctrl-H") + "\t - " + tr("History") + "\n"
-                           + tr("Ctrl-O") + "\t - " + tr("Browse file to open") + "\n" + tr("Esc") + "\t - "
+                           + tr("Ctrl-O") + "\t - " + tr("Browse file to open") + "\n" + tr("Ctrl-S") + "\t - "
+                           + tr("Save page") + "\n" + tr("Ctrl-P") + "\t - " + tr("Print") + "\n" + tr("Esc") + "\t - "
                            + tr("Stop loading/clear Find field") + "\n" + tr("Alt→, Alt←") + "\t - "
                            + tr("Back/Forward") + "\n" + tr("F1, or ?") + "\t - " + tr("Open this help dialog"));
 }
@@ -1170,6 +1174,53 @@ void MainWindow::addFileMenuActions(QMenu *menu)
     menu->addAction(newTab = new QAction(QIcon::fromTheme("tab-new"), tr("&New tab")));
     newTab->setShortcut(Qt::CTRL | Qt::Key_T);
     connect(newTab, &QAction::triggered, this, [this] { addNewTab(); });
+
+    auto *savePage = new QAction(QIcon::fromTheme("document-save-as"), tr("&Save page..."), this);
+    savePage->setShortcut(QKeySequence::Save);
+    menu->addAction(savePage);
+    addAction(savePage);
+    // Goes through downloadRequested, where the download widget asks for the file name.
+    connect(savePage, &QAction::triggered, this, [this] {
+        if (auto *view = currentWebView()) {
+            view->triggerPageAction(QWebEnginePage::SavePage);
+        }
+    });
+
+    auto *print = new QAction(QIcon::fromTheme("document-print"), tr("&Print..."), this);
+    print->setShortcut(QKeySequence::Print);
+    menu->addAction(print);
+    addAction(print);
+    connect(print, &QAction::triggered, this, [this] { printPage(currentWebView()); });
+}
+
+void MainWindow::printPage(WebView *webView)
+{
+    QPointer<WebView> view = webView;
+    if (!view || printingView) {
+        return;
+    }
+    // QWebEngineView::print() is asynchronous. The printer is owned by a connection whose context is
+    // the view, so it stays alive until printFinished and is never freed before the view itself.
+    auto printer = std::make_shared<QPrinter>(QPrinter::HighResolution);
+    QPrintDialog dialog(printer.get(), this);
+    dialog.setWindowTitle(tr("Print page"));
+    if (dialog.exec() != QDialog::Accepted || !view) {
+        return;
+    }
+    printingView = view;
+    QPointer<MainWindow> self = this;
+    connect(
+        view, &QWebEngineView::printFinished, view,
+        [self, view, printer](bool success) {
+            if (self) {
+                self->printingView = nullptr;
+            }
+            if (!success && view) {
+                QMessageBox::warning(view, tr("Print page"), tr("Printing failed."));
+            }
+        },
+        Qt::SingleShotConnection);
+    view->print(printer.get());
 }
 
 void MainWindow::addViewMenuActions(QMenu *menu)
