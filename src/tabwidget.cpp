@@ -35,6 +35,58 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QWebEngineHistory>
+#include <QAbstractButton>
+#include <QPainter>
+#include <QStyleOption>
+
+namespace
+{
+// Same look as QTabBar's own close button, which can't be recreated once removed (used when unpinning).
+class TabCloseButton : public QAbstractButton
+{
+public:
+    explicit TabCloseButton(QWidget *parent)
+        : QAbstractButton(parent)
+    {
+        setFocusPolicy(Qt::NoFocus);
+        setCursor(Qt::ArrowCursor);
+        setToolTip(TabWidget::tr("Close Tab"));
+        resize(sizeHint());
+    }
+    [[nodiscard]] QSize sizeHint() const override
+    {
+        ensurePolished();
+        return {style()->pixelMetric(QStyle::PM_TabCloseIndicatorWidth, nullptr, this),
+                style()->pixelMetric(QStyle::PM_TabCloseIndicatorHeight, nullptr, this)};
+    }
+
+protected:
+    void enterEvent(QEnterEvent *event) override
+    {
+        update();
+        QAbstractButton::enterEvent(event);
+    }
+    void leaveEvent(QEvent *event) override
+    {
+        update();
+        QAbstractButton::leaveEvent(event);
+    }
+    void paintEvent(QPaintEvent * /*event*/) override
+    {
+        QPainter painter(this);
+        QStyleOption opt;
+        opt.initFrom(this);
+        opt.state |= QStyle::State_AutoRaise;
+        if (isEnabled() && underMouse() && !isDown()) {
+            opt.state |= QStyle::State_Raised;
+        }
+        if (isDown()) {
+            opt.state |= QStyle::State_Sunken;
+        }
+        style()->drawPrimitive(QStyle::PE_IndicatorTabClose, &opt, &painter, this);
+    }
+};
+} // namespace
 
 TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
     : QTabWidget(parent),
@@ -64,6 +116,109 @@ WebView *TabWidget::webViewAt(int index) const
     return qobject_cast<WebView *>(widget(index));
 }
 
+bool TabWidget::isPinned(int index) const
+{
+    const auto *w = widget(index);
+    return w && w->property("pinned").toBool();
+}
+
+int TabWidget::pinnedCount() const
+{
+    int pinned = 0;
+    for (int i = 0; i < count(); ++i) {
+        pinned += isPinned(i) ? 1 : 0;
+    }
+    return pinned;
+}
+
+QTabBar::ButtonPosition TabWidget::closeButtonSide() const
+{
+    return static_cast<QTabBar::ButtonPosition>(
+        style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, nullptr, tabBar()));
+}
+
+void TabWidget::setTabTitle(int index, const QString &title)
+{
+    if (index < 0) {
+        return;
+    }
+    setTabToolTip(index, title);
+    setTabText(index, isPinned(index) ? QString() : title);
+}
+
+// A pinned tab without a favicon would otherwise be an empty stub.
+void TabWidget::updateTabIcon(int index)
+{
+    auto *view = webViewAt(index);
+    if (!view) {
+        return;
+    }
+    const QIcon icon = view->icon();
+    setTabIcon(index, icon.isNull() && isPinned(index) ? style()->standardIcon(QStyle::SP_FileIcon) : icon);
+}
+
+void TabWidget::setPinned(int index, bool pinned)
+{
+    auto *view = webViewAt(index);
+    if (!view || isPinned(index) == pinned) {
+        return;
+    }
+    // Pinned tabs form a group on the left: pinning moves the tab to the end of that group,
+    // unpinning to just after it.
+    const int target = pinned ? pinnedCount() : pinnedCount() - 1;
+    view->setProperty("pinned", pinned);
+    tabBar()->moveTab(index, target);
+    const int i = indexOf(view);
+    const auto side = closeButtonSide();
+    if (pinned) {
+        if (auto *button = tabBar()->tabButton(i, side)) {
+            tabBar()->setTabButton(i, side, nullptr);
+            button->deleteLater();
+        }
+    } else {
+        auto *button = new TabCloseButton(tabBar());
+        QPointer<WebView> guard = view;
+        connect(button, &QAbstractButton::clicked, this, [this, guard] {
+            if (guard) {
+                removeTab(indexOf(guard));
+            }
+        });
+        tabBar()->setTabButton(i, side, button);
+    }
+    setTabTitle(i, view->title());
+    updateTabIcon(i);
+}
+
+// Keep pinned tabs in front after a drag or programmatic move, preserving relative order.
+void TabWidget::normalizePinnedOrder()
+{
+    int target = 0;
+    for (int i = 0; i < count(); ++i) {
+        if (isPinned(i)) {
+            if (i != target) {
+                tabBar()->moveTab(i, target);
+            }
+            ++target;
+        }
+    }
+}
+
+bool TabWidget::closeCurrentTabByShortcut()
+{
+    if (isPinned(currentIndex())) {
+        const int firstUnpinned = pinnedCount();
+        if (firstUnpinned < count()) {
+            setCurrentIndex(firstUnpinned);
+        }
+        return true;
+    }
+    if (count() > 1) {
+        removeTab(currentIndex());
+        return true;
+    }
+    return false;
+}
+
 void TabWidget::showTabMenu(const QPoint &pos)
 {
     const int index = tabBar()->tabAt(pos);
@@ -75,6 +230,12 @@ void TabWidget::showTabMenu(const QPoint &pos)
         menu.addAction(tr("Duplicate tab"), this, [this, view] {
             if (view) {
                 duplicateTab(indexOf(view));
+            }
+        });
+        menu.addAction(isPinned(index) ? tr("Unpin tab") : tr("Pin tab"), this, [this, view] {
+            if (view) {
+                const int i = indexOf(view);
+                setPinned(i, !isPinned(i));
             }
         });
         menu.addAction(view->page()->isAudioMuted() ? tr("Unmute tab") : tr("Mute tab"), this, [view] {
@@ -90,7 +251,11 @@ void TabWidget::showTabMenu(const QPoint &pos)
         });
         QList<QWidget *> others;
         QList<QWidget *> right;
+        // Pinned tabs are only closed one at a time, explicitly.
         for (int i = 0; i < count(); ++i) {
+            if (isPinned(i)) {
+                continue;
+            }
             if (i != index) {
                 others.append(widget(i));
             }
@@ -132,6 +297,7 @@ void TabWidget::duplicateTab(int index)
     QDataStream in(&data, QIODevice::ReadOnly);
     in >> *copy->history();
     tabBar()->moveTab(indexOf(copy), index + 1);
+    normalizePinnedOrder();
 }
 
 // Speaker button on the tab (opposite the close button) while the page plays sound or is muted;
@@ -142,11 +308,7 @@ void TabWidget::updateAudioButton(WebView *webView)
     if (i < 0) {
         return;
     }
-    const auto side = static_cast<QTabBar::ButtonPosition>(
-                          style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, nullptr, tabBar()))
-            == QTabBar::LeftSide
-        ? QTabBar::RightSide
-        : QTabBar::LeftSide;
+    const auto side = closeButtonSide() == QTabBar::LeftSide ? QTabBar::RightSide : QTabBar::LeftSide;
     auto *button = qobject_cast<QToolButton *>(tabBar()->tabButton(i, side));
     const bool muted = webView->page()->isAudioMuted();
     if (!muted && !webView->page()->recentlyAudible()) {
@@ -179,7 +341,7 @@ void TabWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::MiddleButton) {
         auto index = tabBar()->tabAt(event->pos());
-        if (index != -1) {
+        if (index != -1 && !isPinned(index)) {
             removeTab(index);
         }
     }
@@ -191,6 +353,10 @@ bool TabWidget::eventFilter(QObject *obj, QEvent *event)
     if (obj == tabBar() && (event->type() == QEvent::Resize || event->type() == QEvent::LayoutRequest || event->type() == QEvent::Show)) {
         QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
     }
+    // Reordering while QTabBar is still dragging would confuse it, so fix the order once the drag ends.
+    if (obj == tabBar() && event->type() == QEvent::MouseButtonRelease) {
+        QTimer::singleShot(0, this, &TabWidget::normalizePinnedOrder);
+    }
     return QTabWidget::eventFilter(obj, event);
 }
 
@@ -198,7 +364,7 @@ void TabWidget::handleCurrentChanged(int index)
 {
     auto *webView = currentWebView();
     if (webView) {
-        setTabText(index, webView->title());
+        setTabTitle(index, webView->title());
     }
 }
 
@@ -283,15 +449,14 @@ void TabWidget::addNewTab(WebView *webView, bool makeCurrent)
     }
     connect(webView, &WebView::titleChanged, this, [this, webView] {
         if (webView) {
-            setTabText(indexOf(webView), webView->title());
-            setTabToolTip(indexOf(webView), webView->title());
+            setTabTitle(indexOf(webView), webView->title());
         }
     });
     connect(webView->page(), &QWebEnginePage::recentlyAudibleChanged, this, [this, webView] { updateAudioButton(webView); });
     connect(webView->page(), &QWebEnginePage::audioMutedChanged, this, [this, webView] { updateAudioButton(webView); });
     connect(webView, &WebView::iconChanged, this, [this, webView] {
         if (webView) {
-            setTabIcon(indexOf(webView), webView->icon());
+            updateTabIcon(indexOf(webView));
         }
     });
     connect(webView, &WebView::newWebView, this, [this](WebView *view, bool makeCurrent) {
@@ -324,10 +489,8 @@ void TabWidget::keyPressEvent(QKeyEvent *event)
             return;
         }
         if (event->key() == Qt::Key_W) {
-            if (count() == 1) {
+            if (!closeCurrentTabByShortcut()) {
                 window()->close();
-            } else {
-                removeTab(currentIndex());
             }
             return;
         }

@@ -632,7 +632,7 @@ void MainWindow::renderHistoryPage(WebView *view)
     }
     view->setHtml(buildHistoryPageHtml(), QUrl("mx-history://list"));
     view->show();
-    tabWidget->setTabText(tabWidget->indexOf(view), tr("History"));
+    tabWidget->setTabTitle(tabWidget->indexOf(view), tr("History"));
     setWindowTitle(tr("History"));
     updateUrl();
 }
@@ -1785,7 +1785,7 @@ void MainWindow::renderSettingsPage(WebView *view)
     const QString ts = QString::number(QDateTime::currentMSecsSinceEpoch());
     view->setHtml(buildSettingsPageHtml(), QUrl("mx-settings://list?ts=" + ts));
     view->show();
-    tabWidget->setTabText(tabWidget->indexOf(view), tr("Settings"));
+    tabWidget->setTabTitle(tabWidget->indexOf(view), tr("Settings"));
     setWindowTitle(tr("Settings"));
     updateUrl();
 }
@@ -2199,9 +2199,7 @@ void MainWindow::openBookmarksEditor()
 
 void MainWindow::closeCurrentTab()
 {
-    if (tabWidget->count() > 1) {
-        tabWidget->removeTab(tabWidget->currentIndex());
-    } else {
+    if (!tabWidget->closeCurrentTabByShortcut()) {
         close();
     }
 }
@@ -2321,11 +2319,13 @@ bool MainWindow::restoreSavedTabs()
     }
 
     QList<QUrl> savedUrls;
+    QList<bool> savedPinned;
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
         QString url = settings.value("url").toString();
         if (!url.isEmpty()) {
             savedUrls.append(QUrl::fromUserInput(url));
+            savedPinned.append(settings.value("pinned", false).toBool());
         }
     }
     settings.endArray();
@@ -2338,6 +2338,12 @@ bool MainWindow::restoreSavedTabs()
 
     for (int i = 1; i < savedUrls.size(); ++i) {
         openSavedTab(savedUrls.at(i), false);
+    }
+    // Each saved entry opened one tab in order; pinning left to right keeps the saved order.
+    for (int i = 0; i < savedPinned.size() && i < tabWidget->count(); ++i) {
+        if (savedPinned.at(i)) {
+            tabWidget->setPinned(i, true);
+        }
     }
     return !savedUrls.isEmpty();
 }
@@ -2515,6 +2521,7 @@ void MainWindow::closeEvent(QCloseEvent * /*event*/)
             auto *webView = qobject_cast<WebView *>(tabWidget->widget(i));
             if (webView) {
                 settings.setValue("url", webView->url().toString());
+                settings.setValue("pinned", tabWidget->isPinned(i));
             }
         }
         settings.endArray();
@@ -2581,6 +2588,6 @@ void MainWindow::done(bool ok)
     progressBar->setRange(0, 100);
     progressBar->setValue(0);
     progressBar->hide();
-    tabWidget->setTabText(tabWidget->currentIndex(), view->title());
+    tabWidget->setTabTitle(tabWidget->currentIndex(), view->title());
     setWindowTitle(view->title());
 }

@@ -21,6 +21,7 @@
  **********************************************************************/
 #pragma once
 
+#include <QTabBar>
 #include <QTabWidget>
 #include <QWebEngineProfile>
 #include "webview.h"
@@ -38,6 +39,13 @@ public:
     WebView *createTab(bool makeCurrent = true);
     void addNewTab(WebView *webView, bool makeCurrent = true);
     void removeTab(int index);
+    // Sets the tab tooltip, and the text unless the tab is pinned (pinned tabs show only the icon).
+    void setTabTitle(int index, const QString &title);
+    [[nodiscard]] bool isPinned(int index) const;
+    void setPinned(int index, bool pinned);
+    // Ctrl+W: closes the current tab, or selects an unpinned one if it is pinned.
+    // Returns false when this is the last tab, so the caller can close the window.
+    bool closeCurrentTabByShortcut();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -60,4 +68,8 @@ private:
     void closeTabs(const QList<QWidget *> &tabs);
     void updateAudioButton(WebView *webView);
     WebView *webViewAt(int index) const;
+    [[nodiscard]] int pinnedCount() const;
+    [[nodiscard]] QTabBar::ButtonPosition closeButtonSide() const;
+    void normalizePinnedOrder();
+    void updateTabIcon(int index);
 };
