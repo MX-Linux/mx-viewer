@@ -39,6 +39,7 @@
 #include <QPointer>
 #include <QTimer>
 #include <QWebEngineCertificateError>
+#include <QWebEngineContextMenuRequest>
 #include <QWebEnginePermission>
 #include <QWebEngineProfile>
 
@@ -291,6 +292,26 @@ void WebView::handleRenderProcessTerminated(QWebEnginePage::RenderProcessTermina
 void WebView::contextMenuEvent(QContextMenuEvent *event)
 {
     auto *menu = createStandardContextMenu();
+    // Spelling suggestions for a misspelled word in an editable field go first.
+    const auto *request = lastContextMenuRequest();
+    if (request && !request->misspelledWord().isEmpty()) {
+        QAction *first = menu->actions().value(0);
+        const QStringList suggestions = request->spellCheckerSuggestions();
+        for (const QString &suggestion : suggestions) {
+            auto *action = new QAction(suggestion, menu);
+            QFont font = action->font();
+            font.setBold(true);
+            action->setFont(font);
+            connect(action, &QAction::triggered, this, [this, suggestion] { page()->replaceMisspelledWord(suggestion); });
+            menu->insertAction(first, action);
+        }
+        if (suggestions.isEmpty()) {
+            auto *none = new QAction(tr("No spelling suggestions"), menu);
+            none->setEnabled(false);
+            menu->insertAction(first, none);
+        }
+        menu->insertSeparator(first);
+    }
     // "Open link in new window" also ends up as a tab here, so it would just duplicate "new tab".
     menu->removeAction(pageAction(QWebEnginePage::OpenLinkInNewWindow));
     const QString selection = selectedText().simplified();

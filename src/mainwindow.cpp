@@ -865,6 +865,7 @@ void MainWindow::loadSettings()
     websettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
     websettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
     webProfile->setHttpAcceptLanguage(QLocale::system().name());
+    setupSpellCheck();
 
     homeAddress = settings.value("Home", "https://start.duckduckgo.com").toString();
     showProgress = settings.value("ShowProgressBar", false).toBool();
@@ -1850,6 +1851,34 @@ void MainWindow::applyWebSettings()
             view->page()->scripts().clear();
             view->page()->scripts().insert(cookieScript);
         }
+    }
+}
+
+// Enable spell checking when a dictionary for the system language is installed
+// (e.g. en_US.bdic from hunspell-en-us); an exact locale match wins over one for the language only.
+void MainWindow::setupSpellCheck()
+{
+    const QString dir = qEnvironmentVariable("QTWEBENGINE_DICTIONARIES_PATH");
+    if (dir.isEmpty()) {
+        return;
+    }
+    const QStringList files = QDir(dir).entryList({"*.bdic"}, QDir::Files);
+    const QString locale = QLocale::system().name();
+    const QString language = locale.section('_', 0, 0);
+    QString match;
+    for (const QString &file : files) {
+        const QString name = QFileInfo(file).completeBaseName();
+        if (name == locale) {
+            match = name;
+            break;
+        }
+        if (match.isEmpty() && name.section('_', 0, 0) == language) {
+            match = name;
+        }
+    }
+    if (!match.isEmpty()) {
+        webProfile->setSpellCheckLanguages({match});
+        webProfile->setSpellCheckEnabled(true);
     }
 }
 

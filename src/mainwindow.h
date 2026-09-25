@@ -171,6 +171,7 @@ private:
     void focusAddressBar();
     void focusAddressBarIfBlank();
     void applyWebSettings();
+    void setupSpellCheck();
     void setZoomPercent(int percent, bool persist);
     void setSiteZoom(int percent);
     void applyZoom();

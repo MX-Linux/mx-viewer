@@ -26,6 +26,7 @@
 #include <QCommandLineParser>
 #include <QDebug>
 #include <QGuiApplication>
+#include <QDir>
 #include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
@@ -130,6 +131,12 @@ int main(int argc, char *argv[])
         if (!qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY")) {
             qputenv("QT_QPA_PLATFORM", "xcb");
         }
+    }
+
+    // Debian's hunspell-* packages ship Chromium-format dictionaries here; QtWebEngine
+    // only looks next to the binary or in the Qt data path unless told otherwise.
+    if (qEnvironmentVariableIsEmpty("QTWEBENGINE_DICTIONARIES_PATH") && QDir("/usr/share/hunspell-bdic").exists()) {
+        qputenv("QTWEBENGINE_DICTIONARIES_PATH", "/usr/share/hunspell-bdic");
     }
 
     QApplication app(argc, argv);
