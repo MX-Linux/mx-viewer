@@ -46,6 +46,8 @@ public:
     // A private window uses an off-the-record profile and writes nothing to disk.
     explicit MainWindow(const QUrl &url, bool privateMode, QWidget *parent = nullptr);
     ~MainWindow() override;
+    // Opens a URL passed on by a later "mx-viewer [URL]" launch; empty opens a new tab.
+    static void openFromOtherInstance(const QString &argument);
 
 public slots:
     void listHistory();
@@ -67,6 +69,7 @@ public slots:
     bool restoreSavedTabs();
 
 protected:
+    void changeEvent(QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
@@ -115,6 +118,7 @@ private:
     bool clearCookiesAtExit {false};
     bool restoredTabs {};
     bool privateWindow {};
+    static QPointer<MainWindow> lastActiveWindow;
     QHash<QString, int> privateZoom;
     bool pageFullScreen {};
     bool fullScreenBeforePage {};

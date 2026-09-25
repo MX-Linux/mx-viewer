@@ -21,6 +21,7 @@
  ****************************************************************************/
 
 #include "mainwindow.h"
+#include "singleinstance.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -187,6 +188,16 @@ int main(int argc, char *argv[])
     QString localePath = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation).at(0) + "/" + QApplication::applicationName() + "/locale";
     if (appTran.load(QApplication::applicationName() + "_" + QLocale::system().name(), localePath)) {
         QApplication::installTranslator(&appTran);
+    }
+
+    // A plain launch (how links from other applications arrive) opens in the running browser.
+    // Help-viewer style calls with a title or options always get their own window.
+    const bool plainLaunch = parser.optionNames().isEmpty() && parser.positionalArguments().size() <= 1;
+    if (plainLaunch) {
+        if (SingleInstance::forward(parser.positionalArguments().value(0))) {
+            return EXIT_SUCCESS;
+        }
+        SingleInstance::listen(&app, &MainWindow::openFromOtherInstance);
     }
 
     auto *window = new MainWindow(parser);

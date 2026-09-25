@@ -7,4 +7,5 @@ Exec=mx-viewer %U
 Icon=mx-viewer
 NoDisplay=false
 Categories=Qt;Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
 Type=Application

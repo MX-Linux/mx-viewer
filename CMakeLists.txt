@@ -72,6 +72,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Core
     Gui
     Widgets
+    Network
     PrintSupport
     WebEngineWidgets
     LinguistTools
@@ -90,6 +91,7 @@ set(SOURCES
     src/tabwidget.cpp
     src/addressbar.cpp
     src/downloadwidget.cpp
+    src/singleinstance.cpp
 )
 
 set(HEADERS
@@ -98,6 +100,7 @@ set(HEADERS
     src/tabwidget.h
     src/addressbar.h
     src/downloadwidget.h
+    src/singleinstance.h
 )
 
 set(UI_FILES
@@ -125,6 +128,7 @@ target_link_libraries(mx-viewer
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Network
     Qt6::PrintSupport
     Qt6::WebEngineWidgets
 )

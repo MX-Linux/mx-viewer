@@ -169,6 +169,8 @@ void writeHistory(QSettings &settings, const QList<HistoryRecord> &entries)
 }
 } // namespace
 
+QPointer<MainWindow> MainWindow::lastActiveWindow;
+
 MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
     : QMainWindow(parent),
       downloadWidget {new DownloadWidget},
@@ -1544,6 +1546,47 @@ void MainWindow::addFileMenuActions(QMenu *menu)
     menu->addAction(privateAction);
     addAction(privateAction);
     connect(privateAction, &QAction::triggered, this, &MainWindow::openPrivateWindow);
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::ActivationChange && isActiveWindow() && !privateWindow) {
+        lastActiveWindow = this;
+    }
+    QMainWindow::changeEvent(event);
+}
+
+void MainWindow::openFromOtherInstance(const QString &argument)
+{
+    // Links from other applications never go to a private window.
+    MainWindow *target = lastActiveWindow;
+    if (!target || !target->isVisible()) {
+        target = nullptr;
+        const auto widgets = QApplication::topLevelWidgets();
+        for (auto *widget : widgets) {
+            auto *window = qobject_cast<MainWindow *>(widget);
+            if (window && !window->privateWindow && window->isVisible()) {
+                target = window;
+                break;
+            }
+        }
+    }
+    const QUrl url = argument.isEmpty() ? QUrl() : QUrl::fromUserInput(argument);
+    if (!target) {
+        target = new MainWindow(url, false);
+        // Like a first launch: restored tabs replace the start page, so the link needs its own tab.
+        if (target->restoredTabs && !url.isEmpty()) {
+            target->addNewTab(url, true);
+        }
+        target->show();
+    } else {
+        target->addNewTab(url, true);
+        if (target->isMinimized()) {
+            target->showNormal();
+        }
+    }
+    target->raise();
+    target->activateWindow();
 }
 
 void MainWindow::openPrivateWindow()
