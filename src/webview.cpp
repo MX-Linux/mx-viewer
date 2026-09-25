@@ -164,11 +164,12 @@ WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
         bool background = !wasClickConsumed() && lastClickWasNewTabRequest();
         clearClickState();
         emit newWebView(newView, !background);
-    } else if (type == QWebEnginePage::WebBrowserWindow) {
-        connect(newView->page(), &QWebEnginePage::urlChanged, this, [](const QUrl &url) {
-            auto *main = new MainWindow(url);
-            main->show();
-        });
+    } else if (type == QWebEnginePage::WebBrowserBackgroundTab) {
+        emit newWebView(newView, false);
+    } else {
+        // WebBrowserWindow / WebDialog: open in a tab of this window so the view is owned, shown and
+        // shares this window's profile (a separate MainWindow would own a different profile object).
+        emit newWebView(newView, true);
     }
     return newView;
 }

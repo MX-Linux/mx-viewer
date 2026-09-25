@@ -172,6 +172,13 @@ void TabWidget::addNewTab(WebView *webView, bool makeCurrent)
     connect(webView, &WebView::newWebView, this, [this](WebView *view, bool makeCurrent) {
         addNewTab(view, makeCurrent);
     });
+    // Popups opened as tabs (e.g. OAuth flows) close themselves with window.close()
+    connect(webView->page(), &QWebEnginePage::windowCloseRequested, this, [this, webView] {
+        const int i = indexOf(webView);
+        if (i >= 0 && count() > 1) {
+            removeTab(i);
+        }
+    });
     updateNewTabButton();
     QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
 }
