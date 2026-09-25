@@ -762,16 +762,17 @@ void MainWindow::addZoomActions()
     zoomin->setShortcuts({QKeySequence::ZoomIn, Qt::CTRL | Qt::Key_Equal});
     zoomout->setShortcut(QKeySequence::ZoomOut);
     zoomPercentAction->setShortcut(Qt::CTRL | Qt::Key_0);
+    zoomPercentAction->setToolTip(tr("Reset zoom for this site"));
     connect(zoomout, &QAction::triggered, this, [this] {
-        setZoomPercent(zoomPercent - 10, true);
+        setSiteZoom(currentZoomPercent() - 10);
     });
     connect(zoomin, &QAction::triggered, this, [this] {
-        setZoomPercent(zoomPercent + 10, true);
+        setSiteZoom(currentZoomPercent() + 10);
     });
     connect(zoomPercentAction, &QAction::triggered, this, [this] {
-        setZoomPercent(100, true);
+        setSiteZoom(zoomPercent);
     });
-    setZoomPercent(zoomPercent, false);
+    applyZoom();
 }
 
 void MainWindow::setupMenuButton()
@@ -1037,7 +1038,7 @@ void MainWindow::setConnections()
             statusBar()->showMessage(url);
         }
     });
-    setZoomPercent(zoomPercent, false);
+    applyZoom();
 }
 
 void MainWindow::showFullScreenNotification()
@@ -1798,17 +1799,65 @@ void MainWindow::applyWebSettings()
     }
 }
 
+// Sets the default zoom, used for sites without their own zoom level.
 void MainWindow::setZoomPercent(int percent, bool persist)
 {
-    zoomPercent = qBound(25, percent, 500);
-    if (zoomPercentAction) {
-        zoomPercentAction->setText(QString::number(zoomPercent) + "%");
-    }
-    if (auto *view = currentWebView()) {
-        view->setZoomFactor(zoomPercent / 100.0);
-    }
+    zoomPercent = qBound(minZoom, percent, maxZoom);
     if (persist) {
         settings.setValue("ZoomPercent", zoomPercent);
+    }
+    applyZoom();
+}
+
+// Zoom levels are remembered per host (per scheme for host-less pages such as file://).
+QString MainWindow::zoomKey(const QUrl &url)
+{
+    const QString site = url.host().isEmpty() ? url.scheme() : url.host();
+    return site.isEmpty() ? QString() : "SiteZoom/" + site;
+}
+
+int MainWindow::currentZoomPercent() const
+{
+    const auto *view = tabWidget->currentWebView();
+    return view ? qRound(view->zoomFactor() * 100) : zoomPercent;
+}
+
+void MainWindow::setSiteZoom(int percent)
+{
+    auto *view = currentWebView();
+    if (!view) {
+        return;
+    }
+    percent = qBound(minZoom, percent, maxZoom);
+    const QString key = zoomKey(view->url());
+    if (key.isEmpty()) {
+        view->setZoomFactor(percent / 100.0);
+        if (zoomPercentAction) {
+            zoomPercentAction->setText(QString::number(percent) + "%");
+        }
+        return;
+    }
+    if (percent == zoomPercent) {
+        settings.remove(key);
+    } else {
+        settings.setValue(key, percent);
+    }
+    applyZoom();
+}
+
+void MainWindow::applyZoom()
+{
+    auto *view = currentWebView();
+    if (!view) {
+        return;
+    }
+    const QString key = zoomKey(view->url());
+    const int percent = key.isEmpty() ? zoomPercent : qBound(minZoom, settings.value(key, zoomPercent).toInt(), maxZoom);
+    if (qRound(view->zoomFactor() * 100) != percent) {
+        view->setZoomFactor(percent / 100.0);
+    }
+    if (zoomPercentAction) {
+        zoomPercentAction->setText(QString::number(percent) + "%");
     }
 }
 
@@ -2045,6 +2094,7 @@ void MainWindow::updateUrl()
     addressBar->show();
     addressBar->setText(view->url().toDisplayString());
     addressBar->setCursorPosition(0);
+    applyZoom();
 }
 
 bool MainWindow::restoreSavedTabs()
@@ -2270,6 +2320,8 @@ void MainWindow::done(bool ok)
         progressBar->hide();
         return;
     }
+    // Navigation to another site may have reset the zoom.
+    applyZoom();
     if (!ok && lastAddressMaySearch && !lastAddressExplicitScheme && view->url() == lastAddressUrl
         && !lastAddressInput.isEmpty()) {
         displaySearchResults(lastAddressInput);

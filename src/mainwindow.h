@@ -127,6 +127,8 @@ private:
     static constexpr int progBarVerticalAdj {40};
     static constexpr int progBarWidth {20};
     static constexpr int searchWidth {150};
+    static constexpr int minZoom {25};
+    static constexpr int maxZoom {500};
 
     void init();
     QAction *pageAction(QWebEnginePage::WebAction webAction);
@@ -159,6 +161,10 @@ private:
     void focusAddressBarIfBlank();
     void applyWebSettings();
     void setZoomPercent(int percent, bool persist);
+    void setSiteZoom(int percent);
+    void applyZoom();
+    [[nodiscard]] int currentZoomPercent() const;
+    static QString zoomKey(const QUrl &url);
     void loadBookmarks();
     void loadSettings();
     void openBrowseDialog();
