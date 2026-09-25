@@ -29,6 +29,7 @@
 #include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
+#include <QPointer>
 #include <QProcess>
 #include <QStandardPaths>
 #include <QTranslator>
@@ -182,7 +183,8 @@ int main(int argc, char *argv[])
         QApplication::installTranslator(&appTran);
     }
 
-    auto *window = new MainWindow(parser);
+    // QPointer: the window is deleted on close (WA_DeleteOnClose), possibly before aboutToQuit fires
+    QPointer<MainWindow> window = new MainWindow(parser);
     window->show();
 
     // Ensure proper cleanup on application exit
