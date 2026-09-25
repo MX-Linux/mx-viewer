@@ -545,6 +545,9 @@ void MainWindow::removeHistoryEntry(int index)
         return;
     }
     entries.removeAt(index);
+    // Clear the old array first; otherwise an entry without an icon would keep the icon of the entry
+    // previously stored at its index.
+    settings.remove("History");
     settings.beginWriteArray("History");
     for (int i = 0; i < entries.size(); ++i) {
         settings.setArrayIndex(i);
