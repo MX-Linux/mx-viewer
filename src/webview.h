@@ -70,6 +70,7 @@ protected:
 private slots:
     void handleLoadFinished(bool ok);
     void handleIconChanged();
+    void handleRenderProcessTerminated(QWebEnginePage::RenderProcessTerminationStatus status);
 
 signals:
     void newWebView(WebView *wv, bool makeCurrent);
@@ -79,6 +80,7 @@ private:
     int index;
     int lastHistoryIndex = -1;
     QUrl lastHistoryUrl;
+    bool crashPageShown {};
     QWidget *m_currentProxy = nullptr;
     QWebEngineProfile *profile {};
 

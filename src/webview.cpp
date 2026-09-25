@@ -254,6 +254,28 @@ WebView::WebView(QWebEngineProfile *profile, QWidget *parent)
     setPage(new WebPage(profile, this));
     connect(this, &WebView::loadFinished, this, &WebView::handleLoadFinished);
     connect(this, &WebView::iconChanged, this, &WebView::handleIconChanged);
+    connect(this, &WebView::renderProcessTerminated, this, &WebView::handleRenderProcessTerminated);
+}
+
+void WebView::handleRenderProcessTerminated(QWebEnginePage::RenderProcessTerminationStatus status)
+{
+    if (status == QWebEnginePage::NormalTerminationStatus) {
+        return;
+    }
+    const QUrl crashedUrl = url();
+    // Load the replacement page outside the signal handler, once the dead renderer is torn down.
+    QTimer::singleShot(0, this, [this, crashedUrl] {
+        const QString link = QString::fromUtf8(crashedUrl.toEncoded()).toHtmlEscaped();
+        const QString html
+            = QStringLiteral("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>%1</title></head>"
+                             "<body style=\"font-family: sans-serif; text-align: center; margin-top: 15%;\">"
+                             "<h2>%1</h2><p>%2</p><p><a href=\"%3\">%4</a></p></body></html>")
+                  .arg(tr("This tab crashed").toHtmlEscaped(),
+                       tr("The page stopped unexpectedly.").toHtmlEscaped(), link, tr("Reload").toHtmlEscaped());
+        crashPageShown = true;
+        // Keep the original URL as base so the address bar still shows it.
+        setHtml(html, crashedUrl);
+    });
 }
 
 void WebView::installEventFilterOnFocusProxy()
@@ -333,6 +355,10 @@ WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
 
 void WebView::handleLoadFinished(bool ok)
 {
+    if (crashPageShown) {
+        crashPageShown = false;
+        return;
+    }
     if (!ok) {
         return;
     }
