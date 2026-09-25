@@ -23,9 +23,16 @@
 #include "mainwindow.h"
 
 #include <QApplication>
+#include <QAuthenticator>
 #include <QBuffer>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QFormLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QPointer>
 #include <QTimer>
 #include <QWebEngineCertificateError>
 #include <QWebEnginePermission>
@@ -50,6 +57,55 @@ WebPage::WebPage(QWebEngineProfile *profile, WebView *parent)
     });
     connect(this, &QWebEnginePage::permissionRequested, this, &WebPage::handlePermissionRequest);
     connect(this, &QWebEnginePage::certificateError, this, &WebPage::handleCertificateError);
+    connect(this, &QWebEnginePage::authenticationRequired, this,
+            [this](const QUrl &requestUrl, QAuthenticator *auth) {
+                askCredentials(tr("%1 requires a user name and password.").arg(requestUrl.host()), auth);
+            });
+    connect(this, &QWebEnginePage::proxyAuthenticationRequired, this,
+            [this](const QUrl &, QAuthenticator *auth, const QString &proxyHost) {
+                askCredentials(tr("The proxy %1 requires a user name and password.").arg(proxyHost), auth);
+            });
+}
+
+// The authenticator must be filled in before the signal returns, so this dialog has to be modal.
+void WebPage::askCredentials(const QString &message, QAuthenticator *auth)
+{
+    // Heap-allocated and guarded: if the tab is closed during exec(), the view deletes the dialog
+    // and the authenticator must not be touched.
+    QPointer<QDialog> dialog = new QDialog(m_webView);
+    dialog->setWindowTitle(tr("Authentication required"));
+    auto *layout = new QFormLayout(dialog);
+    auto *label = new QLabel(message, dialog);
+    label->setTextFormat(Qt::PlainText);
+    label->setWordWrap(true);
+    layout->addRow(label);
+    if (!auth->realm().isEmpty()) {
+        auto *realm = new QLabel(tr("Realm: %1").arg(auth->realm()), dialog);
+        realm->setTextFormat(Qt::PlainText);
+        realm->setWordWrap(true);
+        layout->addRow(realm);
+    }
+    auto *user = new QLineEdit(auth->user(), dialog);
+    auto *password = new QLineEdit(dialog);
+    password->setEchoMode(QLineEdit::Password);
+    layout->addRow(tr("User name:"), user);
+    layout->addRow(tr("Password:"), password);
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
+    connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+    layout->addRow(buttons);
+    const int result = dialog->exec();
+    if (!dialog) {
+        return;
+    }
+    if (result == QDialog::Accepted) {
+        auth->setUser(user->text());
+        auth->setPassword(password->text());
+    } else {
+        // A null authenticator cancels the request.
+        *auth = QAuthenticator();
+    }
+    delete dialog;
 }
 
 void WebPage::handleCertificateError(QWebEngineCertificateError error)

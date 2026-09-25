@@ -28,6 +28,7 @@
 #include <QWebEnginePermission>
 #include <QWebEngineView>
 
+class QAuthenticator;
 class WebView;
 
 class WebPage : public QWebEnginePage
@@ -46,6 +47,7 @@ private:
     static QString permissionDescription(QWebEnginePermission::PermissionType type);
     void handlePermissionRequest(QWebEnginePermission permission);
     void handleCertificateError(QWebEngineCertificateError error);
+    void askCredentials(const QString &message, QAuthenticator *auth);
 };
 
 class WebView : public QWebEngineView
