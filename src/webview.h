@@ -23,6 +23,7 @@
 
 #include <QSettings>
 #include <QUrl>
+#include <QWebEngineCertificateError>
 #include <QWebEnginePage>
 #include <QWebEnginePermission>
 #include <QWebEngineView>
@@ -44,6 +45,7 @@ private:
     WebView *m_webView;
     static QString permissionDescription(QWebEnginePermission::PermissionType type);
     void handlePermissionRequest(QWebEnginePermission permission);
+    void handleCertificateError(QWebEngineCertificateError error);
 };
 
 class WebView : public QWebEngineView

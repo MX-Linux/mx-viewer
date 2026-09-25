@@ -27,6 +27,7 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QTimer>
+#include <QWebEngineCertificateError>
 #include <QWebEnginePermission>
 #include <QWebEngineProfile>
 
@@ -48,6 +49,37 @@ WebPage::WebPage(QWebEngineProfile *profile, WebView *parent)
         mw->handleFullScreenRequest(std::move(request), m_webView);
     });
     connect(this, &QWebEnginePage::permissionRequested, this, &WebPage::handlePermissionRequest);
+    connect(this, &QWebEnginePage::certificateError, this, &WebPage::handleCertificateError);
+}
+
+void WebPage::handleCertificateError(QWebEngineCertificateError error)
+{
+    // Only offer an override for the page itself; broken subresources are just blocked.
+    // Chromium remembers an accepted certificate for the rest of the session.
+    if (!error.isOverridable() || !error.isMainFrame()) {
+        error.rejectCertificate();
+        return;
+    }
+    error.defer();
+    auto *box = new QMessageBox(QMessageBox::Warning, tr("Certificate error"),
+                                tr("The connection to %1 is not secure.").arg(error.url().host()),
+                                QMessageBox::NoButton, m_webView);
+    box->setTextFormat(Qt::PlainText);
+    box->setInformativeText(error.description() + "\n\n"
+                            + tr("Someone could be trying to impersonate the site or intercept your data."));
+    auto *back = box->addButton(tr("Go back"), QMessageBox::RejectRole);
+    auto *proceed = box->addButton(tr("Proceed anyway (unsafe)"), QMessageBox::DestructiveRole);
+    box->setDefaultButton(back);
+    box->setEscapeButton(back);
+    box->setAttribute(Qt::WA_DeleteOnClose);
+    connect(box, &QMessageBox::finished, this, [box, proceed, error]() mutable {
+        if (box->clickedButton() == proceed) {
+            error.acceptCertificate();
+        } else {
+            error.rejectCertificate();
+        }
+    });
+    box->open();
 }
 
 QString WebPage::permissionDescription(QWebEnginePermission::PermissionType type)
