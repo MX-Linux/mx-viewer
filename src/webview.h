@@ -24,6 +24,7 @@
 #include <QSettings>
 #include <QUrl>
 #include <QWebEnginePage>
+#include <QWebEnginePermission>
 #include <QWebEngineView>
 
 class WebView;
@@ -41,6 +42,8 @@ protected:
 
 private:
     WebView *m_webView;
+    static QString permissionDescription(QWebEnginePermission::PermissionType type);
+    void handlePermissionRequest(QWebEnginePermission permission);
 };
 
 class WebView : public QWebEngineView

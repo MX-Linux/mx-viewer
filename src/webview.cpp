@@ -24,8 +24,10 @@
 
 #include <QApplication>
 #include <QBuffer>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QTimer>
+#include <QWebEnginePermission>
 #include <QWebEngineProfile>
 
 // Static member definitions
@@ -45,6 +47,65 @@ WebPage::WebPage(QWebEngineProfile *profile, WebView *parent)
         }
         mw->handleFullScreenRequest(std::move(request), m_webView);
     });
+    connect(this, &QWebEnginePage::permissionRequested, this, &WebPage::handlePermissionRequest);
+}
+
+QString WebPage::permissionDescription(QWebEnginePermission::PermissionType type)
+{
+    using Type = QWebEnginePermission::PermissionType;
+    switch (type) {
+    case Type::MediaAudioCapture:
+        return tr("use your microphone");
+    case Type::MediaVideoCapture:
+        return tr("use your camera");
+    case Type::MediaAudioVideoCapture:
+        return tr("use your camera and microphone");
+    case Type::DesktopVideoCapture:
+        return tr("share your screen");
+    case Type::DesktopAudioVideoCapture:
+        return tr("share your screen and audio");
+    case Type::MouseLock:
+        return tr("lock your mouse pointer");
+    case Type::Geolocation:
+        return tr("know your location");
+    case Type::ClipboardReadWrite:
+        return tr("read and write your clipboard");
+    case Type::LocalFontsAccess:
+        return tr("access the fonts installed on your computer");
+    case Type::Notifications:
+    case Type::Unsupported:
+        break;
+    }
+    return {};
+}
+
+void WebPage::handlePermissionRequest(QWebEnginePermission permission)
+{
+    // No notification presenter is installed, so granting would have no visible effect;
+    // decline quietly instead of prompting.
+    const QString what = permissionDescription(permission.permissionType());
+    if (what.isEmpty()) {
+        permission.deny();
+        return;
+    }
+    const QString host = permission.origin().host().isEmpty() ? permission.origin().toDisplayString()
+                                                               : permission.origin().host();
+    auto *box = new QMessageBox(QMessageBox::Question, tr("Permission request"), tr("%1 wants to %2.").arg(host, what),
+                                QMessageBox::NoButton, m_webView);
+    box->setTextFormat(Qt::PlainText);
+    box->addButton(tr("Allow"), QMessageBox::AcceptRole);
+    auto *block = box->addButton(tr("Block"), QMessageBox::RejectRole);
+    box->setDefaultButton(block);
+    box->setAttribute(Qt::WA_DeleteOnClose);
+    // The profile stores the answer on disk for persistent permission types, so a site is asked only once.
+    connect(box, &QMessageBox::finished, this, [box, block, permission] {
+        if (box->clickedButton() && box->clickedButton() != block) {
+            permission.grant();
+        } else {
+            permission.deny();
+        }
+    });
+    box->open();
 }
 
 void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message, int lineNumber,
