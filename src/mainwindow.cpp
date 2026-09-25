@@ -282,23 +282,6 @@ void MainWindow::addBookmarksSubmenu()
     });
 }
 
-void MainWindow::addHistorySubmenu()
-{
-    history->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(history, &QMenu::customContextMenuRequested, this, [this](QPoint pos) {
-        if (history->actionAt(pos) == history->actions().at(0)) { // skip first "Clear history" action.
-            return;
-        }
-        QPoint globalPos = history->mapToGlobal(pos);
-        QMenu submenu;
-        submenu.addAction(QIcon::fromTheme("user-trash"), tr("Delete"), history, [this, pos] {
-            history->removeAction(history->actionAt(pos));
-            saveMenuItems(history, 3); // skip "clear history", separator, and first item added at menu refresh
-        });
-        submenu.exec(globalPos);
-    });
-}
-
 void MainWindow::addNewTab(const QUrl &url, bool makeCurrent)
 {
     WebView *view = tabWidget->createTab(makeCurrent);
@@ -836,27 +819,6 @@ void MainWindow::loadBookmarks()
                              = new QAction(settings.value("icon").value<QIcon>(), settings.value("title").toString()));
         bookmark->setProperty("url", settings.value("url"));
         connectAddress(bookmark, bookmarks);
-    }
-    settings.endArray();
-}
-
-void MainWindow::loadHistory()
-{
-    int size = settings.beginReadArray("History");
-    for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
-        QAction *histItem {nullptr};
-        QIcon restoredIcon;
-        QByteArray iconByteArray = settings.value("icon").toByteArray();
-        if (!iconByteArray.isEmpty()) {
-            QPixmap restoredIconPixmap;
-            if (restoredIconPixmap.loadFromData(iconByteArray)) {
-                restoredIcon.addPixmap(restoredIconPixmap);
-            }
-        }
-        history->addAction(histItem = new QAction(restoredIcon, settings.value("title").toString()));
-        histItem->setProperty("url", settings.value("url"));
-        connectAddress(histItem, history);
     }
     settings.endArray();
 }

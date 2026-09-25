@@ -126,7 +126,6 @@ private:
     void reloadCurrentView();
     void addActions();
     void addBookmarksSubmenu();
-    void addHistorySubmenu();
     void addNavigationActions();
     void addHomeAction();
     void addNewTab(const QUrl &url = QUrl(), bool makeCurrent = true);
@@ -153,7 +152,6 @@ private:
     void applyWebSettings();
     void setZoomPercent(int percent, bool persist);
     void loadBookmarks();
-    void loadHistory();
     void loadSettings();
     void openBrowseDialog();
     void openQuickInfo();
