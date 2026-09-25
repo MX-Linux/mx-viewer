@@ -32,6 +32,8 @@
 #include <QProcess>
 #include <QStandardPaths>
 #include <QTranslator>
+#include <grp.h>
+#include <pwd.h>
 #include <unistd.h>
 
 #ifndef VERSION
@@ -82,6 +84,12 @@ bool dropElevatedPrivileges(bool force_nobody)
         id = gid = nobody;
     }
 
+    // Replace root's supplementary groups with the target user's groups (or none for 'nobody')
+    // before changing the primary gid, while we still have the privilege to do so.
+    const passwd *pw = (id == nobody) ? nullptr : getpwuid(id);
+    if (pw ? initgroups(pw->pw_name, gid) != 0 : setgroups(0, nullptr) != 0) {
+        return false;
+    }
     if (setgid(gid) != 0) {
         return false;
     }
@@ -91,7 +99,7 @@ bool dropElevatedPrivileges(bool force_nobody)
 
     // On systems with defined _POSIX_SAVED_IDS in the unistd.h file, it should be
     // impossible to regain elevated privs after the setuid() call, above.  Test, try to regain elev priv:
-    if (setuid(0) != -1 || seteuid(0) != -1) {
+    if (setuid(0) != -1 || seteuid(0) != -1 || setgid(0) != -1 || setegid(0) != -1) {
         return false; // and the calling fn should EXIT/abort the program
     }
 
