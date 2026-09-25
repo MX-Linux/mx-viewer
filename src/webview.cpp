@@ -392,7 +392,7 @@ void WebView::handleLoadFinished(bool ok)
         crashPageShown = false;
         return;
     }
-    if (!ok) {
+    if (!ok || page()->profile()->isOffTheRecord()) {
         return;
     }
     const QUrl loadedUrl = url();

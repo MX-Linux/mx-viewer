@@ -142,16 +142,18 @@ MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
     }
 }
 
-MainWindow::MainWindow(const QUrl &url, QWidget *parent)
+MainWindow::MainWindow(const QUrl &url, bool privateMode, QWidget *parent)
     : QMainWindow(parent),
       downloadWidget {new DownloadWidget},
       searchBox {new QLineEdit(this)},
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},
-      webProfile {new QWebEngineProfile("mx-viewer", this)},
+      // A profile without a storage name is off-the-record: cookies, cache and permissions stay in memory.
+      webProfile {privateMode ? new QWebEngineProfile(this) : new QWebEngineProfile("mx-viewer", this)},
       tabWidget {new TabWidget(webProfile, this)},
       args {nullptr}
 {
+    privateWindow = privateMode;
     init();
     if (!restoredTabs) {
         displaySite(url.toString(), QString());
@@ -191,7 +193,21 @@ void MainWindow::init()
     addActions();
     setConnections();
 
-    restoredTabs = settings.value("SaveTabs", false).toBool() && restoreSavedTabs();
+    restoredTabs = !privateWindow && settings.value("SaveTabs", false).toBool() && restoreSavedTabs();
+    if (privateWindow) {
+        auto *label = new QLabel(tr("Private"), toolBar);
+        label->setToolTip(tr("Private window: history, tabs and site data are not saved"));
+        label->setContentsMargins(6, 0, 6, 0);
+        toolBar->addWidget(label);
+        auto markPrivate = [this](const QString &title) {
+            const QString suffix = " \u2014 " + tr("Private");
+            if (!title.endsWith(suffix)) {
+                setWindowTitle(title + suffix);
+            }
+        };
+        connect(this, &QWidget::windowTitleChanged, this, markPrivate);
+        markPrivate(windowTitle());
+    }
 
     auto *closeTabAction = new QAction(this);
     closeTabAction->setShortcut(QKeySequence::Close);
@@ -205,6 +221,9 @@ void MainWindow::init()
 
 MainWindow::~MainWindow()
 {
+    if (privateWindow) {
+        return;
+    }
     settings.setValue("Geometry", saveGeometry());
     saveMenuItems(bookmarks, 2);
 }
@@ -1209,6 +1228,19 @@ void MainWindow::addFileMenuActions(QMenu *menu)
     menu->addAction(print);
     addAction(print);
     connect(print, &QAction::triggered, this, [this] { printPage(currentWebView()); });
+
+    auto *privateAction = new QAction(QIcon::fromTheme("view-private"), tr("New p&rivate window"), this);
+    privateAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_N));
+    menu->addAction(privateAction);
+    addAction(privateAction);
+    connect(privateAction, &QAction::triggered, this, &MainWindow::openPrivateWindow);
+}
+
+void MainWindow::openPrivateWindow()
+{
+    auto *window = new MainWindow(QUrl(), true);
+    window->move(pos() + QPoint(40, 40));
+    window->show();
 }
 
 void MainWindow::printPage(WebView *webView)
@@ -1269,6 +1301,11 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     connect(devTools, &QAction::triggered, this, &MainWindow::openDevTools);
     connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
     connect(manageBookmarks, &QAction::triggered, this, &MainWindow::openBookmarksEditor);
+    // Bookmarks are saved when a window closes; a private window must not overwrite the regular list.
+    if (privateWindow) {
+        addBookmark->setEnabled(false);
+        manageBookmarks->setEnabled(false);
+    }
     connect(addBookmark, &QAction::triggered, this, [this] {
         QAction *bookmark {nullptr};
         bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), currentWebView()->title()));
@@ -1854,7 +1891,9 @@ void MainWindow::setSiteZoom(int percent)
         }
         return;
     }
-    if (percent == zoomPercent) {
+    if (privateWindow) {
+        privateZoom.insert(key, percent);
+    } else if (percent == zoomPercent) {
         settings.remove(key);
     } else {
         settings.setValue(key, percent);
@@ -1869,7 +1908,11 @@ void MainWindow::applyZoom()
         return;
     }
     const QString key = zoomKey(view->url());
-    const int percent = key.isEmpty() ? zoomPercent : qBound(minZoom, settings.value(key, zoomPercent).toInt(), maxZoom);
+    int percent = zoomPercent;
+    if (!key.isEmpty()) {
+        percent = privateZoom.contains(key) ? privateZoom.value(key) : settings.value(key, zoomPercent).toInt();
+        percent = qBound(minZoom, percent, maxZoom);
+    }
     if (qRound(view->zoomFactor() * 100) != percent) {
         view->setZoomFactor(percent / 100.0);
     }
@@ -2304,6 +2347,9 @@ void MainWindow::closeEvent(QCloseEvent * /*event*/)
     downloadWidget->close();
     if (clearCookiesAtExit) {
         webProfile->cookieStore()->deleteAllCookies();
+    }
+    if (privateWindow) {
+        return;
     }
     settings.setValue("Geometry", saveGeometry());
 

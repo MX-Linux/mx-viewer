@@ -29,7 +29,6 @@
 #include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
-#include <QPointer>
 #include <QProcess>
 #include <QStandardPaths>
 #include <QTranslator>
@@ -183,14 +182,17 @@ int main(int argc, char *argv[])
         QApplication::installTranslator(&appTran);
     }
 
-    // QPointer: the window is deleted on close (WA_DeleteOnClose), possibly before aboutToQuit fires
-    QPointer<MainWindow> window = new MainWindow(parser);
+    auto *window = new MainWindow(parser);
     window->show();
 
     // Ensure proper cleanup on application exit
-    QObject::connect(&app, &QApplication::aboutToQuit, [window]() {
-        if (window && !window->isHidden()) {
-            window->close();
+    // Close every browser window (including private ones) so each saves its state
+    QObject::connect(&app, &QApplication::aboutToQuit, [] {
+        const auto widgets = QApplication::topLevelWidgets();
+        for (auto *widget : widgets) {
+            if (qobject_cast<MainWindow *>(widget) && !widget->isHidden()) {
+                widget->close();
+            }
         }
     });
 

@@ -26,6 +26,7 @@
 #include "tabwidget.h"
 #include "webview.h"
 
+#include <QHash>
 #include <QPointer>
 #include <QWebEngineFullScreenRequest>
 
@@ -42,7 +43,8 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 public:
     explicit MainWindow(const QCommandLineParser &argParser, QWidget *parent = nullptr);
-    explicit MainWindow(const QUrl &url, QWidget *parent = nullptr);
+    // A private window uses an off-the-record profile and writes nothing to disk.
+    explicit MainWindow(const QUrl &url, bool privateMode, QWidget *parent = nullptr);
     ~MainWindow() override;
 
 public slots:
@@ -112,6 +114,8 @@ private:
     bool cookiesEnabled {true};
     bool clearCookiesAtExit {false};
     bool restoredTabs {};
+    bool privateWindow {};
+    QHash<QString, int> privateZoom;
     bool pageFullScreen {};
     bool fullScreenBeforePage {};
     QPointer<WebView> pageFullScreenView;
@@ -150,6 +154,7 @@ private:
     void setupMenuButton();
     void setupSearchBox();
     void addFileMenuActions(QMenu *menu);
+    void openPrivateWindow();
     void addViewMenuActions(QMenu *menu);
     void addHelpMenuActions(QMenu *menu);
     void setupMenuConnections(QMenu *menu);

@@ -324,7 +324,11 @@ void TabWidget::keyPressEvent(QKeyEvent *event)
             return;
         }
         if (event->key() == Qt::Key_W) {
-            count() == 1 ? QApplication::quit() : removeTab(currentIndex());
+            if (count() == 1) {
+                window()->close();
+            } else {
+                removeTab(currentIndex());
+            }
             return;
         }
     }
