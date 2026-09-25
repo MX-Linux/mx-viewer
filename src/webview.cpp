@@ -418,7 +418,7 @@ void WebView::handleLoadFinished(bool ok)
     }
     const QUrl loadedUrl = url();
     if (!loadedUrl.isValid() || loadedUrl.toString() == "about:blank" || loadedUrl.scheme() == "mx-history"
-        || loadedUrl.scheme() == "mx-settings") {
+        || loadedUrl.scheme() == "mx-settings" || loadedUrl.scheme() == "mx-newtab") {
         return;
     }
     QTimer::singleShot(750, this, [this, loadedUrl] {

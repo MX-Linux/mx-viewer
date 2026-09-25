@@ -167,6 +167,8 @@ private:
     void openFromAddressBarText(const QString &input);
     QString buildSettingsPageHtml();
     QString buildHistoryPageHtml();
+    QString buildNewTabPageHtml();
+    void renderNewTabPage(WebView *view);
     void findInPage(QWebEnginePage::FindFlags flags);
     void focusAddressBar();
     void focusAddressBarIfBlank();
