@@ -22,15 +22,19 @@
 #include "tabwidget.h"
 
 #include <QApplication>
+#include <QDataStream>
 #include <QEvent>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
 #include <QSize>
+#include <QStyle>
 #include <QTabBar>
 #include <QTimer>
 #include <QToolButton>
+#include <QWebEngineHistory>
 
 TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
     : QTabWidget(parent),
@@ -50,7 +54,125 @@ TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
     newTabButton->hide();
     connect(newTabButton, &QPushButton::clicked, this, &TabWidget::newTabButtonClicked);
     tabBar()->installEventFilter(this);
+    tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(tabBar(), &QTabBar::customContextMenuRequested, this, &TabWidget::showTabMenu);
     updateNewTabButton();
+}
+
+WebView *TabWidget::webViewAt(int index) const
+{
+    return qobject_cast<WebView *>(widget(index));
+}
+
+void TabWidget::showTabMenu(const QPoint &pos)
+{
+    const int index = tabBar()->tabAt(pos);
+    QMenu menu(this);
+    menu.addAction(tr("New tab"), this, &TabWidget::newTabButtonClicked);
+    QPointer<WebView> view = webViewAt(index);
+    if (view) {
+        menu.addAction(tr("Reload tab"), view.data(), &QWebEngineView::reload);
+        menu.addAction(tr("Duplicate tab"), this, [this, view] {
+            if (view) {
+                duplicateTab(indexOf(view));
+            }
+        });
+        menu.addAction(view->page()->isAudioMuted() ? tr("Unmute tab") : tr("Mute tab"), this, [view] {
+            if (view) {
+                view->page()->setAudioMuted(!view->page()->isAudioMuted());
+            }
+        });
+        menu.addSeparator();
+        menu.addAction(tr("Close tab"), this, [this, view] {
+            if (view) {
+                removeTab(indexOf(view));
+            }
+        });
+        QList<QWidget *> others;
+        QList<QWidget *> right;
+        for (int i = 0; i < count(); ++i) {
+            if (i != index) {
+                others.append(widget(i));
+            }
+            if (i > index) {
+                right.append(widget(i));
+            }
+        }
+        menu.addAction(tr("Close other tabs"), this, [this, others] { closeTabs(others); })->setEnabled(!others.isEmpty());
+        menu.addAction(tr("Close tabs to the right"), this, [this, right] { closeTabs(right); })
+            ->setEnabled(!right.isEmpty());
+    }
+    menu.exec(tabBar()->mapToGlobal(pos));
+}
+
+void TabWidget::closeTabs(const QList<QWidget *> &tabs)
+{
+    // Tabs may have been closed while the menu was open, so look each one up again.
+    QList<QPointer<QWidget>> guarded(tabs.cbegin(), tabs.cend());
+    for (const auto &tab : guarded) {
+        const int i = tab ? indexOf(tab) : -1;
+        if (i >= 0 && count() > 1) {
+            removeTab(i);
+        }
+    }
+}
+
+void TabWidget::duplicateTab(int index)
+{
+    auto *source = webViewAt(index);
+    if (!source) {
+        return;
+    }
+    auto *copy = new WebView(profile);
+    addNewTab(copy, true);
+    // Copying the history restores back/forward and loads the current entry.
+    QByteArray data;
+    QDataStream out(&data, QIODevice::WriteOnly);
+    out << *source->history();
+    QDataStream in(&data, QIODevice::ReadOnly);
+    in >> *copy->history();
+    tabBar()->moveTab(indexOf(copy), index + 1);
+}
+
+// Speaker button on the tab (opposite the close button) while the page plays sound or is muted;
+// clicking it toggles mute.
+void TabWidget::updateAudioButton(WebView *webView)
+{
+    const int i = indexOf(webView);
+    if (i < 0) {
+        return;
+    }
+    const auto side = static_cast<QTabBar::ButtonPosition>(
+                          style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, nullptr, tabBar()))
+            == QTabBar::LeftSide
+        ? QTabBar::RightSide
+        : QTabBar::LeftSide;
+    auto *button = qobject_cast<QToolButton *>(tabBar()->tabButton(i, side));
+    const bool muted = webView->page()->isAudioMuted();
+    if (!muted && !webView->page()->recentlyAudible()) {
+        if (button) {
+            tabBar()->setTabButton(i, side, nullptr);
+            button->deleteLater();
+        }
+        return;
+    }
+    if (!button) {
+        button = new QToolButton(tabBar());
+        button->setAutoRaise(true);
+        button->setIconSize(QSize(16, 16));
+        QPointer<WebView> view = webView;
+        connect(button, &QToolButton::clicked, this, [view] {
+            if (view) {
+                view->page()->setAudioMuted(!view->page()->isAudioMuted());
+            }
+        });
+        tabBar()->setTabButton(i, side, button);
+    }
+    button->setIcon(muted ? QIcon::fromTheme("audio-volume-muted") : QIcon::fromTheme("audio-volume-high"));
+    if (button->icon().isNull()) {
+        button->setText(muted ? QStringLiteral("\U0001F507") : QStringLiteral("\U0001F50A"));
+    }
+    button->setToolTip(muted ? tr("Unmute tab") : tr("Mute tab"));
 }
 
 void TabWidget::mousePressEvent(QMouseEvent *event)
@@ -162,8 +284,11 @@ void TabWidget::addNewTab(WebView *webView, bool makeCurrent)
     connect(webView, &WebView::titleChanged, this, [this, webView] {
         if (webView) {
             setTabText(indexOf(webView), webView->title());
+            setTabToolTip(indexOf(webView), webView->title());
         }
     });
+    connect(webView->page(), &QWebEnginePage::recentlyAudibleChanged, this, [this, webView] { updateAudioButton(webView); });
+    connect(webView->page(), &QWebEnginePage::audioMutedChanged, this, [this, webView] { updateAudioButton(webView); });
     connect(webView, &WebView::iconChanged, this, [this, webView] {
         if (webView) {
             setTabIcon(indexOf(webView), webView->icon());

@@ -55,4 +55,9 @@ private:
     void finalizeRemoveTab(int index);
     void updateNewTabButton();
     void positionNewTabButton();
+    void showTabMenu(const QPoint &pos);
+    void duplicateTab(int index);
+    void closeTabs(const QList<QWidget *> &tabs);
+    void updateAudioButton(WebView *webView);
+    WebView *webViewAt(int index) const;
 };
