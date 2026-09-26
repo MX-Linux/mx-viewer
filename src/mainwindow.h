@@ -203,7 +203,7 @@ private:
     bool isLocalHostInput(const QString &input) const;
     void openSettingsPage();
     void openSavedTab(const QUrl &url, bool makeCurrent);
-    void removeHistoryEntry(int index);
+    void removeHistoryEntry(qint64 id);
     void refreshHistoryCompleter();
     void renderHistoryPage(WebView *view);
     void renderSettingsPage(WebView *view);

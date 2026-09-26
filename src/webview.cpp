@@ -21,6 +21,7 @@
  **********************************************************************/
 #include "webview.h"
 #include "mainwindow.h"
+#include "historystore.h"
 
 #include <algorithm>
 
@@ -31,7 +32,6 @@
 #include <QContextMenuEvent>
 #include <QDebug>
 #include <QDataStream>
-#include <QDateTime>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -352,7 +352,6 @@ bool WebPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool
 
 WebView::WebView(QWebEngineProfile *profile, QWidget *parent)
     : QWebEngineView(profile, parent),
-      index(historyLog.value("History/size", 0).toInt()),
       profile(profile)
 {
     setPage(new WebPage(profile, this));
@@ -561,15 +560,9 @@ void WebView::handleLoadFinished(bool ok)
         if (url() != loadedUrl) {
             return;
         }
-        index = historyLog.value("History/size", 0).toInt();
-        historyLog.beginWriteArray("History");
-        historyLog.setArrayIndex(index);
-        historyLog.setValue("title", title());
-        historyLog.setValue("url", loadedUrl.toString());
-        historyLog.setValue("time", QDateTime::currentSecsSinceEpoch());
-        historyLog.endArray();
-        historyLog.setValue("History/size", index + 1);
-        lastHistoryIndex = index;
+        if (!HistoryStore::addVisit(loadedUrl, title())) {
+            return;
+        }
         lastHistoryUrl = loadedUrl;
         handleIconChanged();
     });
@@ -577,10 +570,7 @@ void WebView::handleLoadFinished(bool ok)
 
 void WebView::handleIconChanged()
 {
-    if (icon().isNull() || lastHistoryIndex < 0) {
-        return;
-    }
-    if (url() != lastHistoryUrl) {
+    if (icon().isNull() || lastHistoryUrl.isEmpty() || url() != lastHistoryUrl) {
         return;
     }
     QPixmap iconPixmap = icon().pixmap(QSize(22, 22));
@@ -589,12 +579,5 @@ void WebView::handleIconChanged()
     if (buffer.open(QIODevice::WriteOnly)) {
         iconPixmap.save(&buffer, "PNG");
     }
-    // Address the entry directly: writing through an array would make endArray() reset History/size to
-    // this index and drop newer entries. Other windows may have rewritten the array, so check it is ours.
-    const QString entry = QStringLiteral("History/%1/").arg(lastHistoryIndex + 1);
-    if (historyLog.value(entry + "url").toString() != lastHistoryUrl.toString()) {
-        lastHistoryIndex = -1;
-        return;
-    }
-    historyLog.setValue(entry + "icon", iconByteArray);
+    HistoryStore::setIcon(lastHistoryUrl, iconByteArray);
 }

@@ -85,10 +85,7 @@ signals:
     void newWebView(WebView *wv, bool makeCurrent);
 
 private:
-    QSettings historyLog;
-    int index;
-    int lastHistoryIndex = -1;
-    QUrl lastHistoryUrl;
+    QUrl lastHistoryUrl; // The page most recently logged to history, which gets its site's icon.
     bool readerMode {};
     QWidget *m_currentProxy = nullptr;
     QWebEngineProfile *profile {};

@@ -20,6 +20,7 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
+#include "historystore.h"
 #include "mainwindow.h"
 #include "singleinstance.h"
 
@@ -218,5 +219,7 @@ int main(int argc, char *argv[])
         }
     });
 
-    return QApplication::exec();
+    const int result = QApplication::exec();
+    HistoryStore::close();
+    return result;
 }

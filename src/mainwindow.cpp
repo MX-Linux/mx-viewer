@@ -20,6 +20,7 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include "mainwindow.h"
+#include "historystore.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -215,55 +216,6 @@ void adaptMenuIcons(QMenu *menu)
             action->setIcon(iconForBackground(action->icon(), background, foreground));
         }
     }
-}
-} // namespace
-
-namespace
-{
-struct HistoryRecord {
-    QString title;
-    QString url;
-    QByteArray icon;
-    qint64 time {}; // seconds since epoch; 0 for entries logged before timestamps were recorded
-};
-
-QList<HistoryRecord> readHistory(QSettings &settings)
-{
-    QList<HistoryRecord> entries;
-    const int size = settings.beginReadArray("History");
-    entries.reserve(size);
-    for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
-        const QString url = settings.value("url").toString();
-        if (url.isEmpty()) {
-            continue;
-        }
-        entries.append({settings.value("title").toString(), url, settings.value("icon").toByteArray(),
-                        settings.value("time").toLongLong()});
-    }
-    settings.endArray();
-    return entries;
-}
-
-void writeHistory(QSettings &settings, const QList<HistoryRecord> &entries)
-{
-    // Clear the old array first; otherwise an entry without an icon would keep the icon of the entry
-    // previously stored at its index.
-    settings.remove("History");
-    settings.beginWriteArray("History");
-    for (int i = 0; i < entries.size(); ++i) {
-        settings.setArrayIndex(i);
-        settings.setValue("title", entries.at(i).title);
-        settings.setValue("url", entries.at(i).url);
-        if (!entries.at(i).icon.isEmpty()) {
-            settings.setValue("icon", entries.at(i).icon);
-        }
-        if (entries.at(i).time > 0) {
-            settings.setValue("time", entries.at(i).time);
-        }
-    }
-    settings.endArray();
-    settings.setValue("History/size", entries.size());
 }
 } // namespace
 
@@ -478,9 +430,7 @@ void MainWindow::openClearDataDialog()
         } else {
             // Entries without a timestamp predate this feature, so they are older than any range offered.
             const qint64 cutoff = QDateTime::currentSecsSinceEpoch() - age;
-            auto entries = readHistory(settings);
-            entries.removeIf([cutoff](const HistoryRecord &entry) { return entry.time >= cutoff; });
-            writeHistory(settings, entries);
+            HistoryStore::removeSince(cutoff);
             // Closed tabs carry no time; they are all from this session, which is usually recent.
             closedTabs.clear();
         }
@@ -775,14 +725,13 @@ QString MainWindow::buildNewTabPageHtml()
         struct Site {
             QUrl root;
             int visits {};
-            int lastIndex {};
+            qsizetype lastIndex {};
             QByteArray icon;
         };
         QHash<QString, Site> sites;
-        const int size = settings.beginReadArray("History");
-        for (int i = 0; i < size; ++i) {
-            settings.setArrayIndex(i);
-            const QUrl url(settings.value("url").toString());
+        const QList<HistoryStore::Entry> entries = HistoryStore::entries();
+        for (qsizetype i = 0; i < entries.size(); ++i) {
+            const QUrl url(entries.at(i).url);
             if (url.host().isEmpty() || (url.scheme() != "http" && url.scheme() != "https")) {
                 continue;
             }
@@ -793,12 +742,10 @@ QString MainWindow::buildNewTabPageHtml()
             site.root.setPath("/");
             ++site.visits;
             site.lastIndex = i;
-            const QByteArray icon = settings.value("icon").toByteArray();
-            if (!icon.isEmpty()) {
-                site.icon = icon;
+            if (!entries.at(i).icon.isEmpty()) {
+                site.icon = entries.at(i).icon;
             }
         }
-        settings.endArray();
         QList<Site> ranked = sites.values();
         std::sort(ranked.begin(), ranked.end(), [](const Site &a, const Site &b) {
             return a.visits != b.visits ? a.visits > b.visits : a.lastIndex > b.lastIndex;
@@ -900,7 +847,7 @@ void MainWindow::listHistory()
 QString MainWindow::buildHistoryPageHtml()
 {
     // The history on disk belongs to regular windows; a private window lists none of it.
-    const QList<HistoryRecord> entries = privateWindow ? QList<HistoryRecord>() : readHistory(settings);
+    const QList<HistoryStore::Entry> entries = privateWindow ? QList<HistoryStore::Entry>() : HistoryStore::entries();
 
     // Newest first, under a heading per day. Entries are stored in the order they were visited, and
     // the oldest ones may have no time recorded.
@@ -917,7 +864,7 @@ QString MainWindow::buildHistoryPageHtml()
         }
     };
     for (qsizetype i = entries.size() - 1; i >= 0; --i) {
-        const HistoryRecord &entry = entries.at(i);
+        const HistoryStore::Entry &entry = entries.at(i);
         const QDateTime visited = entry.time > 0 ? QDateTime::fromSecsSinceEpoch(entry.time) : QDateTime();
         QString label;
         if (!visited.isValid()) {
@@ -953,12 +900,12 @@ QString MainWindow::buildHistoryPageHtml()
                         "<div class=\"content\">"
                         "<div class=\"row\">"
                         "<a class=\"title\" href=\"%3\">%4</a>"
-                        "<button class=\"delete\" data-index=\"%5\">%6</button>"
+                        "<button class=\"delete\" data-id=\"%5\">%6</button>"
                         "</div>"
                         "<div class=\"url\">%7</div>"
                         "</div>"
                         "</li>")
-                        .arg(searchText, iconHtml, urlEscaped, titleEscaped, QString::number(i),
+                        .arg(searchText, iconHtml, urlEscaped, titleEscaped, QString::number(entry.id),
                              tr("Delete").toHtmlEscaped(), urlEscaped, timeText.toHtmlEscaped()));
     }
     closeGroup();
@@ -1016,7 +963,7 @@ QString MainWindow::buildHistoryPageHtml()
     document.querySelectorAll('button.delete').forEach(btn => {
       btn.addEventListener('click', event => {
         event.preventDefault();
-        location.href = 'mx-history://delete?index=' + btn.dataset.index;
+        location.href = 'mx-history://delete?id=' + btn.dataset.id;
       });
     });
     const clearButton = document.getElementById('clear');
@@ -1067,17 +1014,12 @@ void MainWindow::openHistoryPage()
     renderHistoryPage(view);
 }
 
-void MainWindow::removeHistoryEntry(int index)
+void MainWindow::removeHistoryEntry(qint64 id)
 {
-    if (privateWindow || index < 0) {
+    if (privateWindow) {
         return;
     }
-    auto entries = readHistory(settings);
-    if (index >= entries.size()) {
-        return;
-    }
-    entries.removeAt(index);
-    writeHistory(settings, entries);
+    HistoryStore::remove(id);
 }
 
 void MainWindow::clearHistoryEntries()
@@ -1085,8 +1027,7 @@ void MainWindow::clearHistoryEntries()
     if (privateWindow) {
         return;
     }
-    settings.remove("History");
-    settings.setValue("History/size", 0);
+    HistoryStore::clear();
 }
 
 bool MainWindow::handleHistoryRequest(const QUrl &url)
@@ -1097,7 +1038,7 @@ bool MainWindow::handleHistoryRequest(const QUrl &url)
     const QString action = url.host();
     if (action == "delete") {
         QUrlQuery query(url);
-        removeHistoryEntry(query.queryItemValue("index").toInt());
+        removeHistoryEntry(query.queryItemValue("id").toLongLong());
     } else if (action == "clear") {
         clearHistoryEntries();
     } else {
@@ -1112,13 +1053,10 @@ void MainWindow::refreshHistoryCompleter()
 {
     QStringList completions;
     QStringList hosts;
-    QSet<QString> seenUrls;
     QSet<QString> seenHosts;
-    int size = settings.beginReadArray("History");
-    completions.reserve(size);
-    for (int i = size - 1; i >= 0; --i) {
-        settings.setArrayIndex(i);
-        const QString urlValue = settings.value("url").toString();
+    const QStringList urls = HistoryStore::recentUrls();
+    completions.reserve(urls.size());
+    for (const QString &urlValue : urls) {
         if (urlValue.isEmpty() || urlValue == "about:blank") {
             continue;
         }
@@ -1138,12 +1076,8 @@ void MainWindow::refreshHistoryCompleter()
                 }
             }
         }
-        if (!seenUrls.contains(urlValue)) {
-            seenUrls.insert(urlValue);
-            completions.append(urlValue);
-        }
+        completions.append(urlValue);
     }
-    settings.endArray();
     historyCompletionModel->setStringList(completions);
     historyCompletionHosts = hosts;
 }

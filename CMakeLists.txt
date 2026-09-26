@@ -74,6 +74,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Widgets
     Network
     PrintSupport
+    Sql
     WebEngineWidgets
     LinguistTools
 )
@@ -92,6 +93,7 @@ set(SOURCES
     src/tabwidget.cpp
     src/addressbar.cpp
     src/downloadwidget.cpp
+    src/historystore.cpp
     src/singleinstance.cpp
 )
 
@@ -101,6 +103,7 @@ set(HEADERS
     src/tabwidget.h
     src/addressbar.h
     src/downloadwidget.h
+    src/historystore.h
     src/singleinstance.h
 )
 
@@ -131,6 +134,7 @@ target_link_libraries(mx-viewer
     Qt6::Widgets
     Qt6::Network
     Qt6::PrintSupport
+    Qt6::Sql
     Qt6::WebEngineWidgets
     Qt6Keychain::Qt6Keychain
 )

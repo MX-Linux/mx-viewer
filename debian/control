@@ -10,7 +10,7 @@ Rules-Requires-Root: no
 
 Package: mx-viewer
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, libqt6sql6-sqlite
 Provides: x-www-browser
 Description: Lightweight web browser for MX Linux
  MX Viewer is a lightweight browser that displays URLs in a clean window.
