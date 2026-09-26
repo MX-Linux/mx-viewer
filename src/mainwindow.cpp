@@ -68,6 +68,7 @@
 #include <QWebEngineScript>
 #include <QWebEngineView>
 #include <QStandardPaths>
+#include <QStyleOptionMenuItem>
 
 namespace {
 qint64 directorySize(const QString &path)
@@ -173,6 +174,34 @@ QIcon iconForBackground(const QIcon &icon, const QColor &background, const QColo
         tinted.addPixmap(pixmap);
     }
     return tinted;
+}
+
+// Styles like qt6gtk2 paint menus from the desktop theme, which can be dark while the palette stays light,
+// so ask the style what it paints behind an item and fall back to black or white text if the palette's
+// text would not show on it.
+std::pair<QColor, QColor> renderedMenuColors(QMenu *menu)
+{
+    menu->ensurePolished();
+    QImage image(64, 32, QImage::Format_ARGB32_Premultiplied);
+    image.fill(menu->palette().color(QPalette::Window));
+    QPainter painter(&image);
+    QStyleOption panel;
+    panel.initFrom(menu);
+    panel.rect = image.rect();
+    menu->style()->drawPrimitive(QStyle::PE_PanelMenu, &panel, &painter, menu);
+    QStyleOptionMenuItem item;
+    item.initFrom(menu);
+    item.state = QStyle::State_Enabled;
+    item.menuItemType = QStyleOptionMenuItem::Normal;
+    item.rect = image.rect();
+    menu->style()->drawControl(QStyle::CE_MenuItem, &item, &painter, menu);
+    painter.end();
+    const QColor background = image.pixelColor(image.rect().center());
+    QColor foreground = menu->palette().color(QPalette::WindowText);
+    if (std::abs(foreground.lightness() - background.lightness()) < 100) {
+        foreground = background.lightness() < 128 ? QColor(Qt::white) : QColor(Qt::black);
+    }
+    return {background, foreground};
 }
 } // namespace
 
@@ -1127,7 +1156,10 @@ void MainWindow::adaptIcons()
     adapt(searchBox, QPalette::Base, QPalette::Text);
     // Only the main menu's own items: bookmark icons are saved back to settings and must stay as fetched.
     if (QMenu *menu = menuButton->menu()) {
-        adapt(menu, QPalette::Window, QPalette::WindowText);
+        const auto [background, foreground] = renderedMenuColors(menu);
+        for (QAction *action : menu->actions()) {
+            action->setIcon(iconForBackground(action->icon(), background, foreground));
+        }
     }
 }
 
