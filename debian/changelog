@@ -34,7 +34,6 @@ mx-viewer (26.09) mx; urgency=medium
     the system title bar.
   * Tabs all have the same width and shrink together when the row is full;
     the "+" new tab button is always visible.
-  * Closing the last tab closes the window.
   * Bookmarks bar under the toolbar (Ctrl+Shift+B): drag the address or a
     link onto it to add a bookmark, drag bookmarks to reorder them, and
     right-click one to open it in a new tab, edit or delete it.
@@ -50,7 +49,6 @@ mx-viewer (26.09) mx; urgency=medium
     with "&" show correctly, and a possible crash when quitting is gone.
   * Web pages can no longer change your settings or clear your history.
   * When started as root, also give up root's group memberships.
-  * Add a manual page.
 
  -- Adrian <adrian@mxlinux.org>  Sat, 26 Sep 2026 13:12:28 -0400
 
