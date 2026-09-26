@@ -2576,6 +2576,9 @@ void MainWindow::handleFullScreenRequest(QWebEngineFullScreenRequest request, We
             showFullScreen();
         }
         toolBar->hide();
+        // Auto-hide would show the tab bar again as soon as a tab is added in the background.
+        // Turning it off shows the bar, so hide it afterwards.
+        tabWidget->setTabBarAutoHide(false);
         tabWidget->tabBar()->hide();
         statusBar()->hide();
     } else {
@@ -2605,7 +2608,8 @@ void MainWindow::restoreFromPageFullScreen()
     }
     pageFullScreen = false;
     pageFullScreenView = nullptr;
-    tabWidget->tabBar()->setVisible(tabWidget->count() > 1);
+    // Turning auto-hide back on also shows the tab bar again when there is more than one tab.
+    tabWidget->setTabBarAutoHide(true);
     if (!fullScreenBeforePage) {
         showNormal();
         if (!normalGeometry.isEmpty()) {
