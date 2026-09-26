@@ -165,6 +165,10 @@ target_compile_definitions(mx-viewer PRIVATE
     QT_DISABLE_DEPRECATED_BEFORE=0x060000
     VERSION="${PROJECT_VERSION}"
 )
+# QKeychain::isAvailable() is new in qtkeychain 0.14; its version macro in the header is not kept up to date.
+if(Qt6Keychain_VERSION VERSION_GREATER_EQUAL 0.14)
+    target_compile_definitions(mx-viewer PRIVATE HAVE_KEYCHAIN_IS_AVAILABLE)
+endif()
 
 # Release-specific optimizations
 if(CMAKE_BUILD_TYPE STREQUAL "Release")

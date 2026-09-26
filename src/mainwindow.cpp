@@ -467,8 +467,14 @@ void MainWindow::openClearDataDialog()
     for (auto *box : {historyBox, cookiesBox, cacheBox, permissionsBox}) {
         layout->addWidget(box);
     }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
     // QtWebEngine can only clear these completely.
     auto *note = new QLabel(tr("Cookies, cache and site permissions are always cleared for all time."), &dialog);
+#else
+    // Before Qt 6.8 site permissions are only kept until the page closes, so there is nothing to clear.
+    permissionsBox->hide();
+    auto *note = new QLabel(tr("Cookies and cache are always cleared for all time."), &dialog);
+#endif
     note->setWordWrap(true);
     note->setEnabled(false);
     layout->addWidget(note);
@@ -515,12 +521,14 @@ void MainWindow::openClearDataDialog()
     if (cacheBox->isChecked()) {
         webProfile->clearHttpCache();
     }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
     if (permissionsBox->isChecked()) {
         const auto permissions = webProfile->listAllPermissions();
         for (const auto &permission : permissions) {
             permission.reset();
         }
     }
+#endif
 }
 
 void MainWindow::cycleTab(int step)

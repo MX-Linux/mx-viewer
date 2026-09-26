@@ -25,8 +25,12 @@
 #include <QUrl>
 #include <QWebEngineCertificateError>
 #include <QWebEnginePage>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 #include <QWebEnginePermission>
+#endif
 #include <QWebEngineView>
+
+#include <functional>
 
 class QAuthenticator;
 class WebView;
@@ -44,8 +48,15 @@ protected:
 
 private:
     WebView *m_webView;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
     static QString permissionDescription(QWebEnginePermission::PermissionType type);
     void handlePermissionRequest(QWebEnginePermission permission);
+#else
+    static QString permissionDescription(QWebEnginePage::Feature feature);
+    void handleFeaturePermissionRequest(const QUrl &origin, QWebEnginePage::Feature feature);
+#endif
+    // Asks whether the site may do "what"; the answer is true when the user allows it.
+    void askPermission(const QUrl &origin, const QString &what, const std::function<void(bool)> &answer);
     void handleCertificateError(QWebEngineCertificateError error);
     void askCredentials(const QString &message, const QString &keychainKey, QAuthenticator *auth);
 };

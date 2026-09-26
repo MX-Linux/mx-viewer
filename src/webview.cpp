@@ -44,7 +44,9 @@
 #include <QTimer>
 #include <QWebEngineCertificateError>
 #include <QWebEngineContextMenuRequest>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 #include <QWebEnginePermission>
+#endif
 #include <QWebEngineProfile>
 #include <QWebEngineScript>
 
@@ -72,7 +74,11 @@ WebPage::WebPage(QWebEngineProfile *profile, WebView *parent)
         }
         mw->handleFullScreenRequest(std::move(request), m_webView);
     });
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
     connect(this, &QWebEnginePage::permissionRequested, this, &WebPage::handlePermissionRequest);
+#else
+    connect(this, &QWebEnginePage::featurePermissionRequested, this, &WebPage::handleFeaturePermissionRequest);
+#endif
     connect(this, &QWebEnginePage::certificateError, this, &WebPage::handleCertificateError);
     connect(this, &QWebEnginePage::authenticationRequired, this,
             [this](const QUrl &requestUrl, QAuthenticator *auth) {
@@ -116,7 +122,12 @@ void WebPage::askCredentials(const QString &message, const QString &keychainKey,
     layout->addRow(tr("Password:"), password);
     // Nothing is saved from a private window.
     const bool privateWindow = profile()->isOffTheRecord();
+#ifdef HAVE_KEYCHAIN_IS_AVAILABLE
     const bool canRemember = !privateWindow && QKeychain::isAvailable();
+#else
+    // Older qtkeychain cannot tell beforehand; a missing keyring just makes the jobs fail.
+    const bool canRemember = !privateWindow;
+#endif
     QCheckBox *remember {nullptr};
     if (!privateWindow) {
         remember = new QCheckBox(tr("Remember password"), dialog);
@@ -216,7 +227,13 @@ void WebPage::handleCertificateError(QWebEngineCertificateError error)
 {
     // Only offer an override for the page itself; broken subresources are just blocked.
     // Chromium remembers an accepted certificate for the rest of the session.
-    if (!error.isOverridable() || !error.isMainFrame()) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+    const bool mainFrame = error.isMainFrame();
+#else
+    // Older Qt does not say which frame failed; an error for the host being loaded is taken for the page.
+    const bool mainFrame = error.url().host() == requestedUrl().host();
+#endif
+    if (!error.isOverridable() || !mainFrame) {
         error.rejectCertificate();
         return;
     }
@@ -242,6 +259,7 @@ void WebPage::handleCertificateError(QWebEngineCertificateError error)
     box->open();
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 QString WebPage::permissionDescription(QWebEnginePermission::PermissionType type)
 {
     using Type = QWebEnginePermission::PermissionType;
@@ -280,8 +298,59 @@ void WebPage::handlePermissionRequest(QWebEnginePermission permission)
         permission.deny();
         return;
     }
-    const QString host = permission.origin().host().isEmpty() ? permission.origin().toDisplayString()
-                                                               : permission.origin().host();
+    // The profile stores the answer on disk for persistent permission types, so a site is asked only once.
+    askPermission(permission.origin(), what, [permission](bool allowed) {
+        if (allowed) {
+            permission.grant();
+        } else {
+            permission.deny();
+        }
+    });
+}
+#else
+QString WebPage::permissionDescription(QWebEnginePage::Feature feature)
+{
+    switch (feature) {
+    case MediaAudioCapture:
+        return tr("use your microphone");
+    case MediaVideoCapture:
+        return tr("use your camera");
+    case MediaAudioVideoCapture:
+        return tr("use your camera and microphone");
+    case DesktopVideoCapture:
+        return tr("share your screen");
+    case DesktopAudioVideoCapture:
+        return tr("share your screen and audio");
+    case MouseLock:
+        return tr("lock your mouse pointer");
+    case Geolocation:
+        return tr("know your location");
+    default:
+        break;
+    }
+    return {};
+}
+
+void WebPage::handleFeaturePermissionRequest(const QUrl &origin, QWebEnginePage::Feature feature)
+{
+    // Notifications and unknown features are declined quietly, as with the newer permission API.
+    const QString what = permissionDescription(feature);
+    if (what.isEmpty()) {
+        setFeaturePermission(origin, feature, PermissionDeniedByUser);
+        return;
+    }
+    QPointer<WebPage> self = this;
+    askPermission(origin, what, [self, origin, feature](bool allowed) {
+        if (self) {
+            self->setFeaturePermission(origin, feature, allowed ? PermissionGrantedByUser : PermissionDeniedByUser);
+        }
+    });
+}
+#endif
+
+void WebPage::askPermission(const QUrl &origin, const QString &what, const std::function<void(bool)> &answer)
+{
+    const QString host = origin.host().isEmpty() ? origin.toDisplayString() : origin.host();
     auto *box = new QMessageBox(QMessageBox::Question, tr("Permission request"), tr("%1 wants to %2.").arg(host, what),
                                 QMessageBox::NoButton, m_webView);
     box->setTextFormat(Qt::PlainText);
@@ -289,13 +358,8 @@ void WebPage::handlePermissionRequest(QWebEnginePermission permission)
     auto *block = box->addButton(tr("Block"), QMessageBox::RejectRole);
     box->setDefaultButton(block);
     box->setAttribute(Qt::WA_DeleteOnClose);
-    // The profile stores the answer on disk for persistent permission types, so a site is asked only once.
-    connect(box, &QMessageBox::finished, this, [box, block, permission] {
-        if (box->clickedButton() && box->clickedButton() != block) {
-            permission.grant();
-        } else {
-            permission.deny();
-        }
+    connect(box, &QMessageBox::finished, this, [box, block, answer] {
+        answer(box->clickedButton() && box->clickedButton() != block);
     });
     box->open();
 }

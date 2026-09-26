@@ -26,7 +26,8 @@ jobs:
             qt6-base-dev-tools \
             qt6-tools-dev \
             qt6-tools-dev-tools \
-            qt6-webengine-dev
+            qt6-webengine-dev \
+            qtkeychain-qt6-dev
 
       - name: Install GCC 14
         if: matrix.compiler == 'gcc'
@@ -74,7 +75,8 @@ jobs:
             qt6-base-dev-tools \
             qt6-tools-dev \
             qt6-tools-dev-tools \
-            qt6-webengine-dev
+            qt6-webengine-dev \
+            qtkeychain-qt6-dev
 
       - name: Build binary package (unsigned)
         run: debuild -us -uc -b
