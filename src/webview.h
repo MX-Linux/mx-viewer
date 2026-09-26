@@ -66,6 +66,10 @@ public:
     // Reader view is generated HTML shown in place of the page, with the page's URL kept as base.
     [[nodiscard]] bool isReaderMode() const { return readerMode; }
     void showReaderPage(const QString &html);
+    // A crash notice or reader view: generated HTML shown under the page's own URL.
+    [[nodiscard]] bool isGeneratedPage() const;
+    // Like reload(), but a generated page is replaced by a fresh load of the real page.
+    void reloadPage();
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
@@ -85,7 +89,6 @@ private:
     int index;
     int lastHistoryIndex = -1;
     QUrl lastHistoryUrl;
-    bool generatedPageShown {};
     bool readerMode {};
     QWidget *m_currentProxy = nullptr;
     QWebEngineProfile *profile {};

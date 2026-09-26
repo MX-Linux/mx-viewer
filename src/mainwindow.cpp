@@ -2884,7 +2884,7 @@ void MainWindow::reloadCurrentView()
         renderSettingsPage(view);
         return;
     }
-    view->reload();
+    view->reloadPage();
 }
 
 // display progressbar while loading page

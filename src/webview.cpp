@@ -284,7 +284,6 @@ void WebView::handleRenderProcessTerminated(QWebEnginePage::RenderProcessTermina
                              "<h2>%1</h2><p>%2</p><p><a href=\"%3\">%4</a></p></body></html>")
                   .arg(tr("This tab crashed").toHtmlEscaped(),
                        tr("The page stopped unexpectedly.").toHtmlEscaped(), link, tr("Reload").toHtmlEscaped());
-        generatedPageShown = true;
         readerMode = false;
         // Keep the original URL as base so the address bar still shows it.
         setHtml(html, crashedUrl);
@@ -293,9 +292,26 @@ void WebView::handleRenderProcessTerminated(QWebEnginePage::RenderProcessTermina
 
 void WebView::showReaderPage(const QString &html)
 {
-    generatedPageShown = true;
     readerMode = true;
     setHtml(html, url());
+}
+
+bool WebView::isGeneratedPage() const
+{
+    // setHtml() loads a data: URL while url() keeps the base URL, and this holds after back, forward
+    // and reload too. Internal mx-* pages are generated the same way but regenerate themselves.
+    const QString scheme = url().scheme();
+    return history()->currentItem().url().scheme() == "data" && scheme != "data" && scheme != "mx-history"
+           && scheme != "mx-settings" && scheme != "mx-newtab";
+}
+
+void WebView::reloadPage()
+{
+    if (isGeneratedPage()) {
+        setUrl(url());
+    } else {
+        reload();
+    }
 }
 
 void WebView::contextMenuEvent(QContextMenuEvent *event)
@@ -419,8 +435,7 @@ WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
 void WebView::handleLoadFinished(bool ok)
 {
     // Generated pages (crash notice, reader view) are not visits; any other load leaves reader view.
-    if (generatedPageShown) {
-        generatedPageShown = false;
+    if (isGeneratedPage()) {
         return;
     }
     readerMode = false;

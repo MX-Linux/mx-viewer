@@ -226,7 +226,7 @@ void TabWidget::showTabMenu(const QPoint &pos)
     menu.addAction(tr("New tab"), this, &TabWidget::newTabButtonClicked);
     QPointer<WebView> view = webViewAt(index);
     if (view) {
-        menu.addAction(tr("Reload tab"), view.data(), &QWebEngineView::reload);
+        menu.addAction(tr("Reload tab"), view.data(), &WebView::reloadPage);
         menu.addAction(tr("Duplicate tab"), this, [this, view] {
             if (view) {
                 duplicateTab(indexOf(view));
@@ -290,12 +290,17 @@ void TabWidget::duplicateTab(int index)
     }
     auto *copy = new WebView(profile);
     addNewTab(copy, true);
-    // Copying the history restores back/forward and loads the current entry.
-    QByteArray data;
-    QDataStream out(&data, QIODevice::WriteOnly);
-    out << *source->history();
-    QDataStream in(&data, QIODevice::ReadOnly);
-    in >> *copy->history();
+    if (source->isGeneratedPage()) {
+        // The history would reload the generated HTML as if it were the page itself.
+        copy->setUrl(source->url());
+    } else {
+        // Copying the history restores back/forward and loads the current entry.
+        QByteArray data;
+        QDataStream out(&data, QIODevice::WriteOnly);
+        out << *source->history();
+        QDataStream in(&data, QIODevice::ReadOnly);
+        in >> *copy->history();
+    }
     tabBar()->moveTab(indexOf(copy), index + 1);
     normalizePinnedOrder();
 }
