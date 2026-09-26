@@ -48,6 +48,8 @@ public:
     ~MainWindow() override;
     // Opens a URL passed on by a later "mx-viewer [URL]" launch; empty opens a new tab.
     static void openFromOtherInstance(const QString &argument);
+    // Set once the application is quitting, when closing a window can no longer be refused.
+    static void setQuitting();
 
 public slots:
     void listHistory();
@@ -121,6 +123,7 @@ private:
     bool restoredTabs {};
     bool privateWindow {};
     static QPointer<MainWindow> lastActiveWindow;
+    static inline bool quitting {false};
     QHash<QString, int> privateZoom;
     bool pageFullScreen {};
     bool fullScreenBeforePage {};

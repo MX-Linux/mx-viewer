@@ -23,6 +23,8 @@
 #include "downloadwidget.h"
 #include "ui_downloadwidget.h"
 
+#include <algorithm>
+
 DownloadWidget::DownloadWidget(QWidget* parent)
     : QWidget(parent),
       ui(new Ui::DownloadWidget)
@@ -65,11 +67,13 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download)
     }
     raise();
     download->accept();
+    downloads.append(download);
 
     connect(pushButton, &QPushButton::pressed, this, [this, download, pushButton, downloadLabel, progressBar] {
         if (download->state() == QWebEngineDownloadRequest::DownloadInProgress) {
             download->cancel();
         } else {
+            downloads.removeAll(download);
             ui->gridLayout->removeWidget(downloadLabel);
             ui->gridLayout->removeWidget(pushButton);
             ui->gridLayout->removeWidget(progressBar);
@@ -83,6 +87,13 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download)
             [download, pushButton, progressBar] { updateDownload(download, pushButton, progressBar); });
     connect(download, &QWebEngineDownloadRequest::stateChanged, this,
             [download, pushButton, progressBar] { updateDownload(download, pushButton, progressBar); });
+}
+
+int DownloadWidget::activeDownloadCount() const
+{
+    return static_cast<int>(std::count_if(downloads.cbegin(), downloads.cend(), [](const auto& download) {
+        return download && download->state() == QWebEngineDownloadRequest::DownloadInProgress;
+    }));
 }
 
 QString DownloadWidget::withUnit(qreal bytes)

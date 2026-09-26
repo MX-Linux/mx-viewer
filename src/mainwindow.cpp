@@ -374,6 +374,8 @@ void MainWindow::init()
 
 MainWindow::~MainWindow()
 {
+    // Top-level window without a parent, so it is not deleted with this one.
+    delete downloadWidget;
     if (privateWindow) {
         return;
     }
@@ -3054,8 +3056,32 @@ void MainWindow::resizeEvent(QResizeEvent * /*event*/)
     }
 }
 
-void MainWindow::closeEvent(QCloseEvent * /*event*/)
+void MainWindow::setQuitting()
 {
+    quitting = true;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    // Downloads belong to this window's profile, so closing the window cancels them.
+    if (const int active = downloadWidget->activeDownloadCount(); active > 0 && !quitting) {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle(tr("Downloads in progress"));
+        box.setText(tr("%n download(s) still in progress. Closing this window will cancel them.", nullptr, active));
+        QPushButton *closeButton = box.addButton(tr("Cancel downloads and close"), QMessageBox::DestructiveRole);
+        QPushButton *keepButton = box.addButton(tr("Keep window open"), QMessageBox::RejectRole);
+        box.setDefaultButton(keepButton);
+        box.setEscapeButton(keepButton);
+        box.exec();
+        if (box.clickedButton() != closeButton) {
+            event->ignore();
+            downloadWidget->show();
+            downloadWidget->raise();
+            downloadWidget->activateWindow();
+            return;
+        }
+    }
     downloadWidget->close();
     if (clearCookiesAtExit) {
         webProfile->cookieStore()->deleteAllCookies();

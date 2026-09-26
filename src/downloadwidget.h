@@ -36,6 +36,8 @@ public:
     explicit DownloadWidget(QWidget* parent = nullptr);
     ~DownloadWidget() override;
 
+    // Downloads from this window that are still transferring; they stop when the window closes.
+    [[nodiscard]] int activeDownloadCount() const;
     static QString withUnit(qreal bytes);
     static QString timeUnit(int seconds);
     void downloadRequested(QWebEngineDownloadRequest* download);
@@ -47,4 +49,5 @@ protected:
 private:
     QSettings settings;
     Ui::DownloadWidget* ui;
+    QList<QPointer<QWebEngineDownloadRequest>> downloads;
 };

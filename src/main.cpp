@@ -209,6 +209,7 @@ int main(int argc, char *argv[])
     // Ensure proper cleanup on application exit
     // Close every browser window (including private ones) so each saves its state
     QObject::connect(&app, &QApplication::aboutToQuit, [] {
+        MainWindow::setQuitting();
         const auto widgets = QApplication::topLevelWidgets();
         for (auto *widget : widgets) {
             if (qobject_cast<MainWindow *>(widget) && !widget->isHidden()) {
