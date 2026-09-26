@@ -1,0 +1,46 @@
+# Maintainer: Adrian <adrian@mxlinux.org>
+
+# OBS extracts this PKGBUILD and the Debian source tarball from the same git
+# revision. Keep pkgver in step with debian/changelog and debs/.
+pkgname=mx-viewer
+pkgver=26.09
+pkgrel=1
+pkgdesc="Lightweight Qt6 WebEngine browser for MX Linux"
+arch=('x86_64')
+url="https://github.com/MX-Linux/mx-viewer"
+license=('GPL3')
+depends=('qt6-webengine' 'qt6-base' 'qtkeychain-qt6')
+makedepends=('cmake' 'ninja' 'qt6-tools')
+provides=('x-www-browser')
+source=("${pkgname}_${pkgver}.tar.xz")
+sha256sums=('SKIP')
+
+_srcdir=src
+
+build() {
+    cd "${srcdir}/${_srcdir}"
+    # The current signed source tarball predates PROJECT_VERSION_OVERRIDE.
+    # Supply its dpkg-parsechangelog call until the next release refreshes debs/.
+    mkdir -p "${srcdir}/version-shim"
+    printf '#!/bin/sh\nprintf "%%s\\n" "%s"\n' "${pkgver}" \
+        > "${srcdir}/version-shim/dpkg-parsechangelog"
+    chmod 755 "${srcdir}/version-shim/dpkg-parsechangelog"
+    export PATH="${srcdir}/version-shim:${PATH}"
+    cmake -S . -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DPROJECT_VERSION_OVERRIDE="${pkgver}"
+    cmake --build build --parallel
+}
+
+package() {
+    cd "${srcdir}/${_srcdir}"
+    install -Dm755 build/mx-viewer "${pkgdir}/usr/bin/mx-viewer"
+    install -Dm644 -t "${pkgdir}/usr/share/mx-viewer/locale/" build/*.qm
+    install -Dm644 mx-viewer.desktop "${pkgdir}/usr/share/applications/mx-viewer.desktop"
+    install -Dm644 mx-viewer.png "${pkgdir}/usr/share/icons/hicolor/24x24/apps/mx-viewer.png"
+    install -Dm644 mx-viewer.png "${pkgdir}/usr/share/pixmaps/mx-viewer.png"
+    install -Dm644 debian/mx-viewer.1 "${pkgdir}/usr/share/man/man1/mx-viewer.1"
+    install -Dm644 help/license.html "${pkgdir}/usr/share/doc/mx-viewer/license.html"
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

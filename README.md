@@ -97,6 +97,24 @@ make
 dpkg-buildpackage -b -uc -us
 ```
 
+### Arch Package Build
+
+`arch/PKGBUILD` builds from the committed `debs/mx-viewer_26.09.tar.xz` source
+archive. On an Arch system, place the PKGBUILD and matching archive in one
+directory, then run `makepkg -si`. The archive version must match `pkgver`.
+
+OBS uses the existing `home:mx-packaging/mx-viewer` package. Its `_service`
+must extract `arch/PKGBUILD` alongside `debs/*.dsc` and `debs/*.tar.xz`:
+
+```xml
+<param name="extract">arch/PKGBUILD</param>
+```
+
+Enable the `Arch` repository for that OBS package with
+`<enable repository="Arch"/>` in its package metadata. Commit and push the
+recipe before triggering the OBS source service. The release workflow keeps
+`pkgver` in step with `debian/changelog` when it refreshes `debs/`.
+
 ## Architecture
 
 - **MainWindow**: Primary application window with toolbar and tab management

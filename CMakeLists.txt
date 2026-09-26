@@ -22,17 +22,21 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-# Get version from debian/changelog
-execute_process(
-    COMMAND dpkg-parsechangelog -SVersion
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE PROJECT_VERSION_FROM_CHANGELOG
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    RESULT_VARIABLE DPKG_RESULT
-)
+# Arch packaging supplies the version directly because dpkg is unavailable there.
+if(PROJECT_VERSION_OVERRIDE)
+    set(PROJECT_VERSION_FROM_CHANGELOG "${PROJECT_VERSION_OVERRIDE}")
+else()
+    execute_process(
+        COMMAND dpkg-parsechangelog -SVersion
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE PROJECT_VERSION_FROM_CHANGELOG
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE DPKG_RESULT
+    )
 
-if(NOT DPKG_RESULT EQUAL 0)
-    message(FATAL_ERROR "Failed to get version from debian/changelog using dpkg-parsechangelog")
+    if(NOT DPKG_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to get version from debian/changelog using dpkg-parsechangelog")
+    endif()
 endif()
 
 project(mx-viewer
