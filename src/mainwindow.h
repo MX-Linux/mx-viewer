@@ -164,6 +164,7 @@ private:
     void addHelpMenuActions(QMenu *menu);
     void setupMenuConnections(QMenu *menu);
     void buildMenu();
+    void adaptIcons();
     void centerWindow();
     void clearHistoryEntries();
     void connectAddress(const QAction *action, const QMenu *menu);

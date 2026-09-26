@@ -22,6 +22,7 @@
 #include "mainwindow.h"
 
 #include <algorithm>
+#include <cstdlib>
 
 #include <QAbstractItemView>
 #include <QBuffer>
@@ -47,6 +48,7 @@
 #include <QtGlobal>
 #include <memory>
 #include <QListWidget>
+#include <QPainter>
 #include <QPrintDialog>
 #include <QPrinter>
 #include <QMessageBox>
@@ -120,6 +122,53 @@ bool removeCachePath(const QString &path)
     }
     QDir dir(path);
     return dir.removeRecursively();
+}
+
+// Single-grey icons are drawn for one kind of panel (dark on light, like most themes and the bundled
+// backups), so they vanish on the other; repaint those in the panel's text color. Colored icons are
+// left alone.
+QIcon iconForBackground(const QIcon &icon, const QColor &background, const QColor &foreground)
+{
+    if (icon.isNull()) {
+        return icon;
+    }
+    const QImage sample = icon.pixmap(32).toImage().convertToFormat(QImage::Format_ARGB32);
+    int darkest {255};
+    int lightest {0};
+    for (int y = 0; y < sample.height(); ++y) {
+        for (int x = 0; x < sample.width(); ++x) {
+            const QColor color = QColor::fromRgba(sample.pixel(x, y));
+            if (color.alpha() < 64) {
+                continue;
+            }
+            if (color.hsvSaturation() > 60 && color.value() > 40) {
+                return icon;
+            }
+            darkest = std::min(darkest, color.lightness());
+            lightest = std::max(lightest, color.lightness());
+        }
+    }
+    // Nothing drawn, or a glyph over a filled shape of another grey, which a single color would erase.
+    if (darkest > lightest || lightest - darkest > 80) {
+        return icon;
+    }
+    const int mean = (darkest + lightest) / 2;
+    if (std::abs(mean - background.lightness()) >= std::abs(mean - foreground.lightness())) {
+        return icon;
+    }
+    QIcon tinted;
+    for (const int size : {16, 22, 24, 32, 48, 64}) {
+        QPixmap pixmap = icon.pixmap(size);
+        if (pixmap.isNull()) {
+            continue;
+        }
+        QPainter painter(&pixmap);
+        painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+        painter.fillRect(pixmap.rect(), foreground);
+        painter.end();
+        tinted.addPixmap(pixmap);
+    }
+    return tinted;
 }
 } // namespace
 
@@ -1013,7 +1062,26 @@ void MainWindow::addToolbar()
     addZoomActions();
     setupMenuButton();
     buildMenu();
+    adaptIcons();
     toolBar->show();
+}
+
+// Run again whenever the palette or the tab's page actions change, since icons follow the panel.
+void MainWindow::adaptIcons()
+{
+    const auto adapt = [](QWidget *widget, QPalette::ColorRole background, QPalette::ColorRole foreground) {
+        const QPalette palette = widget->palette();
+        for (QAction *action : widget->actions()) {
+            action->setIcon(iconForBackground(action->icon(), palette.color(background), palette.color(foreground)));
+        }
+    };
+    adapt(toolBar, QPalette::Window, QPalette::WindowText);
+    adapt(addressBar, QPalette::Base, QPalette::Text);
+    adapt(searchBox, QPalette::Base, QPalette::Text);
+    // Only the main menu's own items: bookmark icons are saved back to settings and must stay as fetched.
+    if (QMenu *menu = menuButton->menu()) {
+        adapt(menu, QPalette::Window, QPalette::WindowText);
+    }
 }
 
 void MainWindow::addNavigationActions()
@@ -1572,6 +1640,14 @@ void MainWindow::tabChanged()
         reloadAction->setToolTip(reload->toolTip());
         reloadAction->setEnabled(reload->isEnabled());
     }
+    // Each tab brings its own page actions with the theme's icons.
+    const QPalette palette = toolBar->palette();
+    for (QAction *action : {backAction, forwardAction, stopAction, reloadAction}) {
+        if (action) {
+            action->setIcon(iconForBackground(action->icon(), palette.color(QPalette::Window),
+                                              palette.color(QPalette::WindowText)));
+        }
+    }
     addressBar->setText(currentWebView()->url().scheme() == "mx-newtab" ? QString() : currentWebView()->url().toString());
     if (addressBar->text().isEmpty()) {
         addressBar->setFocus();
@@ -1658,6 +1734,9 @@ void MainWindow::changeEvent(QEvent *event)
 {
     if (event->type() == QEvent::ActivationChange && isActiveWindow() && !privateWindow) {
         lastActiveWindow = this;
+    }
+    if (event->type() == QEvent::PaletteChange && menuButton) {
+        adaptIcons();
     }
     QMainWindow::changeEvent(event);
 }
