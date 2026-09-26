@@ -35,6 +35,9 @@
 namespace
 {
 constexpr int connectTimeoutMs {1000};
+// Longer, since the running instance answers from its GUI thread.
+constexpr int ackTimeoutMs {3000};
+constexpr char ack[] {"ok\n"};
 constexpr qint64 maxRequestSize {64 * 1024};
 
 // The socket goes only in a runtime directory owned by this user, never in a shared place like /tmp
@@ -66,6 +69,8 @@ void readRequest(QLocalSocket *socket, const std::function<void(const QString &)
     }
     // One request per connection.
     const QString argument = QString::fromUtf8(socket->readLine(maxRequestSize)).trimmed();
+    // Tell the sender the request was taken, so it can exit; disconnecting flushes this first.
+    socket->write(ack);
     socket->disconnectFromServer();
     handler(argument);
 }
@@ -93,11 +98,14 @@ bool SingleInstance::forward(const QString &argument)
     if (!socket.waitForBytesWritten(connectTimeoutMs)) {
         return false;
     }
-    socket.disconnectFromServer();
-    if (socket.state() != QLocalSocket::UnconnectedState) {
-        socket.waitForDisconnected(connectTimeoutMs);
+    // A connection can succeed through the listen backlog even if the instance is hung, so only its
+    // answer counts as delivered.
+    while (!socket.canReadLine()) {
+        if (!socket.waitForReadyRead(ackTimeoutMs)) {
+            return false;
+        }
     }
-    return true;
+    return socket.readLine() == ack;
 }
 
 void SingleInstance::listen(QObject *parent, const std::function<void(const QString &)> &handler)
