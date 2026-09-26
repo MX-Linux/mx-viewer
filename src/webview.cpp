@@ -467,8 +467,12 @@ void WebView::handleIconChanged()
     if (buffer.open(QIODevice::WriteOnly)) {
         iconPixmap.save(&buffer, "PNG");
     }
-    historyLog.beginWriteArray("History");
-    historyLog.setArrayIndex(lastHistoryIndex);
-    historyLog.setValue("icon", iconByteArray);
-    historyLog.endArray();
+    // Address the entry directly: writing through an array would make endArray() reset History/size to
+    // this index and drop newer entries. Other windows may have rewritten the array, so check it is ours.
+    const QString entry = QStringLiteral("History/%1/").arg(lastHistoryIndex + 1);
+    if (historyLog.value(entry + "url").toString() != lastHistoryUrl.toString()) {
+        lastHistoryIndex = -1;
+        return;
+    }
+    historyLog.setValue(entry + "icon", iconByteArray);
 }
