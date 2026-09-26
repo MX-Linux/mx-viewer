@@ -50,6 +50,7 @@ public:
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 signals:

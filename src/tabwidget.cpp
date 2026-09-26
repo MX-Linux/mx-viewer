@@ -21,6 +21,8 @@
  **********************************************************************/
 #include "tabwidget.h"
 
+#include <algorithm>
+
 #include <QApplication>
 #include <QDataStream>
 #include <QEvent>
@@ -86,6 +88,59 @@ protected:
         style()->drawPrimitive(QStyle::PE_IndicatorTabClose, &opt, &painter, this);
     }
 };
+
+// Tabs share one width whatever their titles, so a page changing its title does not resize its tab.
+// They stay at the preferred width until the row is full, then shrink together down to the minimum,
+// after which the bar scrolls. Pinned tabs keep their icon-only size.
+class TabBar : public QTabBar
+{
+public:
+    explicit TabBar(TabWidget *parent)
+        : QTabBar(parent),
+          tabWidget(parent)
+    {
+        setElideMode(Qt::ElideRight);
+    }
+    // Lays the tabs out again for a new available width.
+    void relayout()
+    {
+        // Setting the elide mode recomputes the tab sizes; QTabBar has no other public way to do it.
+        setElideMode(Qt::ElideRight);
+    }
+
+protected:
+    [[nodiscard]] QSize tabSizeHint(int index) const override
+    {
+        QSize size = QTabBar::tabSizeHint(index);
+        if (tabWidget->isPinned(index)) {
+            return size;
+        }
+        int pinnedWidth = 0;
+        int unpinned = 0;
+        for (int i = 0; i < count(); ++i) {
+            if (tabWidget->isPinned(i)) {
+                pinnedWidth += QTabBar::tabSizeHint(i).width();
+            } else {
+                ++unpinned;
+            }
+        }
+        const int available = tabWidget->width() - newTabButtonSpace - pinnedWidth;
+        const int width = unpinned > 0 ? available / unpinned : preferredWidth;
+        size.setWidth(std::clamp(width, minimumWidth, preferredWidth));
+        return size;
+    }
+    [[nodiscard]] QSize minimumTabSizeHint(int index) const override
+    {
+        return tabSizeHint(index);
+    }
+
+private:
+    TabWidget *tabWidget;
+    static constexpr int preferredWidth {220};
+    static constexpr int minimumWidth {100};
+    // Room for the "+" button after the last tab.
+    static constexpr int newTabButtonSpace {40};
+};
 } // namespace
 
 TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
@@ -93,6 +148,7 @@ TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
       newTabButton(new QPushButton("+", this)),
       profile(profile)
 {
+    setTabBar(new TabBar(this));
     setTabBarAutoHide(true);
     setTabsClosable(true);
     setMovable(true);
@@ -363,6 +419,12 @@ bool TabWidget::eventFilter(QObject *obj, QEvent *event)
         QTimer::singleShot(0, this, &TabWidget::normalizePinnedOrder);
     }
     return QTabWidget::eventFilter(obj, event);
+}
+
+void TabWidget::resizeEvent(QResizeEvent *event)
+{
+    QTabWidget::resizeEvent(event);
+    static_cast<TabBar *>(tabBar())->relayout();
 }
 
 void TabWidget::handleCurrentChanged(int index)
