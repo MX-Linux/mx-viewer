@@ -590,13 +590,14 @@ void MainWindow::addNewTab(const QUrl &url, bool makeCurrent)
     view->show();
     if (makeCurrent) {
         QTimer::singleShot(0, this, &MainWindow::focusAddressBarIfBlank);
-        QMetaObject::Connection once;
-        once = connect(view, &QWebEngineView::loadFinished, this, [this, view, once](bool) mutable {
-            if (view == currentWebView()) {
-                focusAddressBarIfBlank();
-            }
-            disconnect(once);
-        });
+        connect(
+            view, &QWebEngineView::loadFinished, this,
+            [this, view](bool) {
+                if (view == currentWebView()) {
+                    focusAddressBarIfBlank();
+                }
+            },
+            Qt::SingleShotConnection);
     }
 }
 
