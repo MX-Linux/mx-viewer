@@ -78,6 +78,7 @@ private:
     AddressBar *addressBar {};
     DownloadWidget *downloadWidget {};
     QAction *addBookmark {};
+    QAction *clearDataAction {};
     QAction *menuButton {};
     QAction *reloadAction {};
     QAction *homeAction {};

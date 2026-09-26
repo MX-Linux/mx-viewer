@@ -310,7 +310,8 @@ void MainWindow::addActions()
     addAction(previousTabAction);
     connect(previousTabAction, &QAction::triggered, this, [this] { cycleTab(-1); });
 
-    auto *clearDataAction = new QAction(this);
+    // Also shown in the History menu; one action, so the shortcut is never registered twice.
+    clearDataAction = new QAction(QIcon::fromTheme("edit-clear-history"), tr("Clear browsing data..."), this);
     clearDataAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_Delete);
     addAction(clearDataAction);
     connect(clearDataAction, &QAction::triggered, this, &MainWindow::openClearDataDialog);
@@ -728,10 +729,7 @@ void MainWindow::listHistory()
     showHistory->setShortcut(Qt::CTRL | Qt::Key_H);
     connect(showHistory, &QAction::triggered, this, &MainWindow::openHistoryPage);
     history->addAction(showHistory);
-    auto *clearData = new QAction(QIcon::fromTheme("edit-clear-history"), tr("Clear browsing data..."), history);
-    clearData->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_Delete);
-    connect(clearData, &QAction::triggered, this, &MainWindow::openClearDataDialog);
-    history->addAction(clearData);
+    history->addAction(clearDataAction);
     history->addSeparator();
     auto *recentTitle = new QWidgetAction(history);
     auto *recentLabel = new QLabel(tr("Recent tabs"), history);
