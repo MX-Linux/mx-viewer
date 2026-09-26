@@ -93,6 +93,7 @@ set(SOURCES
     src/tabwidget.cpp
     src/addressbar.cpp
     src/bookmarkbar.cpp
+    src/findbar.cpp
     src/downloadwidget.cpp
     src/historystore.cpp
     src/singleinstance.cpp
@@ -104,6 +105,7 @@ set(HEADERS
     src/tabwidget.h
     src/addressbar.h
     src/bookmarkbar.h
+    src/findbar.h
     src/downloadwidget.h
     src/historystore.h
     src/singleinstance.h

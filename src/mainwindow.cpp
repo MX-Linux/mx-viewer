@@ -20,6 +20,7 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include "mainwindow.h"
+#include "findbar.h"
 #include "historystore.h"
 
 #include <algorithm>
@@ -292,7 +293,7 @@ QPointer<MainWindow> MainWindow::lastActiveWindow;
 MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
     : QMainWindow(parent),
       downloadWidget {new DownloadWidget},
-      searchBox {new QLineEdit(this)},
+      findBar {new FindBar(this)},
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},
       webProfile {new QWebEngineProfile("mx-viewer", this)},
@@ -320,7 +321,7 @@ MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
 MainWindow::MainWindow(const QUrl &url, bool privateMode, bool restoreTabs, QWidget *parent)
     : QMainWindow(parent),
       downloadWidget {new DownloadWidget},
-      searchBox {new QLineEdit(this)},
+      findBar {new FindBar(this)},
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},
       // A profile without a storage name is off-the-record: cookies, cache and permissions stay in memory.
@@ -1453,7 +1454,7 @@ void MainWindow::addToolbar()
     addNavigationActions();
     addHomeAction();
     setupAddressBar();
-    setupSearchBox();
+    setupFindBar();
     addZoomActions();
     setupMenuButton();
     buildMenu();
@@ -1472,7 +1473,6 @@ void MainWindow::adaptIcons()
     };
     adapt(toolBar, QPalette::Window, QPalette::WindowText);
     adapt(addressBar, QPalette::Base, QPalette::Text);
-    adapt(searchBox, QPalette::Base, QPalette::Text);
     if (QMenu *menu = menuButton->menu()) {
         adaptMenuIcons(menu);
     }
@@ -1608,25 +1608,12 @@ void MainWindow::setupAddressBar()
     toolBar->addWidget(addressBar);
 }
 
-void MainWindow::setupSearchBox()
+void MainWindow::setupFindBar()
 {
-    searchBox->setPlaceholderText(tr("search in page"));
-    searchBox->setClearButtonEnabled(true);
-    searchBox->setMaximumWidth(searchWidth);
-    searchBox->addAction(QIcon::fromTheme("search", QIcon(":/icons/system-search.png")), QLineEdit::LeadingPosition);
-    connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::findForward);
-    connect(searchBox, &QLineEdit::returnPressed, this, &MainWindow::findForward);
-    toolBar->addWidget(searchBox);
-    findMatchCase = new QToolButton(this);
-    findMatchCase->setText(QStringLiteral("Aa"));
-    findMatchCase->setToolTip(tr("Match case"));
-    findMatchCase->setCheckable(true);
-    findMatchCase->setAutoRaise(true);
-    connect(findMatchCase, &QToolButton::toggled, this, &MainWindow::findForward);
-    toolBar->addWidget(findMatchCase);
-    findMatches = new QLabel(this);
-    findMatchesAction = toolBar->addWidget(findMatches);
-    findMatchesAction->setVisible(false);
+    connect(findBar, &FindBar::findRequested, this, [this](bool backward) {
+        findInPage(backward ? QWebEnginePage::FindBackward : QWebEnginePage::FindFlags {});
+    });
+    connect(findBar, &FindBar::closed, this, &MainWindow::closeFindBar);
 }
 
 void MainWindow::addZoomActions()
@@ -1824,12 +1811,12 @@ void MainWindow::openQuickInfo()
              {tr("Alt+←, Alt+→"), tr("Back/Forward")},
              {tr("Alt+Home"), tr("Home page")},
              {tr("Ctrl+R, F5"), tr("Reload")},
-             {tr("Esc"), tr("Stop loading/clear Find field")},
+             {tr("Esc"), tr("Stop loading/close Find bar")},
          }},
         {tr("Page"),
          {
-             {tr("Ctrl+F, F3, /"), tr("Find")},
-             {tr("Shift+F3"), tr("Find previous")},
+             {tr("Ctrl+F, /"), tr("Find")},
+             {tr("F3, Shift+F3"), tr("Find next/previous")},
              {tr("Ctrl++, Ctrl+-"), tr("Zoom in/out")},
              {tr("Ctrl+0"), tr("Reset zoom")},
              {tr("F9, Ctrl+Alt+R"), tr("Reader view")},
@@ -2190,9 +2177,13 @@ void MainWindow::showFullScreenNotification()
 
 void MainWindow::tabChanged()
 {
-    // The match count belongs to the previous tab's search.
-    if (findMatchesAction) {
-        findMatchesAction->setVisible(false);
+    // The search follows the current tab; the previous one keeps no highlights.
+    if (findBar && findBar->isVisible()) {
+        if (findView && findView != currentWebView()) {
+            findView->findText(QString());
+        }
+        findBar->setPage(currentWebView());
+        findForward();
     }
     if (pageFullScreen && currentWebView() != pageFullScreenView) {
         exitPageFullScreen();
@@ -3487,31 +3478,51 @@ void MainWindow::findForward()
 
 void MainWindow::findInPage(QWebEnginePage::FindFlags flags)
 {
-    searchBox->setFocus();
     auto *view = currentWebView();
     if (!view) {
         return;
     }
-    if (findMatchCase->isChecked()) {
+    if (!findBar->isVisible()) {
+        openFindBar();
+        if (findBar->text().isEmpty()) {
+            return;
+        }
+    }
+    if (findBar->isCaseSensitive()) {
         flags |= QWebEnginePage::FindCaseSensitively;
     }
-    const QString text = searchBox->text();
+    const QString text = findBar->text();
+    findView = view;
     QPointer<MainWindow> self = this;
     QPointer<WebView> guard = view;
     view->findText(text, flags, [this, self, guard, text](const QWebEngineFindTextResult &result) {
         // Ignore results for a tab that is no longer shown or a search that was replaced.
-        if (!self || !guard || guard != currentWebView() || text != searchBox->text()) {
+        if (!self || !guard || guard != currentWebView() || text != findBar->text() || !findBar->isVisible()) {
             return;
         }
         if (text.isEmpty()) {
-            findMatchesAction->setVisible(false);
+            findBar->clearResult();
             return;
         }
-        findMatches->setText(result.numberOfMatches() == 0
-                                 ? tr("No matches")
-                                 : tr("%1 of %2").arg(result.activeMatch()).arg(result.numberOfMatches()));
-        findMatchesAction->setVisible(true);
+        findBar->setResult(result.activeMatch(), result.numberOfMatches());
     });
+}
+
+void MainWindow::openFindBar()
+{
+    findBar->open(currentWebView());
+}
+
+void MainWindow::closeFindBar()
+{
+    findBar->hide();
+    findBar->clearResult();
+    if (findView) {
+        findView->findText(QString());
+    }
+    if (auto *view = currentWebView()) {
+        view->setFocus();
+    }
 }
 
 // process keystrokes
@@ -3521,7 +3532,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         openHistoryPage();
         return;
     }
-    if (event->matches(QKeySequence::FindNext) || event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash) {
+    if (event->matches(QKeySequence::Find) || event->key() == Qt::Key_Slash) {
+        openFindBar();
+        return;
+    }
+    if (event->matches(QKeySequence::FindNext)) {
         findForward();
         return;
     }
@@ -3537,8 +3552,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         openQuickInfo();
         return;
     }
-    if (event->matches(QKeySequence::Cancel) && !searchBox->text().isEmpty() && searchBox->hasFocus()) {
-        searchBox->clear();
+    if (event->matches(QKeySequence::Cancel) && findBar->isVisible()) {
+        closeFindBar();
         return;
     }
     if (event->key() == Qt::Key_Escape && pageFullScreen) {
@@ -3549,7 +3564,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         toggleFullScreen();
         return;
     }
-    if (event->matches(QKeySequence::Cancel) && searchBox->text().isEmpty()) {
+    if (event->matches(QKeySequence::Cancel)) {
         if (auto *view = currentWebView()) {
             view->setFocus();
         }
@@ -3726,7 +3741,6 @@ void MainWindow::done(bool ok)
 {
     auto *view = currentWebView();
     if (!view) {
-        searchBox->clear();
         progressBar->setRange(0, 100);
         progressBar->setValue(0);
         progressBar->hide();
@@ -3743,8 +3757,12 @@ void MainWindow::done(bool ok)
         qDebug() << "Error loading:" << view->url().toString();
     }
     view->stop();
-    view->setFocus();
-    searchBox->clear();
+    // The new page has no highlights, so the old count no longer applies.
+    if (findBar->isVisible()) {
+        findBar->clearResult();
+    } else {
+        view->setFocus();
+    }
     progressBar->setRange(0, 100);
     progressBar->setValue(0);
     progressBar->hide();

@@ -36,6 +36,7 @@ class QWebEngineScript;
 class QWebEngineView;
 class QCompleter;
 class QStringListModel;
+class FindBar;
 class QLabel;
 class QToolButton;
 
@@ -91,10 +92,8 @@ private:
     QAction *forwardAction {};
     QAction *stopAction {};
     QAction *zoomPercentAction {};
-    QLineEdit *searchBox {};
-    QToolButton *findMatchCase {};
-    QLabel *findMatches {};
-    QAction *findMatchesAction {};
+    FindBar *findBar {};
+    QPointer<WebView> findView;
     QMenu *bookmarks {};
     BookmarkBar *bookmarkBar {};
     QAction *bookmarkBarAction {};
@@ -158,7 +157,6 @@ private:
     static constexpr int defaultWidth {800};
     static constexpr int progBarVerticalAdj {40};
     static constexpr int progBarWidth {20};
-    static constexpr int searchWidth {150};
     static constexpr int gripSize {4};
     static constexpr int minZoom {25};
     static constexpr int maxZoom {500};
@@ -193,7 +191,7 @@ private:
     void addZoomActions();
     void setupAddressBar();
     void setupMenuButton();
-    void setupSearchBox();
+    void setupFindBar();
     void addFileMenuActions(QMenu *menu);
     void openPrivateWindow();
     void addViewMenuActions(QMenu *menu);
@@ -212,6 +210,8 @@ private:
     QString buildNewTabPageHtml();
     void renderNewTabPage(WebView *view);
     void findInPage(QWebEnginePage::FindFlags flags);
+    void openFindBar();
+    void closeFindBar();
     void focusAddressBar();
     void focusAddressBarIfBlank();
     void applyWebSettings();
