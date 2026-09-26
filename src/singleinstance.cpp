@@ -22,6 +22,7 @@
 #include "singleinstance.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QLocalServer>
 #include <QLocalSocket>
@@ -30,6 +31,7 @@
 
 #include <memory>
 
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace
@@ -40,8 +42,9 @@ constexpr int ackTimeoutMs {3000};
 constexpr char ack[] {"ok\n"};
 constexpr qint64 maxRequestSize {64 * 1024};
 
-// The socket goes only in a runtime directory owned by this user, never in a shared place like /tmp
-// where another user could create it first. Empty means single-instance mode is off.
+// The socket goes only in a private runtime directory owned by this user (as XDG requires, mode 0700),
+// never in a shared place like /tmp where another user could create it first. Empty means
+// single-instance mode is off.
 QString socketPath()
 {
     QStringList candidates;
@@ -51,8 +54,9 @@ QString socketPath()
     }
     candidates << QStringLiteral("/run/user/%1").arg(getuid());
     for (const QString &dir : std::as_const(candidates)) {
-        const QFileInfo info(dir);
-        if (info.isDir() && info.ownerId() == getuid()) {
+        struct stat info {};
+        if (stat(QFile::encodeName(dir).constData(), &info) == 0 && S_ISDIR(info.st_mode)
+            && info.st_uid == getuid() && (info.st_mode & 077) == 0) {
             return QDir(dir).filePath(QStringLiteral("mx-viewer.sock"));
         }
     }
