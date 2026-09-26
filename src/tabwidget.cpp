@@ -105,15 +105,15 @@ public:
     {
         setElideMode(Qt::ElideRight);
     }
+    // Recomputes the tab sizes after the room for them changed.
+    void relayout()
+    {
+        // Setting the elide mode is the only public way to make QTabBar lay out its tabs again.
+        setElideMode(Qt::ElideRight);
+        updateGeometry();
+    }
 
 protected:
-    void resizeEvent(QResizeEvent *event) override
-    {
-        QTabBar::resizeEvent(event);
-        // Setting the elide mode recomputes the tab sizes for the new width; QTabBar has no other
-        // public way to do it.
-        setElideMode(Qt::ElideRight);
-    }
     [[nodiscard]] QSize tabSizeHint(int index) const override
     {
         QSize size = QTabBar::tabSizeHint(index);
@@ -129,7 +129,7 @@ protected:
                 ++unpinned;
             }
         }
-        const int available = width() - newTabButtonSpace - pinnedWidth;
+        const int available = tabWidget->tabAreaWidth() - pinnedWidth;
         const int width = unpinned > 0 ? available / unpinned : preferredWidth;
         size.setWidth(std::clamp(width, minimumWidth, preferredWidth));
         return size;
@@ -143,8 +143,6 @@ private:
     TabWidget *tabWidget;
     static constexpr int preferredWidth {220};
     static constexpr int minimumWidth {100};
-    // Room for the "+" button after the last tab.
-    static constexpr int newTabButtonSpace {40};
 };
 } // namespace
 
@@ -154,16 +152,17 @@ TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
       stack(new QStackedWidget(this)),
       strip(new QWidget(this)),
       windowButtons(new QWidget(strip)),
-      newTabButton(new QPushButton("+", bar)),
+      newTabButton(new QPushButton("+", strip)),
       profile(profile)
 {
     bar->setAutoHide(true);
-    // The bar spans the whole strip; the tabs keep their own width instead of stretching over it.
     bar->setExpanding(false);
     bar->setTabsClosable(true);
     bar->setMovable(true);
     bar->setUsesScrollButtons(true);
-    bar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    // The bar is as wide as its tabs, so the "+" button follows the last one, and it shrinks and
+    // scrolls when they do not fit.
+    bar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     // Window buttons at the end of the strip, shown only in title bar mode.
     auto *buttonsLayout = new QHBoxLayout(windowButtons);
@@ -196,7 +195,10 @@ TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
     auto *stripLayout = new QHBoxLayout(strip);
     stripLayout->setContentsMargins(0, 0, 0, 0);
     stripLayout->setSpacing(0);
-    stripLayout->addWidget(bar, 1);
+    stripLayout->addWidget(bar);
+    stripLayout->addSpacing(newTabButtonSpacing);
+    stripLayout->addWidget(newTabButton);
+    stripLayout->addStretch(1);
     stripLayout->addWidget(windowButtons, 0, Qt::AlignTop);
     strip->installEventFilter(this);
 
@@ -217,7 +219,7 @@ TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
     });
     connect(bar, &QTabBar::tabMoved, this, &TabWidget::moveStackWidget);
 
-    newTabButton->setMaximumSize(30, 30);
+    newTabButton->setFixedSize(30, 30);
     newTabButton->setToolTip(tr("New tab"));
     newTabButton->hide();
     connect(newTabButton, &QPushButton::clicked, this, &TabWidget::newTabButtonClicked);
@@ -301,7 +303,7 @@ void TabWidget::setTitleBarMode(bool enabled)
         strip->setContentsMargins(0, 0, 0, 0);
         window()->removeEventFilter(this);
     }
-    QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
+    static_cast<TabBar *>(bar)->relayout();
 }
 
 void TabWidget::updateMaximizeButton()
@@ -630,8 +632,12 @@ bool TabWidget::eventFilter(QObject *obj, QEvent *event)
         && handleTitleBarMouse(static_cast<QWidget *>(obj), event)) {
         return true;
     }
-    if (obj == tabBar() && (event->type() == QEvent::Resize || event->type() == QEvent::LayoutRequest || event->type() == QEvent::Show)) {
-        QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
+    // The "+" button is shown with the tabs, which hide themselves when there is a single tab.
+    if (obj == tabBar() && (event->type() == QEvent::Show || event->type() == QEvent::Hide)) {
+        updateNewTabButton();
+    }
+    if (obj == strip && event->type() == QEvent::Resize) {
+        static_cast<TabBar *>(bar)->relayout();
     }
     // Reordering while QTabBar is still dragging would confuse it, so fix the order once the drag ends.
     if (obj == tabBar() && event->type() == QEvent::MouseButtonRelease) {
@@ -711,6 +717,11 @@ void TabWidget::finalizeRemoveTab(int index)
         updateNewTabButton();
         return;
     }
+    // Closing the last tab closes the window, which keeps the tab if the user cancels.
+    if (count() == 1) {
+        window()->close();
+        return;
+    }
     if (auto *webView = qobject_cast<WebView *>(w)) {
         emit tabClosed(webView->url());
     }
@@ -756,7 +767,6 @@ void TabWidget::addNewTab(WebView *webView, bool makeCurrent)
         }
     });
     updateNewTabButton();
-    QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
 }
 
 void TabWidget::keyPressEvent(QKeyEvent *event)
@@ -791,52 +801,14 @@ WebView *TabWidget::currentWebView()
 
 void TabWidget::updateNewTabButton()
 {
-    // A single tab has no tab bar unless it is shown in the title bar.
-    if (count() < 2 && !titleBarMode) {
-        newTabButton->hide();
-        return;
-    }
-    newTabButton->show();
-    positionNewTabButton();
-    QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
+    newTabButton->setVisible(!bar->isHidden());
 }
 
-void TabWidget::positionNewTabButton()
+int TabWidget::tabAreaWidth() const
 {
-    // A single tab has no tab bar unless it is shown in the title bar.
-    if (count() < 2 && !titleBarMode) {
-        newTabButton->hide();
-        return;
+    int width = strip->contentsRect().width() - newTabButtonSpacing - newTabButton->width();
+    if (!windowButtons->isHidden()) {
+        width -= windowButtons->sizeHint().width();
     }
-
-    int lastIndex = count() - 1;
-    QRect tabRect = tabBar()->tabRect(lastIndex);
-    int reservedRight = 0;
-    const QRect barRect = tabBar()->rect();
-    const auto toolButtons = tabBar()->findChildren<QToolButton *>();
-    for (const auto *button : toolButtons) {
-        if (!button || !button->isVisible()) {
-            continue;
-        }
-        const QRect buttonRect = button->geometry();
-        if (buttonRect.right() >= barRect.right() - 2) {
-            reservedRight += buttonRect.width() + 2;
-        }
-    }
-
-    constexpr int scrollButtonPadding = 14;
-    int minX = tabRect.right() + 2;
-    int buttonX = minX;
-    if (reservedRight > 0) {
-        int maxX = barRect.right() - reservedRight - scrollButtonPadding - newTabButton->width();
-        if (maxX < minX) {
-            newTabButton->hide();
-            return;
-        }
-        buttonX = qMin(buttonX, maxX);
-    }
-    int buttonY = tabRect.top() + (tabRect.height() - newTabButton->height()) / 2;
-
-    newTabButton->move(buttonX, buttonY);
-    newTabButton->show();
+    return width;
 }

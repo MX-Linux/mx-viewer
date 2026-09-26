@@ -55,6 +55,8 @@ public:
     // moves the window when dragged on an empty spot.
     void setTitleBarMode(bool enabled);
     [[nodiscard]] bool isTitleBarMode() const;
+    // Room for the tabs in the strip, besides the "+" button and the window buttons.
+    [[nodiscard]] int tabAreaWidth() const;
 
     WebView *createTab(bool makeCurrent = true);
     void addNewTab(WebView *webView, bool makeCurrent = true);
@@ -88,6 +90,7 @@ private:
     QPoint dragStartPos;
     bool dragPending {};
     bool titleBarMode {};
+    static constexpr int newTabButtonSpacing {2};
     int addTab(QWidget *widget, const QString &label);
     void moveStackWidget(int from, int to);
     void updateMaximizeButton();
@@ -96,7 +99,6 @@ private:
     void handleCurrentChanged(int index);
     void finalizeRemoveTab(int index);
     void updateNewTabButton();
-    void positionNewTabButton();
     void showTabMenu(const QPoint &pos);
     void duplicateTab(int index);
     void closeTabs(const QList<QWidget *> &tabs);

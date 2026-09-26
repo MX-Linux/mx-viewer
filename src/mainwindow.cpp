@@ -3411,8 +3411,10 @@ bool MainWindow::restoreSavedTabs()
     settings.remove("SavedTabs");
 
     if (!savedUrls.isEmpty()) {
-        tabWidget->removeTab(0);
+        // Open the first saved tab before dropping the initial one, since closing the only tab
+        // closes the window.
         openSavedTab(savedUrls.first(), true);
+        tabWidget->removeTab(0);
     }
 
     for (int i = 1; i < savedUrls.size(); ++i) {
