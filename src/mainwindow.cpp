@@ -41,6 +41,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QLocale>
 #include <QRegularExpression>
 #include <QSet>
 #include <QSpinBox>
@@ -848,39 +849,45 @@ void MainWindow::listHistory()
 
 QString MainWindow::buildHistoryPageHtml()
 {
-    struct HistoryEntry {
-        QString title;
-        QString url;
-        QByteArray icon;
-    };
-
-    QList<HistoryEntry> entries;
     // The history on disk belongs to regular windows; a private window lists none of it.
-    if (!privateWindow) {
-        const int size = settings.beginReadArray("History");
-        entries.reserve(size);
-        for (int i = 0; i < size; ++i) {
-            settings.setArrayIndex(i);
-            const QString url = settings.value("url").toString();
-            if (url.isEmpty()) {
-                continue;
-            }
-            QString title = settings.value("title").toString();
-            if (title.isEmpty()) {
-                title = url;
-            }
-            entries.append({title, url, settings.value("icon").toByteArray()});
-        }
-        settings.endArray();
-    }
+    const QList<HistoryRecord> entries = privateWindow ? QList<HistoryRecord>() : readHistory(settings);
 
+    // Newest first, under a heading per day. Entries are stored in the order they were visited, and
+    // the oldest ones may have no time recorded.
+    const QLocale locale;
+    const QDate today = QDate::currentDate();
+    QStringList groups;
     QStringList rows;
-    rows.reserve(entries.size());
-    for (int i = 0; i < entries.size(); ++i) {
-        const HistoryEntry &entry = entries.at(i);
-        const QString titleEscaped = entry.title.toHtmlEscaped();
+    QString groupLabel;
+    const auto closeGroup = [&] {
+        if (!rows.isEmpty()) {
+            groups.append(QStringLiteral("<section class=\"group\"><h2 class=\"day\">%1</h2><ul class=\"list\">%2</ul></section>")
+                              .arg(groupLabel.toHtmlEscaped(), rows.join("\n")));
+            rows.clear();
+        }
+    };
+    for (qsizetype i = entries.size() - 1; i >= 0; --i) {
+        const HistoryRecord &entry = entries.at(i);
+        const QDateTime visited = entry.time > 0 ? QDateTime::fromSecsSinceEpoch(entry.time) : QDateTime();
+        QString label;
+        if (!visited.isValid()) {
+            label = tr("Earlier");
+        } else if (visited.date() == today) {
+            label = tr("Today");
+        } else if (visited.date() == today.addDays(-1)) {
+            label = tr("Yesterday");
+        } else {
+            label = locale.toString(visited.date(), QLocale::LongFormat);
+        }
+        if (label != groupLabel) {
+            closeGroup();
+            groupLabel = label;
+        }
+        const QString title = entry.title.isEmpty() ? entry.url : entry.title;
+        const QString titleEscaped = title.toHtmlEscaped();
         const QString urlEscaped = entry.url.toHtmlEscaped();
-        const QString searchText = (entry.title + " " + entry.url).toLower().toHtmlEscaped();
+        const QString searchText = (title + " " + entry.url).toLower().toHtmlEscaped();
+        const QString timeText = visited.isValid() ? locale.toString(visited.time(), QLocale::ShortFormat) : QString();
         QString iconHtml;
         if (!entry.icon.isEmpty()) {
             const QString iconBase64 = QString::fromLatin1(entry.icon.toBase64());
@@ -891,6 +898,7 @@ QString MainWindow::buildHistoryPageHtml()
         }
         rows.append(QStringLiteral(
                         "<li class=\"entry\" data-search=\"%1\">"
+                        "<span class=\"time\">%8</span>"
                         "%2"
                         "<div class=\"content\">"
                         "<div class=\"row\">"
@@ -901,8 +909,9 @@ QString MainWindow::buildHistoryPageHtml()
                         "</div>"
                         "</li>")
                         .arg(searchText, iconHtml, urlEscaped, titleEscaped, QString::number(i),
-                             tr("Delete").toHtmlEscaped(), urlEscaped));
+                             tr("Delete").toHtmlEscaped(), urlEscaped, timeText.toHtmlEscaped()));
     }
+    closeGroup();
 
     const QString emptyText = tr("No history entries.");
     const QString html = QStringLiteral(R"(<!doctype html>
@@ -919,7 +928,10 @@ QString MainWindow::buildHistoryPageHtml()
     .search { flex: 1 1 240px; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 6px; }
     .clear { padding: 8px 12px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 6px; cursor: pointer; }
     .list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-    .entry { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 10px 12px; border: 1px solid #eaeef2; border-radius: 8px; }
+    .group { margin-bottom: 20px; }
+    .day { font-size: 15px; margin: 0 0 8px; color: #57606a; }
+    .entry { display: grid; grid-template-columns: auto 24px 1fr; gap: 10px; padding: 10px 12px; border: 1px solid #eaeef2; border-radius: 8px; }
+    .time { color: #57606a; font-size: 13px; width: 5.5em; text-align: right; padding-top: 2px; font-variant-numeric: tabular-nums; }
     .icon { width: 20px; height: 20px; border-radius: 4px; }
     .icon.placeholder { background: #eaeef2; }
     .content { display: flex; flex-direction: column; gap: 4px; }
@@ -945,6 +957,10 @@ QString MainWindow::buildHistoryPageHtml()
       entries.forEach(entry => {
         entry.style.display = entry.dataset.search.includes(term) ? '' : 'none';
       });
+      document.querySelectorAll('section.group').forEach(group => {
+        const visible = Array.from(group.querySelectorAll('li.entry')).some(entry => entry.style.display !== 'none');
+        group.style.display = visible ? '' : 'none';
+      });
     }
     search.addEventListener('input', applyFilter);
     document.querySelectorAll('button.delete').forEach(btn => {
@@ -965,9 +981,9 @@ QString MainWindow::buildHistoryPageHtml()
 </html>)")
                             .arg(tr("History").toHtmlEscaped(), tr("Search history").toHtmlEscaped(),
                                  tr("Clear history").toHtmlEscaped(),
-                                 rows.isEmpty()
+                                 groups.isEmpty()
                                      ? QStringLiteral("<div class=\"empty\">%1</div>").arg(emptyText.toHtmlEscaped())
-                                     : QStringLiteral("<ul class=\"list\">%1</ul>").arg(rows.join("\n")),
+                                     : groups.join("\n"),
                                  tr("Clear all history entries?").toHtmlEscaped());
 
     return html;
