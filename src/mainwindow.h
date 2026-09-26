@@ -102,6 +102,10 @@ private:
     QPointer<QWidget> siteIconButton;
     QPoint siteIconPressPos;
     bool toolbarsVisible {true};
+    // Tabs replace the system title bar, in a frameless window with its own window buttons.
+    bool tabsInTitleBar {true};
+    QWidget *titleBar {};
+    QList<QWidget *> resizeGrips;
     QMenu *history {};
     QCompleter *historyCompleter {};
     QStringListModel *historyCompletionModel {};
@@ -155,6 +159,7 @@ private:
     static constexpr int progBarVerticalAdj {40};
     static constexpr int progBarWidth {20};
     static constexpr int searchWidth {150};
+    static constexpr int gripSize {4};
     static constexpr int minZoom {25};
     static constexpr int maxZoom {500};
 
@@ -178,6 +183,8 @@ private:
     void reloadBookmarks();
     void openInNewWindow(const QUrl &url, bool privateMode);
     void updateSiteIcon();
+    void updateTitleBar();
+    void placeResizeGrips();
     void startAddressDrag();
     void addNavigationActions();
     void addHomeAction();

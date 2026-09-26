@@ -26,6 +26,10 @@
 #include <QApplication>
 #include <QDataStream>
 #include <QEvent>
+#include <QHBoxLayout>
+#include <QStackedWidget>
+#include <QVBoxLayout>
+#include <QWindow>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QMessageBox>
@@ -101,14 +105,15 @@ public:
     {
         setElideMode(Qt::ElideRight);
     }
-    // Lays the tabs out again for a new available width.
-    void relayout()
-    {
-        // Setting the elide mode recomputes the tab sizes; QTabBar has no other public way to do it.
-        setElideMode(Qt::ElideRight);
-    }
 
 protected:
+    void resizeEvent(QResizeEvent *event) override
+    {
+        QTabBar::resizeEvent(event);
+        // Setting the elide mode recomputes the tab sizes for the new width; QTabBar has no other
+        // public way to do it.
+        setElideMode(Qt::ElideRight);
+    }
     [[nodiscard]] QSize tabSizeHint(int index) const override
     {
         QSize size = QTabBar::tabSizeHint(index);
@@ -124,7 +129,7 @@ protected:
                 ++unpinned;
             }
         }
-        const int available = tabWidget->width() - newTabButtonSpace - pinnedWidth;
+        const int available = width() - newTabButtonSpace - pinnedWidth;
         const int width = unpinned > 0 ? available / unpinned : preferredWidth;
         size.setWidth(std::clamp(width, minimumWidth, preferredWidth));
         return size;
@@ -144,27 +149,235 @@ private:
 } // namespace
 
 TabWidget::TabWidget(QWebEngineProfile *profile, QWidget *parent)
-    : QTabWidget(parent),
-      newTabButton(new QPushButton("+", this)),
+    : QWidget(parent),
+      bar(new TabBar(this)),
+      stack(new QStackedWidget(this)),
+      strip(new QWidget(this)),
+      windowButtons(new QWidget(strip)),
+      newTabButton(new QPushButton("+", bar)),
       profile(profile)
 {
-    setTabBar(new TabBar(this));
-    setTabBarAutoHide(true);
-    setTabsClosable(true);
-    setMovable(true);
+    bar->setAutoHide(true);
+    // The bar spans the whole strip; the tabs keep their own width instead of stretching over it.
+    bar->setExpanding(false);
+    bar->setTabsClosable(true);
+    bar->setMovable(true);
+    bar->setUsesScrollButtons(true);
+    bar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    // Window buttons at the end of the strip, shown only in title bar mode.
+    auto *buttonsLayout = new QHBoxLayout(windowButtons);
+    buttonsLayout->setContentsMargins(0, 0, 0, 0);
+    buttonsLayout->setSpacing(0);
+    auto addWindowButton = [this, buttonsLayout](const QString &name, const QString &themeIcon,
+                                                 QStyle::StandardPixmap fallback, const QString &toolTip) {
+        auto *button = new QToolButton(windowButtons);
+        button->setObjectName(name);
+        button->setAutoRaise(true);
+        button->setFocusPolicy(Qt::NoFocus);
+        button->setIconSize(QSize(16, 16));
+        button->setFixedSize(40, 30);
+        button->setIcon(QIcon::fromTheme(themeIcon, style()->standardIcon(fallback)));
+        button->setToolTip(toolTip);
+        buttonsLayout->addWidget(button);
+        return button;
+    };
+    auto *minimizeButton = addWindowButton("minimizeWindow", "window-minimize", QStyle::SP_TitleBarMinButton, tr("Minimize"));
+    maximizeButton = addWindowButton("maximizeWindow", "window-maximize", QStyle::SP_TitleBarMaxButton, tr("Maximize"));
+    auto *closeButton = addWindowButton("closeWindow", "window-close", QStyle::SP_TitleBarCloseButton, tr("Close"));
+    closeButton->setStyleSheet("QToolButton#closeWindow:hover { background: #e81123; }");
+    connect(minimizeButton, &QToolButton::clicked, this, [this] { window()->showMinimized(); });
+    connect(maximizeButton, &QToolButton::clicked, this, [this] {
+        window()->isMaximized() ? window()->showNormal() : window()->showMaximized();
+    });
+    connect(closeButton, &QToolButton::clicked, this, [this] { window()->close(); });
+    windowButtons->hide();
+
+    auto *stripLayout = new QHBoxLayout(strip);
+    stripLayout->setContentsMargins(0, 0, 0, 0);
+    stripLayout->setSpacing(0);
+    stripLayout->addWidget(bar, 1);
+    stripLayout->addWidget(windowButtons, 0, Qt::AlignTop);
+    strip->installEventFilter(this);
+
+    auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    layout->addWidget(strip);
+    layout->addWidget(stack, 1);
+
     createTab();
-    connect(this, &QTabWidget::tabCloseRequested, this, &TabWidget::removeTab);
-    connect(this, &QTabWidget::currentChanged, this, &TabWidget::handleCurrentChanged);
+    connect(bar, &QTabBar::tabCloseRequested, this, &TabWidget::removeTab);
+    connect(bar, &QTabBar::currentChanged, this, [this](int index) {
+        if (index >= 0 && index < stack->count()) {
+            stack->setCurrentIndex(index);
+        }
+        handleCurrentChanged(index);
+        emit currentChanged(index);
+    });
+    connect(bar, &QTabBar::tabMoved, this, &TabWidget::moveStackWidget);
 
     newTabButton->setMaximumSize(30, 30);
-    newTabButton->setParent(this);
     newTabButton->setToolTip(tr("New tab"));
     newTabButton->hide();
     connect(newTabButton, &QPushButton::clicked, this, &TabWidget::newTabButtonClicked);
-    tabBar()->installEventFilter(this);
-    tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(tabBar(), &QTabBar::customContextMenuRequested, this, &TabWidget::showTabMenu);
+    bar->installEventFilter(this);
+    bar->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(bar, &QTabBar::customContextMenuRequested, this, &TabWidget::showTabMenu);
     updateNewTabButton();
+}
+
+int TabWidget::count() const
+{
+    return stack->count();
+}
+
+int TabWidget::currentIndex() const
+{
+    return bar->currentIndex();
+}
+
+void TabWidget::setCurrentIndex(int index)
+{
+    bar->setCurrentIndex(index);
+}
+
+QWidget *TabWidget::currentWidget() const
+{
+    return stack->currentWidget();
+}
+
+QWidget *TabWidget::widget(int index) const
+{
+    return stack->widget(index);
+}
+
+int TabWidget::indexOf(const QWidget *widget) const
+{
+    return stack->indexOf(widget);
+}
+
+QTabBar *TabWidget::tabBar() const
+{
+    return bar;
+}
+
+void TabWidget::setTabBarAutoHide(bool enabled)
+{
+    // In the title bar the tabs stay visible, as they are what the window is dragged by.
+    bar->setAutoHide(enabled && !titleBarMode);
+}
+
+QWidget *TabWidget::tabStrip() const
+{
+    return strip;
+}
+
+void TabWidget::restoreTabStrip()
+{
+    if (strip->parentWidget() != this) {
+        static_cast<QVBoxLayout *>(layout())->insertWidget(0, strip);
+        strip->show();
+    }
+}
+
+bool TabWidget::isTitleBarMode() const
+{
+    return titleBarMode;
+}
+
+void TabWidget::setTitleBarMode(bool enabled)
+{
+    titleBarMode = enabled;
+    windowButtons->setVisible(enabled);
+    bar->setAutoHide(!enabled);
+    updateNewTabButton();
+    if (enabled) {
+        // Tabs sit flush with the top of the window, so leave a little room to grab the window above them.
+        strip->setContentsMargins(0, 4, 0, 0);
+        window()->installEventFilter(this);
+        updateMaximizeButton();
+    } else {
+        strip->setContentsMargins(0, 0, 0, 0);
+        window()->removeEventFilter(this);
+    }
+    QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
+}
+
+void TabWidget::updateMaximizeButton()
+{
+    const bool maximized = window()->isMaximized();
+    maximizeButton->setIcon(maximized ? QIcon::fromTheme("window-restore", style()->standardIcon(QStyle::SP_TitleBarNormalButton))
+                                      : QIcon::fromTheme("window-maximize", style()->standardIcon(QStyle::SP_TitleBarMaxButton)));
+    maximizeButton->setToolTip(maximized ? tr("Restore") : tr("Maximize"));
+}
+
+bool TabWidget::handleTitleBarMouse(QWidget *source, QEvent *event)
+{
+    if (!titleBarMode) {
+        return false;
+    }
+    auto *mouseEvent = static_cast<QMouseEvent *>(event);
+    const QPoint pos = mouseEvent->position().toPoint();
+    // Only empty space moves the window; tabs keep their clicks and drags.
+    if (source == bar && bar->tabAt(pos) != -1) {
+        return false;
+    }
+    switch (event->type()) {
+    case QEvent::MouseButtonPress:
+        if (mouseEvent->button() == Qt::LeftButton) {
+            dragStartPos = mouseEvent->globalPosition().toPoint();
+            dragPending = true;
+        }
+        return false;
+    case QEvent::MouseMove:
+        if (dragPending && (mouseEvent->buttons() & Qt::LeftButton)
+            && (mouseEvent->globalPosition().toPoint() - dragStartPos).manhattanLength() >= QApplication::startDragDistance()) {
+            dragPending = false;
+            if (QWindow *handle = window()->windowHandle()) {
+                handle->startSystemMove();
+            }
+            return true;
+        }
+        return false;
+    case QEvent::MouseButtonRelease:
+        dragPending = false;
+        return false;
+    case QEvent::MouseButtonDblClick:
+        if (mouseEvent->button() == Qt::LeftButton) {
+            dragPending = false;
+            window()->isMaximized() ? window()->showNormal() : window()->showMaximized();
+            return true;
+        }
+        return false;
+    default:
+        return false;
+    }
+}
+
+int TabWidget::addTab(QWidget *widget, const QString &label)
+{
+    const int index = stack->addWidget(widget);
+    bar->insertTab(index, label);
+    return index;
+}
+
+// Keep the pages in the same order as the tabs after the user drags one.
+void TabWidget::moveStackWidget(int from, int to)
+{
+    QWidget *page = stack->widget(from);
+    if (!page) {
+        return;
+    }
+    const QSignalBlocker blocker(stack);
+    stack->removeWidget(page);
+    stack->insertWidget(to, page);
+    stack->setCurrentIndex(bar->currentIndex());
+}
+
+void TabWidget::setTabIcon(int index, const QIcon &icon)
+{
+    bar->setTabIcon(index, icon);
 }
 
 WebView *TabWidget::webViewAt(int index) const
@@ -198,8 +411,8 @@ void TabWidget::setTabTitle(int index, const QString &title)
     if (index < 0) {
         return;
     }
-    setTabToolTip(index, title);
-    setTabText(index, isPinned(index) ? QString() : title);
+    bar->setTabToolTip(index, title);
+    bar->setTabText(index, isPinned(index) ? QString() : title);
 }
 
 // A pinned tab without a favicon would otherwise be an empty stub.
@@ -398,19 +611,25 @@ void TabWidget::updateAudioButton(WebView *webView)
     button->setToolTip(muted ? tr("Unmute tab") : tr("Mute tab"));
 }
 
-void TabWidget::mousePressEvent(QMouseEvent *event)
+bool TabWidget::eventFilter(QObject *obj, QEvent *event)
 {
-    if (event->button() == Qt::MiddleButton) {
-        auto index = tabBar()->tabAt(event->pos());
+    if (obj == window() && event->type() == QEvent::WindowStateChange) {
+        updateMaximizeButton();
+    }
+    if (obj == tabBar() && event->type() == QEvent::MouseButtonPress
+        && static_cast<QMouseEvent *>(event)->button() == Qt::MiddleButton) {
+        const int index = tabBar()->tabAt(static_cast<QMouseEvent *>(event)->position().toPoint());
         if (index != -1 && !isPinned(index)) {
             removeTab(index);
         }
+        return true;
     }
-    QTabWidget::mousePressEvent(event);
-}
-
-bool TabWidget::eventFilter(QObject *obj, QEvent *event)
-{
+    if ((obj == tabBar() || obj == strip)
+        && (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove
+            || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseButtonDblClick)
+        && handleTitleBarMouse(static_cast<QWidget *>(obj), event)) {
+        return true;
+    }
     if (obj == tabBar() && (event->type() == QEvent::Resize || event->type() == QEvent::LayoutRequest || event->type() == QEvent::Show)) {
         QTimer::singleShot(0, this, &TabWidget::positionNewTabButton);
     }
@@ -418,13 +637,7 @@ bool TabWidget::eventFilter(QObject *obj, QEvent *event)
     if (obj == tabBar() && event->type() == QEvent::MouseButtonRelease) {
         QTimer::singleShot(0, this, &TabWidget::normalizePinnedOrder);
     }
-    return QTabWidget::eventFilter(obj, event);
-}
-
-void TabWidget::resizeEvent(QResizeEvent *event)
-{
-    QTabWidget::resizeEvent(event);
-    static_cast<TabBar *>(tabBar())->relayout();
+    return QWidget::eventFilter(obj, event);
 }
 
 void TabWidget::handleCurrentChanged(int index)
@@ -501,7 +714,8 @@ void TabWidget::finalizeRemoveTab(int index)
     if (auto *webView = qobject_cast<WebView *>(w)) {
         emit tabClosed(webView->url());
     }
-    QTabWidget::removeTab(index);
+    stack->removeWidget(w);
+    bar->removeTab(index);
     w->deleteLater();
     updateNewTabButton();
 }
@@ -567,7 +781,7 @@ void TabWidget::keyPressEvent(QKeyEvent *event)
             return;
         }
     }
-    QTabWidget::keyPressEvent(event);
+    QWidget::keyPressEvent(event);
 }
 
 WebView *TabWidget::currentWebView()
@@ -577,7 +791,8 @@ WebView *TabWidget::currentWebView()
 
 void TabWidget::updateNewTabButton()
 {
-    if (count() < 2) {
+    // A single tab has no tab bar unless it is shown in the title bar.
+    if (count() < 2 && !titleBarMode) {
         newTabButton->hide();
         return;
     }
@@ -588,7 +803,8 @@ void TabWidget::updateNewTabButton()
 
 void TabWidget::positionNewTabButton()
 {
-    if (count() < 2) {
+    // A single tab has no tab bar unless it is shown in the title bar.
+    if (count() < 2 && !titleBarMode) {
         newTabButton->hide();
         return;
     }

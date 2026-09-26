@@ -22,13 +22,16 @@
 #pragma once
 
 #include <QTabBar>
-#include <QTabWidget>
 #include <QWebEngineProfile>
 #include "webview.h"
 
 class QPushButton;
+class QStackedWidget;
+class QToolButton;
 
-class TabWidget : public QTabWidget
+// Tabs over a stack of pages, like QTabWidget, but with the tab bar in a separate strip that the
+// window can move into its title bar. The strip then also holds the minimize, maximize and close buttons.
+class TabWidget : public QWidget
 {
     Q_OBJECT
 
@@ -36,9 +39,27 @@ public:
     explicit TabWidget(QWebEngineProfile *profile, QWidget *parent = nullptr);
     WebView *currentWebView();
 
+    [[nodiscard]] int count() const;
+    [[nodiscard]] int currentIndex() const;
+    void setCurrentIndex(int index);
+    [[nodiscard]] QWidget *currentWidget() const;
+    [[nodiscard]] QWidget *widget(int index) const;
+    [[nodiscard]] int indexOf(const QWidget *widget) const;
+    [[nodiscard]] QTabBar *tabBar() const;
+    void setTabBarAutoHide(bool enabled);
+    // The row with the tab bar; it lives above the pages unless the window takes it for its title bar.
+    [[nodiscard]] QWidget *tabStrip() const;
+    // Puts the strip back above the pages.
+    void restoreTabStrip();
+    // In the title bar the strip shows the window buttons, the tabs even when there is only one, and
+    // moves the window when dragged on an empty spot.
+    void setTitleBarMode(bool enabled);
+    [[nodiscard]] bool isTitleBarMode() const;
+
     WebView *createTab(bool makeCurrent = true);
     void addNewTab(WebView *webView, bool makeCurrent = true);
     void removeTab(int index);
+    void setTabIcon(int index, const QIcon &icon);
     // Sets the tab tooltip, and the text unless the tab is pinned (pinned tabs show only the icon).
     void setTabTitle(int index, const QString &title);
     [[nodiscard]] bool isPinned(int index) const;
@@ -49,17 +70,29 @@ public:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 signals:
+    void currentChanged(int index);
     void newTabButtonClicked();
     void tabClosed(const QUrl &url);
 
 private:
+    QTabBar *bar {};
+    QStackedWidget *stack {};
+    QWidget *strip {};
+    QWidget *windowButtons {};
+    QToolButton *maximizeButton {};
     QPushButton *newTabButton {};
     QWebEngineProfile *profile {};
+    QPoint dragStartPos;
+    bool dragPending {};
+    bool titleBarMode {};
+    int addTab(QWidget *widget, const QString &label);
+    void moveStackWidget(int from, int to);
+    void updateMaximizeButton();
+    // Handles presses, drags and double-clicks on an empty part of the strip in title bar mode.
+    bool handleTitleBarMouse(QWidget *source, QEvent *event);
     void handleCurrentChanged(int index);
     void finalizeRemoveTab(int index);
     void updateNewTabButton();

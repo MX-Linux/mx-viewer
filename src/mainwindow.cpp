@@ -72,6 +72,7 @@
 #include <QWebEngineProfile>
 #include <QWebEngineScript>
 #include <QWebEngineView>
+#include <QWindow>
 #include <QStandardPaths>
 #include <QStyleOptionMenuItem>
 
@@ -232,6 +233,58 @@ void adaptMenuIcons(QMenu *menu)
         }
     }
 }
+// Invisible handle along an edge or at a corner of a window without system decorations, which
+// resizes the window when dragged.
+class ResizeGrip : public QWidget
+{
+public:
+    ResizeGrip(Qt::Edges edges, QWidget *parent)
+        : QWidget(parent),
+          edges(edges)
+    {
+        const bool horizontal = edges & (Qt::LeftEdge | Qt::RightEdge);
+        const bool vertical = edges & (Qt::TopEdge | Qt::BottomEdge);
+        if (horizontal && vertical) {
+            const bool mainDiagonal = edges == (Qt::TopEdge | Qt::LeftEdge) || edges == (Qt::BottomEdge | Qt::RightEdge);
+            setCursor(mainDiagonal ? Qt::SizeFDiagCursor : Qt::SizeBDiagCursor);
+        } else {
+            setCursor(horizontal ? Qt::SizeHorCursor : Qt::SizeVerCursor);
+        }
+    }
+    [[nodiscard]] Qt::Edges gripEdges() const
+    {
+        return edges;
+    }
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override
+    {
+        if (event->button() == Qt::LeftButton && window()->windowHandle()) {
+            window()->windowHandle()->startSystemResize(edges);
+        }
+    }
+    void paintEvent(QPaintEvent * /*event*/) override
+    {
+        // The edges draw a thin outline, since the window has no frame of its own.
+        if (edges == Qt::TopEdge || edges == Qt::BottomEdge || edges == Qt::LeftEdge || edges == Qt::RightEdge) {
+            QPainter painter(this);
+            painter.setPen(palette().color(QPalette::Mid));
+            const QRect r = rect();
+            if (edges == Qt::TopEdge) {
+                painter.drawLine(r.topLeft(), r.topRight());
+            } else if (edges == Qt::BottomEdge) {
+                painter.drawLine(r.bottomLeft(), r.bottomRight());
+            } else if (edges == Qt::LeftEdge) {
+                painter.drawLine(r.topLeft(), r.bottomLeft());
+            } else {
+                painter.drawLine(r.topRight(), r.bottomRight());
+            }
+        }
+    }
+
+private:
+    Qt::Edges edges;
+};
 } // namespace
 
 QPointer<MainWindow> MainWindow::lastActiveWindow;
@@ -1385,6 +1438,18 @@ void MainWindow::addToolbar()
 {
     addToolBar(toolBar);
     setCentralWidget(tabWidget);
+    // The menu widget is the only place above the toolbars, so the tabs go there in title bar mode.
+    titleBar = new QWidget(this);
+    auto *titleLayout = new QVBoxLayout(titleBar);
+    titleLayout->setContentsMargins(0, 0, 0, 0);
+    titleLayout->setSpacing(0);
+    setMenuWidget(titleBar);
+    for (const Qt::Edges edges : {Qt::Edges(Qt::TopEdge), Qt::Edges(Qt::BottomEdge), Qt::Edges(Qt::LeftEdge),
+                                  Qt::Edges(Qt::RightEdge), Qt::TopEdge | Qt::LeftEdge, Qt::TopEdge | Qt::RightEdge,
+                                  Qt::BottomEdge | Qt::LeftEdge, Qt::BottomEdge | Qt::RightEdge}) {
+        resizeGrips.append(new ResizeGrip(edges, this));
+    }
+    updateTitleBar();
     addNavigationActions();
     addHomeAction();
     setupAddressBar();
@@ -1649,6 +1714,7 @@ void MainWindow::loadSettings()
     setupSpellCheck();
 
     homeAddress = settings.value("Home", "https://start.duckduckgo.com").toString();
+    tabsInTitleBar = settings.value("TabsInTitleBar", true).toBool();
     showProgress = settings.value("ShowProgressBar", false).toBool();
     openNewTabWithHome = settings.value("OpenNewTabWithHome", true).toBool();
     zoomPercent = settings.value("ZoomPercent", 100).toInt();
@@ -2270,6 +2336,9 @@ void MainWindow::changeEvent(QEvent *event)
     if (event->type() == QEvent::PaletteChange && menuButton) {
         adaptIcons();
     }
+    if (event->type() == QEvent::WindowStateChange && titleBar) {
+        updateTitleBar();
+    }
     QMainWindow::changeEvent(event);
 }
 
@@ -2592,6 +2661,7 @@ QString MainWindow::buildSettingsPageHtml()
     <label class="check"><input id="clearCookiesAtExit" name="clearCookiesAtExit" type="checkbox" value="1" %32> %33</label>
     <label class="check"><input id="allowPopups" name="allowPopups" type="checkbox" value="1" %34> %35</label>
     <label class="check"><input id="saveTabs" name="saveTabs" type="checkbox" value="1" %36> %37</label>
+    <label class="check"><input id="tabsInTitleBar" name="tabsInTitleBar" type="checkbox" value="1" %46> %47</label>
     <div class="check-row">
       <div class="cache-label">%42</div>
       <button class="btn btn-inline" id="clearCache" type="button">%43</button>
@@ -2671,6 +2741,7 @@ QString MainWindow::buildSettingsPageHtml()
       params.set('thirdPartyCookies', boolValue('thirdPartyCookies'));
       params.set('allowPopups', boolValue('allowPopups'));
       params.set('saveTabs', boolValue('saveTabs'));
+      params.set('tabsInTitleBar', boolValue('tabsInTitleBar'));
       params.set('clearCookiesAtExit', boolValue('clearCookiesAtExit'));
       baseline = snapshot();
       updateDirtyState();
@@ -2761,7 +2832,9 @@ QString MainWindow::buildSettingsPageHtml()
                                  tr("Cache size: %1").arg(cacheSizeText).toHtmlEscaped(),
                                  tr("Clear cache").toHtmlEscaped(),
                                  tr("Clear all cookies?").toHtmlEscaped(),
-                                 tr("Clear the cache?").toHtmlEscaped());
+                                 tr("Clear the cache?").toHtmlEscaped(),
+                                 check(tabsInTitleBar),
+                                 tr("Show tabs in the title bar").toHtmlEscaped());
 
     return html;
 }
@@ -2852,6 +2925,7 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
     bool newThirdParty = query.queryItemValue("thirdPartyCookies") == "1";
     const bool newAllowPopups = query.queryItemValue("allowPopups") == "1";
     const bool newSaveTabs = query.queryItemValue("saveTabs") == "1";
+    const bool newTabsInTitleBar = query.queryItemValue("tabsInTitleBar") == "1";
     const bool newClearCookiesAtExit = query.queryItemValue("clearCookiesAtExit") == "1";
     if (!newEnableCookies) {
         newThirdParty = false;
@@ -2876,6 +2950,16 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
     settings.setValue("EnableThirdPartyCookies", newThirdParty);
     settings.setValue("AllowPopups", newAllowPopups);
     settings.setValue("SaveTabs", newSaveTabs);
+    settings.setValue("TabsInTitleBar", newTabsInTitleBar);
+    if (newTabsInTitleBar != tabsInTitleBar) {
+        const auto widgets = QApplication::topLevelWidgets();
+        for (auto *widget : widgets) {
+            if (auto *window = qobject_cast<MainWindow *>(widget)) {
+                window->tabsInTitleBar = newTabsInTitleBar;
+                window->updateTitleBar();
+            }
+        }
+    }
     clearCookiesAtExit = newClearCookiesAtExit;
     settings.setValue("ClearCookiesAtExit", newClearCookiesAtExit);
     if (newZoom > 0) {
@@ -3487,9 +3571,67 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     }
 }
 
-// resize event
+void MainWindow::updateTitleBar()
+{
+    if (windowFlags().testFlag(Qt::FramelessWindowHint) != tabsInTitleBar) {
+        // Changing the flags hides a shown window, so show it again in the same state.
+        const bool wasVisible = isVisible();
+        const Qt::WindowStates state = windowState();
+        setWindowFlag(Qt::FramelessWindowHint, tabsInTitleBar);
+        if (wasVisible) {
+            setWindowState(state);
+            show();
+        }
+    }
+    // Full screen has no title bar, so the tabs go back above the page as usual.
+    const bool inTitleBar = tabsInTitleBar && !isFullScreen() && !pageFullScreen;
+    if (inTitleBar) {
+        titleBar->layout()->addWidget(tabWidget->tabStrip());
+        tabWidget->tabStrip()->show();
+        titleBar->show();
+    } else {
+        tabWidget->restoreTabStrip();
+        titleBar->hide();
+    }
+    tabWidget->setTitleBarMode(inTitleBar);
+    if (pageFullScreen) {
+        tabWidget->setTabBarAutoHide(false);
+        tabWidget->tabBar()->hide();
+    }
+    const bool grips = tabsInTitleBar && !isMaximized() && !isFullScreen();
+    const int margin = grips ? gripSize : 0;
+    setContentsMargins(margin, margin, margin, margin);
+    for (auto *grip : std::as_const(resizeGrips)) {
+        grip->setVisible(grips);
+    }
+    placeResizeGrips();
+}
+
+void MainWindow::placeResizeGrips()
+{
+    const QRect r = rect();
+    constexpr int corner = gripSize * 3;
+    for (auto *widget : std::as_const(resizeGrips)) {
+        auto *grip = static_cast<ResizeGrip *>(widget);
+        const Qt::Edges edges = grip->gripEdges();
+        const int x = edges & Qt::LeftEdge ? 0 : (edges & Qt::RightEdge ? r.width() - gripSize : 0);
+        const int y = edges & Qt::TopEdge ? 0 : (edges & Qt::BottomEdge ? r.height() - gripSize : 0);
+        if (edges == Qt::TopEdge || edges == Qt::BottomEdge) {
+            grip->setGeometry(0, y, r.width(), gripSize);
+        } else if (edges == Qt::LeftEdge || edges == Qt::RightEdge) {
+            grip->setGeometry(x, 0, gripSize, r.height());
+        } else {
+            // Corners reach a little into the window so they are easier to hit.
+            grip->setGeometry(edges & Qt::LeftEdge ? 0 : r.width() - corner, edges & Qt::TopEdge ? 0 : r.height() - corner,
+                              corner, corner);
+        }
+        grip->raise();
+    }
+}
+
 void MainWindow::resizeEvent(QResizeEvent * /*event*/)
 {
+    placeResizeGrips();
     if (showProgress) {
         progressBar->move(geometry().width() / 2 - progressBar->width() / 2, geometry().height() - progBarVerticalAdj);
     }
