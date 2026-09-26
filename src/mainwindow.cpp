@@ -333,7 +333,10 @@ void MainWindow::openClearDataDialog()
     form->addRow(tr("Time range:"), range);
     layout->addLayout(form);
 
-    auto *historyBox = new QCheckBox(tr("Browsing history and recently closed tabs"), &dialog);
+    // A private window keeps no history of its own and must not touch the regular one on disk.
+    auto *historyBox = new QCheckBox(privateWindow ? tr("Recently closed tabs")
+                                                   : tr("Browsing history and recently closed tabs"),
+                                     &dialog);
     auto *cookiesBox = new QCheckBox(tr("Cookies"), &dialog);
     auto *cacheBox = new QCheckBox(tr("Cached images and files"), &dialog);
     auto *permissionsBox = new QCheckBox(tr("Site permissions"), &dialog);
@@ -367,7 +370,10 @@ void MainWindow::openClearDataDialog()
 
     const qint64 age = range->currentData().toLongLong();
     if (historyBox->isChecked()) {
-        if (age == 0) {
+        if (privateWindow) {
+            webProfile->clearAllVisitedLinks(); // The window's own off-the-record profile.
+            closedTabs.clear();
+        } else if (age == 0) {
             clearHistoryEntries();
             webProfile->clearAllVisitedLinks();
             closedTabs.clear();
@@ -766,21 +772,24 @@ QString MainWindow::buildHistoryPageHtml()
     };
 
     QList<HistoryEntry> entries;
-    int size = settings.beginReadArray("History");
-    entries.reserve(size);
-    for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
-        const QString url = settings.value("url").toString();
-        if (url.isEmpty()) {
-            continue;
+    // The history on disk belongs to regular windows; a private window lists none of it.
+    if (!privateWindow) {
+        const int size = settings.beginReadArray("History");
+        entries.reserve(size);
+        for (int i = 0; i < size; ++i) {
+            settings.setArrayIndex(i);
+            const QString url = settings.value("url").toString();
+            if (url.isEmpty()) {
+                continue;
+            }
+            QString title = settings.value("title").toString();
+            if (title.isEmpty()) {
+                title = url;
+            }
+            entries.append({title, url, settings.value("icon").toByteArray()});
         }
-        QString title = settings.value("title").toString();
-        if (title.isEmpty()) {
-            title = url;
-        }
-        entries.append({title, url, settings.value("icon").toByteArray()});
+        settings.endArray();
     }
-    settings.endArray();
 
     QStringList rows;
     rows.reserve(entries.size());
@@ -911,7 +920,7 @@ void MainWindow::openHistoryPage()
 
 void MainWindow::removeHistoryEntry(int index)
 {
-    if (index < 0) {
+    if (privateWindow || index < 0) {
         return;
     }
     auto entries = readHistory(settings);
@@ -924,6 +933,9 @@ void MainWindow::removeHistoryEntry(int index)
 
 void MainWindow::clearHistoryEntries()
 {
+    if (privateWindow) {
+        return;
+    }
     settings.remove("History");
     settings.setValue("History/size", 0);
 }
