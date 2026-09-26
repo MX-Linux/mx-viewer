@@ -93,10 +93,11 @@ bool SingleInstance::forward(const QString &argument)
     if (!socket.waitForConnected(connectTimeoutMs)) {
         return false;
     }
-    // The running instance has a different working directory, so send local files as absolute URLs.
+    // The running instance has a different working directory, so send local paths (files or
+    // directories, as displaySite() accepts) as absolute URLs.
     QString request = argument;
     const QFileInfo file(argument);
-    if (!argument.isEmpty() && file.isFile()) {
+    if (!argument.isEmpty() && file.exists()) {
         request = QUrl::fromLocalFile(file.absoluteFilePath()).toString(QUrl::FullyEncoded);
     }
     request.remove(QLatin1Char('\n'));
