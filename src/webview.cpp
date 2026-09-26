@@ -515,10 +515,12 @@ bool WebView::wasClickConsumed()
 WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
 {
     auto *newView = new WebView(profile);
+    // Check if acceptNavigationRequest already handled this click
+    const bool background = !wasClickConsumed() && lastClickWasNewTabRequest();
+    // The link then loads in the new view's page, which must not take the click as its own and open
+    // yet another tab, leaving this one empty.
+    clearClickState();
     if (type == QWebEnginePage::WebBrowserTab) {
-        // Check if acceptNavigationRequest already handled this click
-        bool background = !wasClickConsumed() && lastClickWasNewTabRequest();
-        clearClickState();
         emit newWebView(newView, !background);
     } else if (type == QWebEnginePage::WebBrowserBackgroundTab) {
         emit newWebView(newView, false);
