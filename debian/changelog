@@ -1,3 +1,59 @@
+mx-viewer (26.09) mx; urgency=medium
+
+  * New tabs open a start page with your bookmarks and most visited sites.
+  * Pin a tab from its right-click menu to keep it as a small icon at the
+    left of the tab bar, safe from "close other tabs".
+  * Open a private window (Ctrl+Shift+N) that saves no history, tabs or
+    site data.
+  * Reader view (F9) shows an article's text without ads and clutter.
+  * Right-click a tab to reload, duplicate, pin, mute or close it, or to
+    close other tabs; tabs playing sound show a speaker button to mute them.
+  * Zoom level is remembered for each site.
+  * Find in page shows how many matches there are and can match case.
+  * Clear browsing data lets you choose a time range, such as the last hour.
+  * Save a page or print it from the menu.
+  * Right-click selected text to search the web for it.
+  * Spelling mistakes are underlined in text boxes when spelling
+    dictionaries are installed.
+  * Sites must ask before using your camera, microphone, screen or location.
+  * Warn about sites with certificate problems, with an option to continue
+    anyway.
+  * Ask for a user name and password when a site or proxy requires one,
+    with an option to remember the password in the system keyring.
+  * Videos and pages can go full screen.
+  * When a tab crashes, show a page with a Reload link instead of a blank tab.
+  * Links opened from other applications open as new tabs in the window
+    that is already running.
+  * Opening several files at once from the file manager now opens all of them.
+  * Popup windows open as tabs and close again when the page is done
+    with them.
+  * New keyboard shortcuts: F6 or Alt+D to go to the address bar and
+    Ctrl+PgUp/PgDn to switch tabs; the menu has a list of all shortcuts.
+  * Tabs are shown in the title bar, with minimize, maximize and close
+    buttons; drag the tab row to move the window. A setting brings back
+    the system title bar.
+  * Tabs all have the same width and shrink together when the row is full;
+    the "+" new tab button is always visible.
+  * Closing the last tab closes the window.
+  * Bookmarks bar under the toolbar (Ctrl+Shift+B): drag the address or a
+    link onto it to add a bookmark, drag bookmarks to reorder them, and
+    right-click one to open it in a new tab, edit or delete it.
+  * History is listed newest first under day headings, with the time of
+    each visit, and is stored in a database so large histories stay fast.
+  * Redesigned About and Keyboard shortcuts dialogs.
+  * Ask before closing a window while downloads are in progress.
+  * Printing to a file saves to the Downloads folder, named after the page.
+  * Reader view is kept when going back and forward.
+  * Various fixes: the Home, Back, Forward and Stop buttons now work in
+    every tab, menu and toolbar icons stay visible on dark themes,
+    middle-clicking a link no longer leaves an empty tab, bookmark titles
+    with "&" show correctly, and a possible crash when quitting is gone.
+  * Web pages can no longer change your settings or clear your history.
+  * When started as root, also give up root's group memberships.
+  * Add a manual page.
+
+ -- Adrian <adrian@mxlinux.org>  Sat, 26 Sep 2026 13:12:28 -0400
+
 mx-viewer (26.06) mx; urgency=medium
 
   * Fix settings not saving — changes to home page, search engine, zoom,
