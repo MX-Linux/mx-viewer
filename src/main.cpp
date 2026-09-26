@@ -168,7 +168,8 @@ int main(int argc, char *argv[])
     parser.addPositionalArgument(QObject::tr("Title"), QObject::tr("Window title for the viewer"), "[title]");
     parser.process(app);
 
-    bool force_nobody = (getuid() == 0 || geteuid() == 0) ? parser.isSet("force-nobody") : false;
+    const bool startedAsRoot = getuid() == 0 || geteuid() == 0;
+    bool force_nobody = startedAsRoot ? parser.isSet("force-nobody") : false;
     if (!dropElevatedPrivileges(force_nobody)) {
         qDebug() << "Could not drop elevated privileges";
         exit(EXIT_FAILURE);
@@ -191,8 +192,10 @@ int main(int argc, char *argv[])
     }
 
     // A plain launch (how links from other applications arrive) opens in the running browser.
-    // Help-viewer style calls with a title or options always get their own window.
-    const bool plainLaunch = parser.optionNames().isEmpty() && parser.positionalArguments().size() <= 1;
+    // Help-viewer style calls with a title or options always get their own window, and so does a
+    // launch as root: after the privilege drop its environment (HOME, XDG_RUNTIME_DIR) is still root's.
+    const bool plainLaunch
+        = !startedAsRoot && parser.optionNames().isEmpty() && parser.positionalArguments().size() <= 1;
     if (plainLaunch) {
         if (SingleInstance::forward(parser.positionalArguments().value(0))) {
             return EXIT_SUCCESS;
