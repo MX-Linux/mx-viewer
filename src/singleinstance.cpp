@@ -27,6 +27,7 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QLockFile>
+#include <QTimer>
 #include <QUrl>
 
 #include <memory>
@@ -41,6 +42,7 @@ constexpr int connectTimeoutMs {1000};
 constexpr int ackTimeoutMs {3000};
 constexpr char ack[] {"ok\n"};
 constexpr qint64 maxRequestSize {64 * 1024};
+constexpr int requestTimeoutMs {5000};
 
 // The socket goes only in a private runtime directory owned by this user (as XDG requires, mode 0700),
 // never in a shared place like /tmp where another user could create it first. Empty means
@@ -143,6 +145,11 @@ void SingleInstance::listen(QObject *parent, const std::function<void(const QStr
     QObject::connect(server, &QLocalServer::newConnection, server, [server, handler] {
         while (QLocalSocket *socket = server->nextPendingConnection()) {
             QObject::connect(socket, &QLocalSocket::disconnected, socket, &QObject::deleteLater);
+            // A client that connects and never finishes its request would otherwise stay open forever.
+            QTimer::singleShot(requestTimeoutMs, socket, [socket] {
+                socket->abort();
+                socket->deleteLater();
+            });
             QObject::connect(socket, &QLocalSocket::readyRead, socket, [socket, handler] { readRequest(socket, handler); });
             readRequest(socket, handler);
         }
