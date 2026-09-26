@@ -4,13 +4,14 @@
 # revision. Keep pkgver in step with debian/changelog and debs/.
 pkgname=mx-viewer
 pkgver=26.09
-pkgrel=1
+pkgrel=2
 pkgdesc="Lightweight Qt6 WebEngine browser for MX Linux"
 arch=('x86_64')
 url="https://github.com/MX-Linux/mx-viewer"
 license=('GPL3')
 depends=('qt6-webengine' 'qt6-base' 'qtkeychain-qt6')
-makedepends=('cmake' 'ninja' 'qt6-tools')
+# OBS needs a concrete provider for qtkeychain's org.freedesktop.secrets dependency.
+makedepends=('cmake' 'ninja' 'qt6-tools' 'gnome-keyring')
 provides=('x-www-browser')
 source=("${pkgname}_${pkgver}.tar.xz")
 sha256sums=('SKIP')
