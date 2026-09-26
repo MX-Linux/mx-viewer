@@ -203,6 +203,17 @@ std::pair<QColor, QColor> renderedMenuColors(QMenu *menu)
     }
     return {background, foreground};
 }
+
+// Bookmark icons are left alone: they are saved back to settings and must stay as fetched.
+void adaptMenuIcons(QMenu *menu)
+{
+    const auto [background, foreground] = renderedMenuColors(menu);
+    for (QAction *action : menu->actions()) {
+        if (!action->property("url").isValid()) {
+            action->setIcon(iconForBackground(action->icon(), background, foreground));
+        }
+    }
+}
 } // namespace
 
 namespace
@@ -611,6 +622,7 @@ void MainWindow::showBookmarkMenu(QAction *bookmark, QPoint globalPos)
     QAction *openInTab = submenu.addAction(QIcon::fromTheme("tab-new"), tr("Open in new tab"));
     QAction *rename = submenu.addAction(QIcon::fromTheme("edit-symbolic"), tr("Rename"));
     QAction *remove = submenu.addAction(QIcon::fromTheme("user-trash"), tr("Delete"));
+    adaptMenuIcons(&submenu);
     const QPointer<QAction> target(bookmark);
     QAction *chosen = submenu.exec(globalPos);
     if (!chosen || !target) {
@@ -852,7 +864,11 @@ void MainWindow::listHistory()
     recentFont.setUnderline(true);
     recentFont.setBold(true);
     recentLabel->setFont(recentFont);
-    recentLabel->setStyleSheet("color: #4a4a4a; padding: 4px 18px 4px 18px;");
+    recentLabel->setStyleSheet("padding: 4px 18px 4px 18px;");
+    // In the text color the menu is really painted with, which the palette may not match.
+    QPalette recentPalette = recentLabel->palette();
+    recentPalette.setColor(QPalette::WindowText, renderedMenuColors(history).second);
+    recentLabel->setPalette(recentPalette);
     recentTitle->setDefaultWidget(recentLabel);
     history->addAction(recentTitle);
     if (closedTabs.isEmpty()) {
@@ -873,6 +889,7 @@ void MainWindow::listHistory()
             });
         }
     }
+    adaptMenuIcons(history);
     refreshHistoryCompleter();
 }
 
@@ -1154,13 +1171,11 @@ void MainWindow::adaptIcons()
     adapt(toolBar, QPalette::Window, QPalette::WindowText);
     adapt(addressBar, QPalette::Base, QPalette::Text);
     adapt(searchBox, QPalette::Base, QPalette::Text);
-    // Only the main menu's own items: bookmark icons are saved back to settings and must stay as fetched.
     if (QMenu *menu = menuButton->menu()) {
-        const auto [background, foreground] = renderedMenuColors(menu);
-        for (QAction *action : menu->actions()) {
-            action->setIcon(iconForBackground(action->icon(), background, foreground));
-        }
+        adaptMenuIcons(menu);
     }
+    // The History menu is adapted each time it is rebuilt.
+    adaptMenuIcons(bookmarks);
 }
 
 void MainWindow::addNavigationActions()
@@ -1949,9 +1964,12 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     downloadAction->setShortcut(Qt::CTRL | Qt::Key_J);
     menu->addAction(bookmarkAction = new QAction(QIcon::fromTheme("emblem-favorite"), tr("&Bookmarks")));
     bookmarkAction->setMenu(bookmarks);
-    bookmarks->addAction(addBookmark);
-    addBookmark->setText(tr("Bookmark current address"));
-    addBookmark->setShortcut(Qt::CTRL | Qt::Key_D);
+    // Its own action rather than the address bar's, whose icon is adapted to the address bar.
+    QAction *bookmarkPage {nullptr};
+    bookmarks->addAction(bookmarkPage = new QAction(addBookmark->icon(), tr("Bookmark current address"), this));
+    bookmarkPage->setShortcut(Qt::CTRL | Qt::Key_D);
+    connect(bookmarkPage, &QAction::triggered, addBookmark, &QAction::trigger);
+    connect(addBookmark, &QAction::enabledChanged, bookmarkPage, &QAction::setEnabled);
     bookmarks->addAction(manageBookmarks = new QAction(QIcon::fromTheme("document-edit"), tr("Manage &bookmarks")));
     manageBookmarks->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
     bookmarks->addSeparator();
