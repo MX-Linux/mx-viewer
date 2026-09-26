@@ -387,12 +387,19 @@ void TabWidget::removeTab(int index)
         }
         setCurrentIndex(index);
         QPointer<WebView> settingsView = webView;
-        webView->page()->runJavaScript("window.mxSettingsDirty === true", [this, index, settingsView](const QVariant &result) {
-            if (!settingsView || index < 0 || index >= count()) {
+        // Tabs can move or close while the page answers or the dialog is open, so find the tab again
+        // each time instead of trusting index.
+        auto closeSettingsTab = [this, settingsView] {
+            if (settingsView) {
+                finalizeRemoveTab(indexOf(settingsView));
+            }
+        };
+        webView->page()->runJavaScript("window.mxSettingsDirty === true", [this, settingsView, closeSettingsTab](const QVariant &result) {
+            if (!settingsView) {
                 return;
             }
             if (!result.toBool()) {
-                finalizeRemoveTab(index);
+                closeSettingsTab();
                 return;
             }
             QMessageBox box(this);
@@ -402,18 +409,16 @@ void TabWidget::removeTab(int index)
             box.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
             box.setDefaultButton(QMessageBox::Save);
             const auto choice = box.exec();
+            if (!settingsView) {
+                return;
+            }
             if (choice == QMessageBox::Save) {
                 settingsView->page()->runJavaScript("document.getElementById('save').click();",
-                                                    [this, index, settingsView](const QVariant &) {
-                                                        if (!settingsView || index < 0 || index >= count()) {
-                                                            return;
-                                                        }
-                                                        finalizeRemoveTab(index);
-                                                    });
+                                                    [closeSettingsTab](const QVariant &) { closeSettingsTab(); });
                 return;
             }
             if (choice == QMessageBox::Discard) {
-                finalizeRemoveTab(index);
+                closeSettingsTab();
             }
         });
         return;
