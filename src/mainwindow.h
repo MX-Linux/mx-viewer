@@ -38,6 +38,7 @@ class QCompleter;
 class QStringListModel;
 class FindBar;
 class QLabel;
+class QMenuBar;
 class QToolButton;
 
 class MainWindow : public QMainWindow
@@ -103,7 +104,7 @@ private:
     bool toolbarsVisible {true};
     // Tabs replace the system title bar, in a frameless window with its own window buttons.
     bool tabsInTitleBar {true};
-    QWidget *titleBar {};
+    QMenuBar *titleBar {};
     QList<QWidget *> resizeGrips;
     QMenu *history {};
     QCompleter *historyCompleter {};

@@ -56,6 +56,7 @@
 #include <QPrintDialog>
 #include <QPrinter>
 #include <QMessageBox>
+#include <QMenuBar>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPointer>
@@ -78,6 +79,17 @@
 #include <QStyleOptionMenuItem>
 
 namespace {
+// QMainWindow::menuBar() replaces and deletes a plain menu widget. Some styles call it while
+// polishing the window, so keep the tab strip in a real menu bar and size it for its layout.
+class TabMenuBar : public QMenuBar
+{
+public:
+    explicit TabMenuBar(QWidget *parent) : QMenuBar(parent) { setNativeMenuBar(false); }
+
+    QSize sizeHint() const override { return layout() ? layout()->sizeHint() : QMenuBar::sizeHint(); }
+    QSize minimumSizeHint() const override { return layout() ? layout()->minimumSize() : QMenuBar::minimumSizeHint(); }
+};
+
 // A bookmark keeps its title in the "title" property; its text is the title with "&" escaped,
 // since menus would otherwise take the "&" for a mnemonic marker.
 void setBookmarkTitle(QAction *bookmark, const QString &title)
@@ -1447,12 +1459,12 @@ void MainWindow::addToolbar()
 {
     addToolBar(toolBar);
     setCentralWidget(tabWidget);
-    // The menu widget is the only place above the toolbars, so the tabs go there in title bar mode.
-    titleBar = new QWidget(this);
+    // The menu bar is the only place above the toolbars, so the tabs go there in title bar mode.
+    titleBar = new TabMenuBar(this);
     auto *titleLayout = new QVBoxLayout(titleBar);
     titleLayout->setContentsMargins(0, 0, 0, 0);
     titleLayout->setSpacing(0);
-    setMenuWidget(titleBar);
+    setMenuBar(titleBar);
     for (const Qt::Edges edges : {Qt::Edges(Qt::TopEdge), Qt::Edges(Qt::BottomEdge), Qt::Edges(Qt::LeftEdge),
                                   Qt::Edges(Qt::RightEdge), Qt::TopEdge | Qt::LeftEdge, Qt::TopEdge | Qt::RightEdge,
                                   Qt::BottomEdge | Qt::LeftEdge, Qt::BottomEdge | Qt::RightEdge}) {
