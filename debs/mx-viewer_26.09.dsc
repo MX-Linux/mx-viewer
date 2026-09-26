@@ -14,20 +14,20 @@ Build-Depends: debhelper-compat (= 12), cmake (>= 3.16), ninja-build, qt6-base-d
 Package-List:
  mx-viewer deb web optional arch=any
 Checksums-Sha1:
- 1ab3ebad806d8968d41a6e325ef91f385588852c 121436 mx-viewer_26.09.tar.xz
+ 5f49872cc4a5c37414f87671cee6b037de7de642 122056 mx-viewer_26.09.tar.xz
 Checksums-Sha256:
- a4ddc89bdfd149f9d1456d95d8e167eb802a148d5f7faf54394b03e09199de54 121436 mx-viewer_26.09.tar.xz
+ ffcc93ef15b46f6e2c400adcafc7420af114895e0aa8cc213de2831700687544 122056 mx-viewer_26.09.tar.xz
 Files:
- 818e223353b936d01ad59f32ab1b76e9 121436 mx-viewer_26.09.tar.xz
+ 6634b547dc29df6d1e0635abb9a1e709 122056 mx-viewer_26.09.tar.xz
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmq3//8THGFkcmlhbkBt
-eGxpbnV4Lm9yZwAKCRBwk4x4BnnumJZ2CADRtugIOqhiAFPV0WlWe1VTiWCY6Vdw
-Kq/qsMJXRMaA+UFuE77ZjymQcHaInq0zKw/Wo9ws+CPFwoiEqsYnSb3gEBWVJ7ao
-AX5XnimDdiacUMkGFAN4xvnTQnA2DdcHkQpmYWPzRdSeD9ClMKUkcv6JBaWKCRWR
-CITuYuqNe/dceRWvFWPLrYgb6KB53BAsWgujE6QvnwL4qQPONuaXMK2XDS4LWA2j
-0omyGBImMTzTVYjWVrmYZkqE8n7Wju61MCc0xBoq8iw8/Y9XzML7n+Xl8qGWc1KR
-3PwnBrjV8bcmp9TYtbbwvE5fIod0Ql8CyX0puCAuV5MGTbpjgcRwW+Oh
-=flap
+iQFHBAEBCgAxFiEE8ndToY6S45N+YzXncJOMeAZ57pgFAmq4A0wTHGFkcmlhbkBt
+eGxpbnV4Lm9yZwAKCRBwk4x4BnnumMIkB/94pter3Kx9nFXpxjzSdOhm6iKPNTAU
+y9Ei32o7VKm0525LLYHDNIAXXVgVgcExigPeEreM0QXsE71FfrKr+5vyThiUOCyX
+L1Dcb6EjUqoGVjXBXsUrdhySgdc1195QpeIqZ0U1ajuF43SUeZj86p1LygPb1/Vh
+mSFYdIY+JTyG/7lod7p6J2Mhk8MAcVMsWZVR9D/92yUjJ7U/NO4NZ+Bi4BKzFgBU
+8p9GBkZzTf9OV4SHgLdK2b93AbNbHda6QZM740VPw4D7nyx7Gm5nGfaWANQtBwDC
+x6m+bDnLQpobUQv8yDk2lPJF8ly149KinS9cjZgxRXv56amkV8LxchIC
+=l9m5
 -----END PGP SIGNATURE-----
