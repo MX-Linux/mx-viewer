@@ -660,8 +660,11 @@ QString MainWindow::buildNewTabPageHtml()
             if (url.host().isEmpty() || (url.scheme() != "http" && url.scheme() != "https")) {
                 continue;
             }
-            Site &site = sites[url.host()];
-            site.root = QUrl(url.scheme() + "://" + url.host() + "/");
+            // Keyed by port too, so local servers on different ports are separate sites.
+            Site &site = sites[url.host() + ':' + QString::number(url.port())];
+            // adjusted() keeps the port and IPv6 brackets that rebuilding the URL from host() would lose.
+            site.root = url.adjusted(QUrl::RemoveUserInfo | QUrl::RemovePath | QUrl::RemoveQuery | QUrl::RemoveFragment);
+            site.root.setPath("/");
             ++site.visits;
             site.lastIndex = i;
             const QByteArray icon = settings.value("icon").toByteArray();
@@ -675,7 +678,8 @@ QString MainWindow::buildNewTabPageHtml()
             return a.visits != b.visits ? a.visits > b.visits : a.lastIndex > b.lastIndex;
         });
         for (const Site &site : std::as_const(ranked)) {
-            QString label = site.root.host();
+            // Host with brackets and port, as typed; user info was removed from root.
+            QString label = site.root.authority();
             if (label.startsWith("www.")) {
                 label = label.mid(4);
             }
