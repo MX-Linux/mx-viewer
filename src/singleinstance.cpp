@@ -25,7 +25,10 @@
 #include <QFileInfo>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QLockFile>
 #include <QUrl>
+
+#include <memory>
 
 #include <unistd.h>
 
@@ -103,15 +106,27 @@ void SingleInstance::listen(QObject *parent, const std::function<void(const QStr
     if (path.isEmpty()) {
         return;
     }
+    // With UserAccessOption, listen() renames its socket over an existing one, so it would silently take
+    // the path from a live instance that was just slow to answer. The lock decides who serves; it is
+    // held until exit; a lock left by a dead process is detected by its PID and taken over.
+    static std::unique_ptr<QLockFile> lock;
+    if (lock) {
+        return;
+    }
+    auto candidate = std::make_unique<QLockFile>(path + QStringLiteral(".lock"));
+    candidate->setStaleLockTime(0);
+    if (!candidate->tryLock(0)) {
+        return;
+    }
+    lock = std::move(candidate);
+    // Holding the lock means any leftover socket file is from an instance that is gone.
+    QLocalServer::removeServer(path);
     auto *server = new QLocalServer(parent);
     server->setSocketOptions(QLocalServer::UserAccessOption);
     if (!server->listen(path)) {
-        // forward() already failed to connect, so a leftover socket file is from a crashed instance.
-        QLocalServer::removeServer(path);
-        if (!server->listen(path)) {
-            delete server;
-            return;
-        }
+        delete server;
+        lock.reset(); // Nobody is serving, so don't keep later launches out.
+        return;
     }
     QObject::connect(server, &QLocalServer::newConnection, server, [server, handler] {
         while (QLocalSocket *socket = server->nextPendingConnection()) {
