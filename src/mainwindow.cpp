@@ -1010,8 +1010,10 @@ void MainWindow::addNavigationActions()
     toolBar->addAction(backAction);
     toolBar->addAction(forwardAction);
     reloadAction = new QAction(reload->icon(), reload->text(), this);
-    reloadAction->setShortcutContext(Qt::ApplicationShortcut);
     toolBar->addAction(reloadAction);
+    // On the window too, so the shortcut works with the toolbar hidden. It must stay window-local:
+    // with several windows an application-wide shortcut would be ambiguous and fire nowhere.
+    addAction(reloadAction);
     toolBar->addAction(stopAction);
     backAction->setShortcut(QKeySequence::Back);
     forwardAction->setShortcut(QKeySequence::Forward);
