@@ -47,7 +47,7 @@ private:
     static QString permissionDescription(QWebEnginePermission::PermissionType type);
     void handlePermissionRequest(QWebEnginePermission permission);
     void handleCertificateError(QWebEngineCertificateError error);
-    void askCredentials(const QString &message, QAuthenticator *auth);
+    void askCredentials(const QString &message, const QString &keychainKey, QAuthenticator *auth);
 };
 
 class WebView : public QWebEngineView

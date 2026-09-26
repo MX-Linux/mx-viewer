@@ -77,6 +77,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     WebEngineWidgets
     LinguistTools
 )
+find_package(Qt6Keychain REQUIRED)
 
 # Enable automatic MOC, UIC, and RCC processing
 set(CMAKE_AUTOMOC ON)
@@ -131,6 +132,7 @@ target_link_libraries(mx-viewer
     Qt6::Network
     Qt6::PrintSupport
     Qt6::WebEngineWidgets
+    Qt6Keychain::Qt6Keychain
 )
 
 # Set compiler flags

@@ -27,7 +27,10 @@
 #include <QApplication>
 #include <QAuthenticator>
 #include <QBuffer>
+#include <QCheckBox>
 #include <QContextMenuEvent>
+#include <QDebug>
+#include <QDataStream>
 #include <QDateTime>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -44,6 +47,13 @@
 #include <QWebEnginePermission>
 #include <QWebEngineProfile>
 #include <QWebEngineScript>
+
+#include <qt6keychain/keychain.h>
+
+namespace
+{
+constexpr char keychainService[] {"mx-viewer"};
+} // namespace
 
 // Static member definitions
 bool WebView::s_ctrlHeld = false;
@@ -66,16 +76,23 @@ WebPage::WebPage(QWebEngineProfile *profile, WebView *parent)
     connect(this, &QWebEnginePage::certificateError, this, &WebPage::handleCertificateError);
     connect(this, &QWebEnginePage::authenticationRequired, this,
             [this](const QUrl &requestUrl, QAuthenticator *auth) {
-                askCredentials(tr("%1 requires a user name and password.").arg(requestUrl.host()), auth);
+                const QString origin = requestUrl.adjusted(QUrl::RemoveUserInfo | QUrl::RemovePath | QUrl::RemoveQuery
+                                                           | QUrl::RemoveFragment)
+                                           .toString();
+                askCredentials(tr("%1 requires a user name and password.").arg(requestUrl.host()),
+                               QStringLiteral("site %1 %2").arg(origin, auth->realm()), auth);
             });
     connect(this, &QWebEnginePage::proxyAuthenticationRequired, this,
             [this](const QUrl &, QAuthenticator *auth, const QString &proxyHost) {
-                askCredentials(tr("The proxy %1 requires a user name and password.").arg(proxyHost), auth);
+                // The signal gives no port, so proxies on one host with the same realm share an entry.
+                askCredentials(tr("The proxy %1 requires a user name and password.").arg(proxyHost),
+                               QStringLiteral("proxy %1 %2").arg(proxyHost, auth->realm()), auth);
             });
 }
 
 // The authenticator must be filled in before the signal returns, so this dialog has to be modal.
-void WebPage::askCredentials(const QString &message, QAuthenticator *auth)
+// Passwords are saved only in the system keyring (gnome-keyring, KWallet, KeePassXC), never in a file.
+void WebPage::askCredentials(const QString &message, const QString &keychainKey, QAuthenticator *auth)
 {
     // Heap-allocated and guarded: if the tab is closed during exec(), the view deletes the dialog
     // and the authenticator must not be touched.
@@ -97,10 +114,54 @@ void WebPage::askCredentials(const QString &message, QAuthenticator *auth)
     password->setEchoMode(QLineEdit::Password);
     layout->addRow(tr("User name:"), user);
     layout->addRow(tr("Password:"), password);
+    // Nothing is saved from a private window.
+    const bool privateWindow = profile()->isOffTheRecord();
+    const bool canRemember = !privateWindow && QKeychain::isAvailable();
+    auto *remember = new QCheckBox(tr("Remember password"), dialog);
+    // Enabled once the keyring has answered, so unticking always knows whether there is an entry to delete.
+    remember->setEnabled(false);
+    if (!privateWindow) {
+        if (!canRemember) {
+            remember->setToolTip(tr("Install a password manager such as gnome-keyring or KeePassXC to save passwords."));
+        }
+        layout->addRow(remember);
+    }
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
     connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
     layout->addRow(buttons);
+    // A saved password only fills in the dialog: sending it without asking would loop on a wrong one.
+    // The lambda captures locals by reference; this is safe only because the dialog, its context object,
+    // is deleted before this function returns.
+    bool wasSaved = false;
+    QString savedUser;
+    QString savedPassword;
+    if (canRemember) {
+        auto *read = new QKeychain::ReadPasswordJob(keychainService);
+        read->setKey(keychainKey);
+        connect(read, &QKeychain::Job::finished, dialog,
+                [read, user, password, remember, &wasSaved, &savedUser, &savedPassword] {
+                    remember->setEnabled(true);
+                    if (read->error() != QKeychain::NoError) {
+                        return;
+                    }
+                    QDataStream stream(read->binaryData());
+                    stream.setVersion(QDataStream::Qt_6_0);
+                    stream >> savedUser >> savedPassword;
+                    if (stream.status() != QDataStream::Ok) {
+                        savedUser.clear();
+                        savedPassword.clear();
+                        return;
+                    }
+                    wasSaved = true;
+                    if (password->text().isEmpty()) {
+                        user->setText(savedUser);
+                        password->setText(savedPassword);
+                        remember->setChecked(true);
+                    }
+                });
+        read->start();
+    }
     const int result = dialog->exec();
     if (!dialog) {
         return;
@@ -108,6 +169,31 @@ void WebPage::askCredentials(const QString &message, QAuthenticator *auth)
     if (result == QDialog::Accepted) {
         auth->setUser(user->text());
         auth->setPassword(password->text());
+        const bool changed = user->text() != savedUser || password->text() != savedPassword;
+        if (remember->isChecked() && (!wasSaved || changed)) {
+            QByteArray data;
+            QDataStream stream(&data, QIODevice::WriteOnly);
+            stream.setVersion(QDataStream::Qt_6_0);
+            stream << user->text() << password->text();
+            auto *write = new QKeychain::WritePasswordJob(keychainService);
+            write->setKey(keychainKey);
+            write->setBinaryData(data);
+            connect(write, &QKeychain::Job::finished, write, [write] {
+                if (write->error() != QKeychain::NoError) {
+                    qWarning() << "Could not save the password:" << write->errorString();
+                }
+            });
+            write->start();
+        } else if (!remember->isChecked() && wasSaved) {
+            auto *remove = new QKeychain::DeletePasswordJob(keychainService);
+            remove->setKey(keychainKey);
+            connect(remove, &QKeychain::Job::finished, remove, [remove] {
+                if (remove->error() != QKeychain::NoError) {
+                    qWarning() << "Could not delete the saved password:" << remove->errorString();
+                }
+            });
+            remove->start();
+        }
     } else {
         // A null authenticator cancels the request.
         *auth = QAuthenticator();
