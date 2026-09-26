@@ -22,6 +22,7 @@
 #pragma once
 
 #include "addressbar.h"
+#include "bookmarkbar.h"
 #include "downloadwidget.h"
 #include "tabwidget.h"
 #include "webview.h"
@@ -44,7 +45,8 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(const QCommandLineParser &argParser, QWidget *parent = nullptr);
     // A private window uses an off-the-record profile and writes nothing to disk.
-    explicit MainWindow(const QUrl &url, bool privateMode, QWidget *parent = nullptr);
+    // restoreTabs is false for a window opened next to others, which must not take over the saved tabs.
+    explicit MainWindow(const QUrl &url, bool privateMode, bool restoreTabs = true, QWidget *parent = nullptr);
     ~MainWindow() override;
     // Opens a URL passed on by a later "mx-viewer [URL]" launch; empty opens a new tab.
     static void openFromOtherInstance(const QString &argument);
@@ -94,6 +96,12 @@ private:
     QLabel *findMatches {};
     QAction *findMatchesAction {};
     QMenu *bookmarks {};
+    BookmarkBar *bookmarkBar {};
+    QAction *bookmarkBarAction {};
+    QAction *siteIconAction {};
+    QPointer<QWidget> siteIconButton;
+    QPoint siteIconPressPos;
+    bool toolbarsVisible {true};
     QMenu *history {};
     QCompleter *historyCompleter {};
     QStringListModel *historyCompletionModel {};
@@ -121,6 +129,7 @@ private:
     bool cookiesEnabled {true};
     bool clearCookiesAtExit {false};
     bool restoredTabs {};
+    bool restoreTabsOnOpen {true};
     bool privateWindow {};
     static QPointer<MainWindow> lastActiveWindow;
     static inline bool quitting {false};
@@ -140,6 +149,7 @@ private:
     QMetaObject::Connection loadFinishedConn;
     QMetaObject::Connection urlChangedConn;
     QMetaObject::Connection linkHoveredConn;
+    QMetaObject::Connection iconChangedConn;
     static constexpr int defaultHeight {600};
     static constexpr int defaultWidth {800};
     static constexpr int progBarVerticalAdj {40};
@@ -154,7 +164,21 @@ private:
     void reloadCurrentView();
     void addActions();
     void addBookmarksSubmenu();
-    void showBookmarkMenu(QAction *bookmark, QPoint globalPos);
+    void showBookmarkMenu(QAction *bookmark, QPoint globalPos, bool fromBar = false);
+    void showBookmarkBarMenu(QPoint globalPos);
+    void setupBookmarkBar();
+    void updateBookmarkBar();
+    void setToolbarsVisible(bool visible);
+    [[nodiscard]] QList<QAction *> bookmarkList() const;
+    void insertBookmark(QAction *bookmark, int index);
+    void moveBookmark(int from, int to);
+    void addDroppedBookmark(const QUrl &url, const QString &title, int index);
+    bool editBookmark(QAction *bookmark);
+    void bookmarksChanged();
+    void reloadBookmarks();
+    void openInNewWindow(const QUrl &url, bool privateMode);
+    void updateSiteIcon();
+    void startAddressDrag();
     void addNavigationActions();
     void addHomeAction();
     void addNewTab(const QUrl &url = QUrl(), bool makeCurrent = true);

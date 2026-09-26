@@ -36,6 +36,7 @@
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QDirIterator>
+#include <QDrag>
 #include <QFile>
 #include <QFileInfo>
 #include <QFormLayout>
@@ -54,6 +55,7 @@
 #include <QPrintDialog>
 #include <QPrinter>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QMouseEvent>
 #include <QPointer>
 #include <QPushButton>
@@ -74,6 +76,19 @@
 #include <QStyleOptionMenuItem>
 
 namespace {
+// A bookmark keeps its title in the "title" property; its text is the title with "&" escaped,
+// since menus would otherwise take the "&" for a mnemonic marker.
+void setBookmarkTitle(QAction *bookmark, const QString &title)
+{
+    bookmark->setProperty("title", title);
+    bookmark->setText(QString(title).replace('&', "&&"));
+}
+
+QString bookmarkTitle(const QAction *bookmark)
+{
+    return bookmark->property("title").toString();
+}
+
 qint64 directorySize(const QString &path)
 {
     QDir dir(path);
@@ -234,7 +249,7 @@ MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
     init();
     if (argParser.isSet("full-screen")) {
         showFullScreen();
-        toolBar->hide();
+        setToolbarsVisible(false);
     }
     QString url;
     QString title;
@@ -249,7 +264,7 @@ MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
     }
 }
 
-MainWindow::MainWindow(const QUrl &url, bool privateMode, QWidget *parent)
+MainWindow::MainWindow(const QUrl &url, bool privateMode, bool restoreTabs, QWidget *parent)
     : QMainWindow(parent),
       downloadWidget {new DownloadWidget},
       searchBox {new QLineEdit(this)},
@@ -261,6 +276,7 @@ MainWindow::MainWindow(const QUrl &url, bool privateMode, QWidget *parent)
       args {nullptr}
 {
     privateWindow = privateMode;
+    restoreTabsOnOpen = restoreTabs;
     init();
     if (!restoredTabs) {
         displaySite(url.toString(), QString());
@@ -297,10 +313,11 @@ void MainWindow::init()
     websettings = webProfile->settings();
     loadSettings();
     addToolbar();
+    setupBookmarkBar();
     addActions();
     setConnections();
 
-    restoredTabs = !privateWindow && settings.value("SaveTabs", false).toBool() && restoreSavedTabs();
+    restoredTabs = !privateWindow && restoreTabsOnOpen && settings.value("SaveTabs", false).toBool() && restoreSavedTabs();
     if (privateWindow) {
         auto *label = new QLabel(tr("Private"), toolBar);
         label->setToolTip(tr("Private window: history, tabs and site data are not saved"));
@@ -552,60 +569,342 @@ void MainWindow::addBookmarksSubmenu()
     bookmarks->installEventFilter(this);
 }
 
-void MainWindow::showBookmarkMenu(QAction *bookmark, QPoint globalPos)
+void MainWindow::showBookmarkMenu(QAction *bookmark, QPoint globalPos, bool fromBar)
 {
-    QList<QAction *> bookmarkActions;
-    for (auto *action : bookmarks->actions()) {
-        if (action->property("url").isValid()) {
-            bookmarkActions.append(action);
-        }
-    }
+    const QList<QAction *> bookmarkActions = bookmarkList();
     const int index = bookmarkActions.indexOf(bookmark);
     if (index < 0) {
         return;
     }
+    // Bookmarks are saved from regular windows only, so a private window leaves them as they are.
+    const bool editable = !privateWindow;
     QMenu submenu;
     QAction *moveUp {nullptr};
     QAction *moveDown {nullptr};
-    if (index > 0) {
-        moveUp = submenu.addAction(QIcon::fromTheme("arrow-up"), tr("Move up"));
-    }
-    if (index < bookmarkActions.count() - 1) {
-        moveDown = submenu.addAction(QIcon::fromTheme("arrow-down"), tr("Move down"));
+    // The bar is reordered by dragging instead.
+    if (!fromBar && editable) {
+        if (index > 0) {
+            moveUp = submenu.addAction(QIcon::fromTheme("arrow-up"), tr("Move up"));
+        }
+        if (index < bookmarkActions.count() - 1) {
+            moveDown = submenu.addAction(QIcon::fromTheme("arrow-down"), tr("Move down"));
+        }
     }
     QAction *openInTab = submenu.addAction(QIcon::fromTheme("tab-new"), tr("Open in new tab"));
-    QAction *rename = submenu.addAction(QIcon::fromTheme("edit-symbolic"), tr("Rename"));
+    QAction *openInWindow = submenu.addAction(QIcon::fromTheme("window-new"), tr("Open in new window"));
+    QAction *openInPrivate = submenu.addAction(QIcon::fromTheme("view-private"), tr("Open in new private window"));
+    submenu.addSeparator();
+    QAction *edit = submenu.addAction(QIcon::fromTheme("edit-symbolic"), tr("Edit..."));
     QAction *remove = submenu.addAction(QIcon::fromTheme("user-trash"), tr("Delete"));
+    submenu.addSeparator();
+    QAction *manage = submenu.addAction(QIcon::fromTheme("document-edit"), tr("Manage bookmarks"));
+    edit->setEnabled(editable);
+    remove->setEnabled(editable);
+    manage->setEnabled(editable);
     adaptMenuIcons(&submenu);
     const QPointer<QAction> target(bookmark);
     QAction *chosen = submenu.exec(globalPos);
     if (!chosen || !target) {
         return;
     }
+    // Close the Bookmarks menu chain before anything that opens a window or a dialog.
+    auto closeMenus = [this, fromBar] {
+        if (fromBar) {
+            return;
+        }
+        QWidget *top = bookmarks;
+        while (qobject_cast<QMenu *>(top->parentWidget())) {
+            top = top->parentWidget();
+        }
+        top->hide();
+    };
+    const QUrl url = target->property("url").toUrl();
     if (chosen == moveUp) {
-        bookmarks->insertAction(bookmarkActions.at(index - 1), target);
+        insertBookmark(target, index - 1);
+        bookmarksChanged();
     } else if (chosen == moveDown) {
-        bookmarks->insertAction(index + 2 < bookmarkActions.count() ? bookmarkActions.at(index + 2) : nullptr, target);
+        insertBookmark(target, index + 1);
+        bookmarksChanged();
     } else if (chosen == openInTab) {
-        openLinkInNewTab(target->property("url").toUrl());
-    } else if (chosen == rename) {
-        QInputDialog edit(this);
-        edit.setInputMode(QInputDialog::TextInput);
-        edit.setOkButtonText(tr("Save"));
-        edit.setTextValue(target->text());
-        edit.setLabelText(tr("Rename bookmark:"));
-        edit.resize(300, edit.height());
-        if (edit.exec() == QDialog::Accepted && target) {
-            target->setText(edit.textValue());
+        openLinkInNewTab(url);
+    } else if (chosen == openInWindow || chosen == openInPrivate) {
+        closeMenus();
+        openInNewWindow(url, chosen == openInPrivate);
+    } else if (chosen == edit) {
+        if (editBookmark(target)) {
+            bookmarksChanged();
         }
     } else if (chosen == remove) {
         bookmarks->removeAction(target);
         target->deleteLater();
+        bookmarksChanged();
+    } else if (chosen == manage) {
+        closeMenus();
+        openBookmarksEditor();
     }
+}
+
+void MainWindow::showBookmarkBarMenu(QPoint globalPos)
+{
+    QMenu menu;
+    QAction *add = menu.addAction(addBookmark->icon(), tr("Bookmark current address"));
+    add->setEnabled(addBookmark->isEnabled() && currentWebView());
+    QAction *manage = menu.addAction(QIcon::fromTheme("document-edit"), tr("Manage bookmarks"));
+    manage->setEnabled(!privateWindow);
+    menu.addSeparator();
+    menu.addAction(bookmarkBarAction);
+    adaptMenuIcons(&menu);
+    QAction *chosen = menu.exec(globalPos);
+    if (chosen == add) {
+        addBookmark->trigger();
+    } else if (chosen == manage) {
+        openBookmarksEditor();
+    }
+}
+
+void MainWindow::setupBookmarkBar()
+{
+    bookmarkBar = new BookmarkBar(this);
+    addToolBarBreak();
+    addToolBar(bookmarkBar);
+    bookmarkBar->setEditable(!privateWindow);
+    updateBookmarkBar();
+    connect(bookmarkBar, &BookmarkBar::bookmarkMoved, this, &MainWindow::moveBookmark);
+    connect(bookmarkBar, &BookmarkBar::urlDropped, this, &MainWindow::addDroppedBookmark);
+    connect(bookmarkBar, &BookmarkBar::openInNewTabRequested, this,
+            [this](QAction *bookmark) { openLinkInNewTab(bookmark->property("url").toUrl()); });
+    connect(bookmarkBar, &BookmarkBar::bookmarkMenuRequested, this,
+            [this](QAction *bookmark, QPoint globalPos) { showBookmarkMenu(bookmark, globalPos, true); });
+    connect(bookmarkBar, &BookmarkBar::barMenuRequested, this, &MainWindow::showBookmarkBarMenu);
+
+    bookmarkBarAction->setChecked(settings.value("BookmarkBar", true).toBool());
+    bookmarkBar->setVisible(bookmarkBarAction->isChecked());
+    connect(bookmarkBarAction, &QAction::toggled, this, [this](bool checked) {
+        bookmarkBar->setVisible(checked && toolbarsVisible);
+        if (!privateWindow) {
+            settings.setValue("BookmarkBar", checked);
+        }
+        // Shown or hidden in every window, as the setting applies to all of them.
+        for (auto *widget : QApplication::topLevelWidgets()) {
+            auto *window = qobject_cast<MainWindow *>(widget);
+            if (window && window != this && window->bookmarkBarAction) {
+                window->bookmarkBarAction->setChecked(checked);
+            }
+        }
+    });
+}
+
+void MainWindow::updateBookmarkBar()
+{
+    if (bookmarkBar) {
+        bookmarkBar->setBookmarks(bookmarkList());
+    }
+}
+
+void MainWindow::setToolbarsVisible(bool visible)
+{
+    toolbarsVisible = visible;
+    toolBar->setVisible(visible);
+    if (bookmarkBar) {
+        bookmarkBar->setVisible(visible && bookmarkBarAction->isChecked());
+    }
+}
+
+QList<QAction *> MainWindow::bookmarkList() const
+{
+    QList<QAction *> list;
+    for (auto *action : bookmarks->actions()) {
+        if (action->property("url").isValid()) {
+            list.append(action);
+        }
+    }
+    return list;
+}
+
+// Places a bookmark at the given position among the bookmarks, counted without the bookmark itself.
+void MainWindow::insertBookmark(QAction *bookmark, int index)
+{
+    QList<QAction *> others = bookmarkList();
+    others.removeAll(bookmark);
+    bookmarks->insertAction(index >= 0 && index < others.count() ? others.at(index) : nullptr, bookmark);
+}
+
+// "to" is the drop position in the list as it was before the move.
+void MainWindow::moveBookmark(int from, int to)
+{
+    QAction *bookmark = bookmarkList().value(from);
+    if (!bookmark) {
+        return;
+    }
+    insertBookmark(bookmark, to > from ? to - 1 : to);
+    bookmarksChanged();
+}
+
+void MainWindow::addDroppedBookmark(const QUrl &url, const QString &title, int index)
+{
+    if (!url.isValid()) {
+        return;
+    }
+    // An address already bookmarked is moved to where it was dropped instead of added twice.
+    const QList<QAction *> list = bookmarkList();
+    for (int i = 0; i < list.count(); ++i) {
+        if (list.at(i)->property("url").toUrl() == url) {
+            if (i != index && i + 1 != index) {
+                moveBookmark(i, index);
+            }
+            return;
+        }
+    }
+    // Title and icon from a tab showing the page, in any window.
+    QString bookmarkTitle;
+    QIcon icon;
+    for (auto *widget : QApplication::topLevelWidgets()) {
+        auto *window = qobject_cast<MainWindow *>(widget);
+        if (!window) {
+            continue;
+        }
+        for (int i = 0; i < window->tabWidget->count() && bookmarkTitle.isEmpty(); ++i) {
+            auto *view = qobject_cast<WebView *>(window->tabWidget->widget(i));
+            if (view && view->url() == url) {
+                bookmarkTitle = view->title();
+                icon = view->icon();
+            }
+        }
+    }
+    if (bookmarkTitle.isEmpty()) {
+        bookmarkTitle = title;
+    }
+    if (bookmarkTitle.isEmpty()) {
+        bookmarkTitle = url.host().isEmpty() ? url.toString() : url.host();
+    }
+    auto *bookmark = new QAction(icon, QString());
+    setBookmarkTitle(bookmark, bookmarkTitle);
+    bookmark->setProperty("url", url);
+    connectAddress(bookmark, bookmarks);
+    insertBookmark(bookmark, index);
+    bookmarksChanged();
+}
+
+bool MainWindow::editBookmark(QAction *bookmark)
+{
+    const QPointer<QAction> target(bookmark);
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Edit bookmark"));
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *formLayout = new QFormLayout;
+    auto *titleEdit = new QLineEdit(bookmarkTitle(bookmark), &dialog);
+    auto *urlEdit = new QLineEdit(bookmark->property("url").toString(), &dialog);
+    titleEdit->setMinimumWidth(360);
+    formLayout->addRow(tr("Title"), titleEdit);
+    formLayout->addRow(tr("URL"), urlEdit);
+    layout->addLayout(formLayout);
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+    layout->addWidget(buttons);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    connect(urlEdit, &QLineEdit::textChanged, &dialog, [buttons](const QString &text) {
+        buttons->button(QDialogButtonBox::Save)->setEnabled(!text.trimmed().isEmpty());
+    });
+    titleEdit->selectAll();
+    if (dialog.exec() != QDialog::Accepted || !target) {
+        return false;
+    }
+    const QUrl url = QUrl::fromUserInput(urlEdit->text().trimmed());
+    if (!url.isValid()) {
+        return false;
+    }
+    setBookmarkTitle(target, titleEdit->text().trimmed().isEmpty() ? url.toString() : titleEdit->text().trimmed());
+    target->setProperty("url", url.toString());
+    return true;
+}
+
+// Saves the bookmarks and shows the change in every window.
+void MainWindow::bookmarksChanged()
+{
+    updateBookmarkBar();
+    if (privateWindow) {
+        return;
+    }
+    saveMenuItems(bookmarks, 2);
+    for (auto *widget : QApplication::topLevelWidgets()) {
+        auto *window = qobject_cast<MainWindow *>(widget);
+        if (window && window != this) {
+            window->reloadBookmarks();
+        }
+    }
+}
+
+void MainWindow::reloadBookmarks()
+{
+    for (auto *bookmark : bookmarkList()) {
+        bookmarks->removeAction(bookmark);
+        bookmark->deleteLater();
+    }
+    loadBookmarks();
+    adaptMenuIcons(bookmarks);
+    updateBookmarkBar();
+}
+
+void MainWindow::openInNewWindow(const QUrl &url, bool privateMode)
+{
+    auto *window = new MainWindow(url, privateMode, false);
+    window->move(pos() + QPoint(40, 40));
+    window->show();
+}
+
+void MainWindow::updateSiteIcon()
+{
+    if (!siteIconAction) {
+        return;
+    }
+    const WebView *view = currentWebView();
+    static const QStringList draggableSchemes {"http", "https", "file", "ftp"};
+    if (!view || !draggableSchemes.contains(view->url().scheme())) {
+        siteIconAction->setVisible(false);
+        return;
+    }
+    const QIcon icon = view->icon();
+    siteIconAction->setIcon(icon.isNull() ? QIcon::fromTheme("text-html", style()->standardIcon(QStyle::SP_FileIcon))
+                                          : icon);
+    siteIconAction->setVisible(true);
+}
+
+void MainWindow::startAddressDrag()
+{
+    const WebView *view = currentWebView();
+    if (!view) {
+        return;
+    }
+    const QUrl url = view->url();
+    auto *data = new QMimeData;
+    data->setUrls({url});
+    data->setText(url.toString());
+    data->setHtml(QString("<a href=\"%1\">%2</a>").arg(url.toString().toHtmlEscaped(), view->title().toHtmlEscaped()));
+    auto *drag = new QDrag(this);
+    drag->setMimeData(data);
+    drag->setPixmap(siteIconAction->icon().pixmap(16));
+    drag->exec(Qt::CopyAction | Qt::LinkAction, Qt::CopyAction);
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
+    if (watched == siteIconButton && siteIconButton) {
+        if (event->type() == QEvent::MouseButtonPress) {
+            auto *mouseEvent = static_cast<QMouseEvent *>(event);
+            if (mouseEvent->button() == Qt::LeftButton) {
+                siteIconPressPos = mouseEvent->position().toPoint();
+            }
+        } else if (event->type() == QEvent::MouseMove) {
+            auto *mouseEvent = static_cast<QMouseEvent *>(event);
+            if ((mouseEvent->buttons() & Qt::LeftButton)
+                && (mouseEvent->position().toPoint() - siteIconPressPos).manhattanLength()
+                       >= QApplication::startDragDistance()) {
+                startAddressDrag();
+                return true;
+            }
+        }
+        return QMainWindow::eventFilter(watched, event);
+    }
     if (watched != bookmarks) {
         return QMainWindow::eventFilter(watched, event);
     }
@@ -713,7 +1012,7 @@ QString MainWindow::buildNewTabPageHtml()
                 action->icon().pixmap(QSize(32, 32)).save(&buffer, "PNG");
             }
         }
-        const QString label = action->text().isEmpty() ? url.host() : action->text();
+        const QString label = bookmarkTitle(action).isEmpty() ? url.host() : bookmarkTitle(action);
         bookmarkTiles.append(tile(url.toString(), label, url.host(), icon));
         if (bookmarkTiles.size() == maxTiles) {
             break;
@@ -1228,6 +1527,18 @@ void MainWindow::setupAddressBar()
     addBookmark = addressBar->addAction(QIcon::fromTheme("emblem-favorite", QIcon(":/icons/emblem-favorite.png")),
                                         QLineEdit::TrailingPosition);
     addBookmark->setToolTip(tr("Add bookmark"));
+    // The page icon, dragged to the bookmarks bar to bookmark the page.
+    siteIconAction = addressBar->addAction(QIcon(), QLineEdit::LeadingPosition);
+    siteIconAction->setToolTip(tr("Drag to the bookmarks bar to bookmark this page"));
+    siteIconAction->setVisible(false);
+    for (QObject *object : siteIconAction->associatedObjects()) {
+        auto *widget = qobject_cast<QWidget *>(object);
+        if (widget && widget != addressBar) {
+            siteIconButton = widget;
+            widget->installEventFilter(this);
+        }
+    }
+    addressBar->setDragEnabled(true);
     connect(addressBar, &QLineEdit::returnPressed, this, &MainWindow::openFromAddressBar);
     toolBar->addWidget(addressBar);
 }
@@ -1321,8 +1632,8 @@ void MainWindow::loadBookmarks()
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
         QAction *bookmark {nullptr};
-        bookmarks->addAction(bookmark
-                             = new QAction(settings.value("icon").value<QIcon>(), settings.value("title").toString()));
+        bookmarks->addAction(bookmark = new QAction(settings.value("icon").value<QIcon>(), QString()));
+        setBookmarkTitle(bookmark, settings.value("title").toString());
         bookmark->setProperty("url", settings.value("url"));
         connectAddress(bookmark, bookmarks);
     }
@@ -1464,6 +1775,7 @@ void MainWindow::openQuickInfo()
          {
              {tr("Ctrl+D"), tr("Bookmark current address")},
              {tr("Ctrl+Shift+O"), tr("Manage bookmarks")},
+             {tr("Ctrl+Shift+B"), tr("Show or hide the bookmarks bar")},
              {tr("Ctrl+H"), tr("History")},
              {tr("Ctrl+J"), tr("Downloads")},
              {tr("Ctrl+Shift+Del"), tr("Clear browsing data")},
@@ -1702,6 +2014,8 @@ void MainWindow::openFromAddressBarText(const QString &inputText)
 void MainWindow::saveMenuItems(const QMenu *menu, int offset)
 {
     // Offset is for skipping "Clear history" item, separator, etc.
+    // Removed first, so entries past the end of a shorter list are not left behind.
+    settings.remove(menu->objectName());
     settings.beginWriteArray(menu->objectName());
     if (menu->objectName() == "Bookmarks") {
         int index = 0;
@@ -1710,7 +2024,7 @@ void MainWindow::saveMenuItems(const QMenu *menu, int offset)
                 continue;
             }
             settings.setArrayIndex(index++);
-            settings.setValue("title", action->text());
+            settings.setValue("title", bookmarkTitle(action));
             settings.setValue("url", action->property("url").toString());
             settings.setValue("icon", action->icon());
         }
@@ -1762,6 +2076,10 @@ void MainWindow::setConnections()
     if (linkHoveredConn) {
         disconnect(linkHoveredConn);
     }
+    if (iconChangedConn) {
+        disconnect(iconChangedConn);
+    }
+    iconChangedConn = connect(currentWebView(), &QWebEngineView::iconChanged, this, &MainWindow::updateSiteIcon);
     linkHoveredConn = connect(currentWebView()->page(), &QWebEnginePage::linkHovered, this, [this](const QString &url) {
         if (url.isEmpty()) {
             statusBar()->hide();
@@ -2070,6 +2388,11 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     menu->addAction(readerAction);
     addAction(readerAction);
     connect(readerAction, &QAction::triggered, this, &MainWindow::toggleReaderMode);
+    bookmarkBarAction = new QAction(QIcon::fromTheme("bookmarks"), tr("Show bookmarks &bar"), this);
+    bookmarkBarAction->setCheckable(true);
+    bookmarkBarAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_B));
+    menu->addAction(bookmarkBarAction);
+    addAction(bookmarkBarAction);
     // The same key leaves reader view, so the item names what it will do for this tab.
     connect(menu, &QMenu::aboutToShow, readerAction, [this, readerAction] {
         const WebView *view = currentWebView();
@@ -2092,6 +2415,17 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     connect(addBookmark, &QAction::enabledChanged, bookmarkPage, &QAction::setEnabled);
     bookmarks->addAction(manageBookmarks = new QAction(QIcon::fromTheme("document-edit"), tr("Manage &bookmarks")));
     manageBookmarks->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
+    // Says what it does rather than a check mark; the shortcut is only shown, the window's action handles it.
+    QAction *toggleBookmarkBar {nullptr};
+    bookmarks->addAction(toggleBookmarkBar = new QAction(bookmarkBarAction->icon(), QString(), this));
+    toggleBookmarkBar->setShortcut(bookmarkBarAction->shortcut());
+    toggleBookmarkBar->setShortcutContext(Qt::WidgetShortcut);
+    auto updateToggleText = [this, toggleBookmarkBar] {
+        toggleBookmarkBar->setText(bookmarkBarAction->isChecked() ? tr("Hide bookmarks bar") : tr("Show bookmarks bar"));
+    };
+    updateToggleText();
+    connect(bookmarkBarAction, &QAction::toggled, toggleBookmarkBar, updateToggleText);
+    connect(toggleBookmarkBar, &QAction::triggered, bookmarkBarAction, &QAction::toggle);
     bookmarks->addSeparator();
     connect(fullScreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
     connect(devTools, &QAction::triggered, this, &MainWindow::openDevTools);
@@ -2104,9 +2438,11 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     }
     connect(addBookmark, &QAction::triggered, this, [this] {
         QAction *bookmark {nullptr};
-        bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), currentWebView()->title()));
+        bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), QString()));
+        setBookmarkTitle(bookmark, currentWebView()->title());
         bookmark->setProperty("url", currentWebView()->url());
         connectAddress(bookmark, bookmarks);
+        bookmarksChanged();
     });
 }
 
@@ -2764,7 +3100,7 @@ void MainWindow::openBookmarksEditor()
         if (!action->property("url").isValid()) {
             continue;
         }
-        auto *item = new QListWidgetItem(action->icon(), action->text(), list);
+        auto *item = new QListWidgetItem(action->icon(), bookmarkTitle(action), list);
         item->setData(Qt::UserRole, action->property("url").toString());
     }
 
@@ -2842,12 +3178,13 @@ void MainWindow::openBookmarksEditor()
     }
     for (int i = 0; i < list->count(); ++i) {
         auto *item = list->item(i);
-        auto *bookmark = new QAction(item->icon(), item->text(), bookmarks);
+        auto *bookmark = new QAction(item->icon(), QString(), bookmarks);
+        setBookmarkTitle(bookmark, item->text());
         bookmark->setProperty("url", item->data(Qt::UserRole).toString());
         bookmarks->addAction(bookmark);
         connectAddress(bookmark, bookmarks);
     }
-    saveMenuItems(bookmarks, 2);
+    bookmarksChanged();
 }
 
 void MainWindow::closeCurrentTab()
@@ -2889,7 +3226,7 @@ void MainWindow::handleFullScreenRequest(QWebEngineFullScreenRequest request, We
             normalGeometry = saveGeometry();
             showFullScreen();
         }
-        toolBar->hide();
+        setToolbarsVisible(false);
         // Auto-hide would show the tab bar again as soon as a tab is added in the background.
         // Turning it off shows the bar, so hide it afterwards.
         tabWidget->setTabBarAutoHide(false);
@@ -2929,7 +3266,7 @@ void MainWindow::restoreFromPageFullScreen()
         if (!normalGeometry.isEmpty()) {
             restoreGeometry(normalGeometry);
         }
-        toolBar->show();
+        setToolbarsVisible(true);
     }
 }
 
@@ -2944,11 +3281,11 @@ void MainWindow::toggleFullScreen()
         if (!normalGeometry.isEmpty()) {
             restoreGeometry(normalGeometry);
         }
-        toolBar->show();
+        setToolbarsVisible(true);
     } else {
         normalGeometry = saveGeometry();
         showFullScreen();
-        toolBar->hide();
+        setToolbarsVisible(false);
         showFullScreenNotification();
     }
 }
@@ -2964,6 +3301,7 @@ void MainWindow::updateUrl()
     addressBar->show();
     addressBar->setText(view->url().scheme() == "mx-newtab" ? QString() : view->url().toDisplayString());
     addressBar->setCursorPosition(0);
+    updateSiteIcon();
     applyZoom();
 }
 

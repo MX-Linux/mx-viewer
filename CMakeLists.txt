@@ -92,6 +92,7 @@ set(SOURCES
     src/webview.cpp
     src/tabwidget.cpp
     src/addressbar.cpp
+    src/bookmarkbar.cpp
     src/downloadwidget.cpp
     src/historystore.cpp
     src/singleinstance.cpp
@@ -102,6 +103,7 @@ set(HEADERS
     src/webview.h
     src/tabwidget.h
     src/addressbar.h
+    src/bookmarkbar.h
     src/downloadwidget.h
     src/historystore.h
     src/singleinstance.h
