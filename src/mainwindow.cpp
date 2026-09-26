@@ -1672,7 +1672,13 @@ void MainWindow::openFromOtherInstance(const QString &argument)
             }
         }
     }
-    const QUrl url = argument.isEmpty() ? QUrl() : QUrl::fromUserInput(argument);
+    QUrl url = argument.isEmpty() ? QUrl() : QUrl::fromUserInput(argument);
+    // Any local process can send this, so only ordinary locations are opened, never internal pages
+    // such as mx-history://clear; anything else just opens a new tab.
+    static const QStringList allowedSchemes {"http", "https", "file", "ftp"};
+    if (!url.isEmpty() && !allowedSchemes.contains(url.scheme())) {
+        url.clear();
+    }
     if (!target) {
         target = new MainWindow(url, false);
         // Like a first launch: restored tabs replace the start page, so the link needs its own tab.
