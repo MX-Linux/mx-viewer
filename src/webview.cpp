@@ -117,10 +117,11 @@ void WebPage::askCredentials(const QString &message, const QString &keychainKey,
     // Nothing is saved from a private window.
     const bool privateWindow = profile()->isOffTheRecord();
     const bool canRemember = !privateWindow && QKeychain::isAvailable();
-    auto *remember = new QCheckBox(tr("Remember password"), dialog);
-    // Enabled once the keyring has answered, so unticking always knows whether there is an entry to delete.
-    remember->setEnabled(false);
+    QCheckBox *remember {nullptr};
     if (!privateWindow) {
+        remember = new QCheckBox(tr("Remember password"), dialog);
+        // Enabled once the keyring has answered, so unticking always knows whether there is an entry to delete.
+        remember->setEnabled(false);
         if (!canRemember) {
             remember->setToolTip(tr("Install a password manager such as gnome-keyring or KeePassXC to save passwords."));
         }
@@ -141,10 +142,16 @@ void WebPage::askCredentials(const QString &message, const QString &keychainKey,
         read->setKey(keychainKey);
         connect(read, &QKeychain::Job::finished, dialog,
                 [read, user, password, remember, &wasSaved, &savedUser, &savedPassword] {
-                    remember->setEnabled(true);
-                    if (read->error() != QKeychain::NoError) {
+                    if (read->error() == QKeychain::EntryNotFound) {
+                        remember->setEnabled(true);
                         return;
                     }
+                    // Not even a lookup worked (no keyring running, unlock refused), so saving would fail too.
+                    if (read->error() != QKeychain::NoError) {
+                        remember->setToolTip(tr("Passwords cannot be saved: %1").arg(read->errorString()));
+                        return;
+                    }
+                    remember->setEnabled(true);
                     QDataStream stream(read->binaryData());
                     stream.setVersion(QDataStream::Qt_6_0);
                     stream >> savedUser >> savedPassword;
@@ -154,10 +161,12 @@ void WebPage::askCredentials(const QString &message, const QString &keychainKey,
                         return;
                     }
                     wasSaved = true;
-                    if (password->text().isEmpty()) {
+                    // Ticked even when not filled in, so OK does not delete an entry the user never unticked.
+                    remember->setChecked(true);
+                    // Never overwrite what the user typed while the keyring was answering.
+                    if (!user->isModified() && !password->isModified()) {
                         user->setText(savedUser);
                         password->setText(savedPassword);
-                        remember->setChecked(true);
                     }
                 });
         read->start();
@@ -169,8 +178,10 @@ void WebPage::askCredentials(const QString &message, const QString &keychainKey,
     if (result == QDialog::Accepted) {
         auth->setUser(user->text());
         auth->setPassword(password->text());
+        const bool keep = remember && remember->isChecked();
         const bool changed = user->text() != savedUser || password->text() != savedPassword;
-        if (remember->isChecked() && (!wasSaved || changed)) {
+        // Typing before the keyring answered leaves the saved password unfilled; an empty one is not a new password.
+        if (keep && (!wasSaved || (changed && !password->text().isEmpty()))) {
             QByteArray data;
             QDataStream stream(&data, QIODevice::WriteOnly);
             stream.setVersion(QDataStream::Qt_6_0);
@@ -184,7 +195,7 @@ void WebPage::askCredentials(const QString &message, const QString &keychainKey,
                 }
             });
             write->start();
-        } else if (!remember->isChecked() && wasSaved) {
+        } else if (!keep && wasSaved) {
             auto *remove = new QKeychain::DeletePasswordJob(keychainService);
             remove->setKey(keychainKey);
             connect(remove, &QKeychain::Job::finished, remove, [remove] {
