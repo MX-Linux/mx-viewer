@@ -71,6 +71,7 @@ public slots:
 protected:
     void changeEvent(QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 
@@ -150,6 +151,7 @@ private:
     void reloadCurrentView();
     void addActions();
     void addBookmarksSubmenu();
+    void showBookmarkMenu(QAction *bookmark, QPoint globalPos);
     void addNavigationActions();
     void addHomeAction();
     void addNewTab(const QUrl &url = QUrl(), bool makeCurrent = true);

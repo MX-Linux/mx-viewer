@@ -28,6 +28,7 @@
 #include <QBuffer>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QContextMenuEvent>
 #include <QCompleter>
 #include <QDateTime>
 #include <QDialog>
@@ -52,6 +53,8 @@
 #include <QPrintDialog>
 #include <QPrinter>
 #include <QMessageBox>
+#include <QMouseEvent>
+#include <QPointer>
 #include <QPushButton>
 #include <QTimer>
 #include <QUrlQuery>
@@ -549,73 +552,101 @@ void MainWindow::toggleReaderMode()
 
 void MainWindow::addBookmarksSubmenu()
 {
-    bookmarks->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(bookmarks, &QMenu::customContextMenuRequested, this, [this](QPoint pos) {
-        QAction *currentAction = bookmarks->actionAt(pos);
-        if (!currentAction || !currentAction->property("url").isValid()) {
-            return;
+    // A menu takes any button release as a click, so right and middle clicks on bookmarks are handled
+    // in eventFilter() before the menu sees them.
+    bookmarks->installEventFilter(this);
+}
+
+void MainWindow::showBookmarkMenu(QAction *bookmark, QPoint globalPos)
+{
+    QList<QAction *> bookmarkActions;
+    for (auto *action : bookmarks->actions()) {
+        if (action->property("url").isValid()) {
+            bookmarkActions.append(action);
         }
-        QPoint globalPos = bookmarks->mapToGlobal(pos);
-        QMenu submenu;
-        QList<QAction *> bookmarkActions;
-        for (auto *action : bookmarks->actions()) {
-            if (action->property("url").isValid()) {
-                bookmarkActions.append(action);
+    }
+    const int index = bookmarkActions.indexOf(bookmark);
+    if (index < 0) {
+        return;
+    }
+    QMenu submenu;
+    QAction *moveUp {nullptr};
+    QAction *moveDown {nullptr};
+    if (index > 0) {
+        moveUp = submenu.addAction(QIcon::fromTheme("arrow-up"), tr("Move up"));
+    }
+    if (index < bookmarkActions.count() - 1) {
+        moveDown = submenu.addAction(QIcon::fromTheme("arrow-down"), tr("Move down"));
+    }
+    QAction *openInTab = submenu.addAction(QIcon::fromTheme("tab-new"), tr("Open in new tab"));
+    QAction *rename = submenu.addAction(QIcon::fromTheme("edit-symbolic"), tr("Rename"));
+    QAction *remove = submenu.addAction(QIcon::fromTheme("user-trash"), tr("Delete"));
+    const QPointer<QAction> target(bookmark);
+    QAction *chosen = submenu.exec(globalPos);
+    if (!chosen || !target) {
+        return;
+    }
+    if (chosen == moveUp) {
+        bookmarks->insertAction(bookmarkActions.at(index - 1), target);
+    } else if (chosen == moveDown) {
+        bookmarks->insertAction(index + 2 < bookmarkActions.count() ? bookmarkActions.at(index + 2) : nullptr, target);
+    } else if (chosen == openInTab) {
+        openLinkInNewTab(target->property("url").toUrl());
+    } else if (chosen == rename) {
+        QInputDialog edit(this);
+        edit.setInputMode(QInputDialog::TextInput);
+        edit.setOkButtonText(tr("Save"));
+        edit.setTextValue(target->text());
+        edit.setLabelText(tr("Rename bookmark:"));
+        edit.resize(300, edit.height());
+        if (edit.exec() == QDialog::Accepted && target) {
+            target->setText(edit.textValue());
+        }
+    } else if (chosen == remove) {
+        bookmarks->removeAction(target);
+        target->deleteLater();
+    }
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched != bookmarks) {
+        return QMainWindow::eventFilter(watched, event);
+    }
+    if (event->type() == QEvent::ContextMenu) {
+        // Keyboard only (the Menu key); a mouse right click is handled on release below.
+        auto *menuEvent = static_cast<QContextMenuEvent *>(event);
+        QAction *action = bookmarks->activeAction();
+        if (menuEvent->reason() == QContextMenuEvent::Keyboard && action && action->property("url").isValid()) {
+            showBookmarkMenu(action, bookmarks->mapToGlobal(bookmarks->actionGeometry(action).center()));
+        }
+        return true;
+    }
+    if (event->type() != QEvent::MouseButtonPress && event->type() != QEvent::MouseButtonRelease) {
+        return false;
+    }
+    auto *mouseEvent = static_cast<QMouseEvent *>(event);
+    if (mouseEvent->button() != Qt::RightButton && mouseEvent->button() != Qt::MiddleButton) {
+        return false;
+    }
+    QAction *action = bookmarks->actionAt(mouseEvent->position().toPoint());
+    if (!action || !action->property("url").isValid()) {
+        return false;
+    }
+    if (event->type() == QEvent::MouseButtonRelease) {
+        if (mouseEvent->button() == Qt::RightButton) {
+            showBookmarkMenu(action, mouseEvent->globalPosition().toPoint());
+        } else {
+            // Close the whole menu chain, as a normal click would.
+            QWidget *top = bookmarks;
+            while (qobject_cast<QMenu *>(top->parentWidget())) {
+                top = top->parentWidget();
             }
+            top->hide();
+            openLinkInNewTab(action->property("url").toUrl());
         }
-        const int currentIndex = bookmarkActions.indexOf(currentAction);
-        if (currentIndex > 0) {
-            submenu.addAction(QIcon::fromTheme("arrow-up"), tr("Move up"), bookmarks, [this, pos] {
-                QAction *action = bookmarks->actionAt(pos);
-                if (!action || !action->property("url").isValid()) {
-                    return;
-                }
-                QList<QAction *> actions;
-                for (auto *entry : bookmarks->actions()) {
-                    if (entry->property("url").isValid()) {
-                        actions.append(entry);
-                    }
-                }
-                const int index = actions.indexOf(action);
-                if (index > 0) {
-                    bookmarks->insertAction(actions.at(index - 1), action);
-                }
-            });
-        }
-        if (currentIndex >= 0 && currentIndex < bookmarkActions.count() - 1) {
-            submenu.addAction(QIcon::fromTheme("arrow-down"), tr("Move down"), bookmarks, [this, pos] {
-                QAction *action = bookmarks->actionAt(pos);
-                if (!action || !action->property("url").isValid()) {
-                    return;
-                }
-                QList<QAction *> actions;
-                for (auto *entry : bookmarks->actions()) {
-                    if (entry->property("url").isValid()) {
-                        actions.append(entry);
-                    }
-                }
-                const int index = actions.indexOf(action);
-                if (index >= 0 && index < actions.count() - 1) {
-                    QAction *insertBefore = (index + 2 < actions.count()) ? actions.at(index + 2) : nullptr;
-                    bookmarks->insertAction(insertBefore, action);
-                }
-            });
-        }
-        submenu.addAction(QIcon::fromTheme("edit-symbolic"), tr("Rename"), bookmarks, [this, pos] {
-            QInputDialog edit(this);
-            edit.setInputMode(QInputDialog::TextInput);
-            edit.setOkButtonText(tr("Save"));
-            edit.setTextValue(bookmarks->actionAt(pos)->text());
-            edit.setLabelText(tr("Rename bookmark:"));
-            edit.resize(300, edit.height());
-            if (edit.exec() == QDialog::Accepted) {
-                bookmarks->actionAt(pos)->setText(edit.textValue());
-            }
-        });
-        submenu.addAction(QIcon::fromTheme("user-trash"), tr("Delete"), bookmarks,
-                          [this, pos] { bookmarks->removeAction(bookmarks->actionAt(pos)); });
-        submenu.exec(globalPos);
-    });
+    }
+    return true;
 }
 
 void MainWindow::addNewTab(const QUrl &url, bool makeCurrent)
