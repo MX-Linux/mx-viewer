@@ -194,6 +194,7 @@ private:
     void loadSettings();
     void openBrowseDialog();
     void openQuickInfo();
+    void openAbout();
     void cycleTab(int step);
     void toggleReaderMode();
     void openClearDataDialog();
