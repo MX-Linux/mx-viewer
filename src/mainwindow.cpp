@@ -1796,6 +1796,31 @@ void MainWindow::printPage(WebView *webView)
     // QWebEngineView::print() is asynchronous. The printer is owned by a connection whose context is
     // the view, so it stays alive until printFinished and is never freed before the view itself.
     auto printer = std::make_shared<QPrinter>(QPrinter::HighResolution);
+    // Print to file defaults to the user's Downloads folder, named after the page, rather than the
+    // working directory.
+    QString folder = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+    if (folder.isEmpty() || !QDir(folder).exists()) {
+        folder = QDir::homePath();
+    }
+    static const QRegularExpression unsafe(QStringLiteral("[/\\\\\\x00-\\x1f]"));
+    QString name = view->title().simplified().replace(unsafe, QStringLiteral("_")).left(100);
+    // File names are limited to 255 bytes, and a title in a non-Latin script takes up to 3 bytes per
+    // character; leave room for ".pdf" and never cut a surrogate pair.
+    while (!name.isEmpty() && name.back().isHighSurrogate()) {
+        name.chop(1);
+    }
+    while (name.toUtf8().size() > 250) {
+        name.chop(name.size() >= 2 && name.back().isLowSurrogate() ? 2 : 1);
+    }
+    while (name.startsWith(QLatin1Char('.'))) {
+        name.remove(0, 1);
+    }
+    if (name.isEmpty()) {
+        name = view->url().host().isEmpty() ? QStringLiteral("page") : view->url().host();
+    }
+    printer->setOutputFileName(QDir(folder).filePath(name + QStringLiteral(".pdf")));
+    // A .pdf name switches the printer to PDF; switch back so a real printer, if any, stays the default.
+    printer->setOutputFormat(QPrinter::NativeFormat);
     QPrintDialog dialog(printer.get(), this);
     dialog.setWindowTitle(tr("Print page"));
     if (dialog.exec() != QDialog::Accepted || !view) {
