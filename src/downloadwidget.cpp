@@ -160,7 +160,7 @@ void DownloadWidget::updateDownload(QWebEngineDownloadRequest* download, QPushBu
         pushButton->setToolTip(tr("Cancel downloading"));
     } else {
         pushButton->setIcon(QIcon::fromTheme("edit-clear"));
-        pushButton->setText(tr("Remove"));
+        pushButton->setText(tr("Clear"));
         pushButton->setToolTip(tr("Remove from list"));
     }
 }
