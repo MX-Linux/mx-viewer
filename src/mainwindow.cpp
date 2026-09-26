@@ -518,7 +518,7 @@ void MainWindow::toggleReaderMode()
         // The article HTML comes from the page, so the reader page may not run scripts, submit forms
         // or load anything but images, media and fonts.
         const QString html = QStringLiteral(
-            "<!DOCTYPE html><html lang=\"%1\" dir=\"%2\"><head><meta charset=\"utf-8\">"
+            "<!DOCTYPE html><html lang=\"%1\" dir=\"%2\" data-mx-reader><head><meta charset=\"utf-8\">"
             "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src * data:; "
             "media-src *; font-src *; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'\">"
             "<title>%3</title><style>"
@@ -1831,6 +1831,11 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     menu->addAction(readerAction);
     addAction(readerAction);
     connect(readerAction, &QAction::triggered, this, &MainWindow::toggleReaderMode);
+    // The same key leaves reader view, so the item names what it will do for this tab.
+    connect(menu, &QMenu::aboutToShow, readerAction, [this, readerAction] {
+        const WebView *view = currentWebView();
+        readerAction->setText(view && view->isReaderMode() ? tr("Exit &reader view") : tr("&Reader view"));
+    });
     menu->addSeparator();
     menu->addAction(devTools = new QAction(QIcon::fromTheme("applications-development"), tr("&Developer Tools")));
     devTools->setShortcut(Qt::Key_F12);

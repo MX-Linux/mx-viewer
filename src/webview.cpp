@@ -43,6 +43,7 @@
 #include <QWebEngineContextMenuRequest>
 #include <QWebEnginePermission>
 #include <QWebEngineProfile>
+#include <QWebEngineScript>
 
 // Static member definitions
 bool WebView::s_ctrlHeld = false;
@@ -436,6 +437,13 @@ void WebView::handleLoadFinished(bool ok)
 {
     // Generated pages (crash notice, reader view) are not visits; any other load leaves reader view.
     if (isGeneratedPage()) {
+        // Back or forward can bring a reader page back, so ask the page which one it is.
+        page()->runJavaScript(QStringLiteral("document.documentElement.hasAttribute('data-mx-reader')"),
+                              QWebEngineScript::ApplicationWorld, [view = QPointer<WebView>(this)](const QVariant &result) {
+                                  if (view && result.isValid() && view->isGeneratedPage()) {
+                                      view->readerMode = result.toBool();
+                                  }
+                              });
         return;
     }
     readerMode = false;
