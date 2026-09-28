@@ -32,9 +32,6 @@
 #include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
-#include <QOffscreenSurface>
-#include <QOpenGLContext>
-#include <QOpenGLFunctions>
 #include <QProcess>
 #include <QStandardPaths>
 #include <QTranslator>
@@ -45,24 +42,6 @@
 #ifndef VERSION
     #define VERSION "?.?.?.?"
 #endif
-
-// With a software OpenGL driver (llvmpipe in VMs, WSL, missing GPU drivers) Chromium already
-// composites in software, and drawing its frames again through Qt Quick's OpenGL scene graph
-// costs more CPU than the page itself, e.g. doubling it during video playback.
-bool openGLIsSoftwareRendered()
-{
-    QOpenGLContext context;
-    QOffscreenSurface surface;
-    surface.create();
-    if (!context.create() || !context.makeCurrent(&surface)) {
-        return false;
-    }
-    const auto *renderer = reinterpret_cast<const char *>(context.functions()->glGetString(GL_RENDERER));
-    const QString name = QString::fromLatin1(renderer ? renderer : "");
-    context.doneCurrent();
-    return name.contains("llvmpipe") || name.contains("softpipe") || name.contains("SwiftShader")
-           || name.contains("Software Rasterizer");
-}
 
 QPair<uint, uint> getUserIDs()
 {
@@ -195,12 +174,6 @@ int main(int argc, char *argv[])
     if (!dropElevatedPrivileges(force_nobody)) {
         qDebug() << "Could not drop elevated privileges";
         exit(EXIT_FAILURE);
-    }
-
-    // Probe the graphics driver only after dropping root rights, and before the first
-    // web view creates its Qt Quick window.
-    if (qEnvironmentVariableIsEmpty("QT_QUICK_BACKEND") && openGLIsSoftwareRendered()) {
-        qputenv("QT_QUICK_BACKEND", "software");
     }
 
     QTranslator qtTran;
