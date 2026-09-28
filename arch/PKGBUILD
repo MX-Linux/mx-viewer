@@ -3,7 +3,7 @@
 # OBS extracts this PKGBUILD and the Debian source tarball from the same git
 # revision. Keep pkgver in step with debian/changelog and debs/.
 pkgname=mx-viewer
-pkgver=26.09.1
+pkgver=26.09.2
 pkgrel=1
 pkgdesc="Lightweight Qt6 WebEngine browser for MX Linux"
 arch=('x86_64')

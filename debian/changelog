@@ -1,3 +1,10 @@
+mx-viewer (26.09.2) mx; urgency=medium
+
+  * Use about half as much CPU when playing videos on computers without
+    graphics acceleration, such as virtual machines or WSL.
+
+ -- Adrian <adrian@mxlinux.org>  Mon, 28 Sep 2026 00:40:46 -0400
+
 mx-viewer (26.09.1) mx; urgency=medium
 
   * Prevent a KDE Breeze startup crash when tabs are in the title bar.
