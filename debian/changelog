@@ -1,3 +1,10 @@
+mx-viewer (26.09.3) mx; urgency=medium
+
+  * Fix a crash when playing videos on computers without graphics
+    acceleration, such as virtual machines or WSL.
+
+ -- Adrian <adrian@mxlinux.org>  Mon, 28 Sep 2026 01:05:49 -0400
+
 mx-viewer (26.09.2) mx; urgency=medium
 
   * Use about half as much CPU when playing videos on computers without
