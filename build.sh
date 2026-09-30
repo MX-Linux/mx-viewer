@@ -24,6 +24,14 @@
 
 set -e
 
+clean_build_artifacts() {
+    rm -rf "$BUILD_DIR"
+    rm -f debian/*.debhelper.log debian/*.substvars debian/files
+    rm -rf debian/.debhelper/ debian/mx-viewer/ obj-*/
+    rm -f translations/*.qm src/version.h
+    rm -f ../mx-viewer_*.build ../mx-viewer_*.buildinfo
+}
+
 # Default values
 BUILD_DIR="build"
 BUILD_TYPE="Release"
@@ -74,19 +82,16 @@ if [ "$DEBIAN_BUILD" = true ]; then
 
     echo "Creating debs directory and moving debian artifacts..."
     mkdir -p debs
-    mv ../*.deb debs/ 2>/dev/null || true
-    mv ../*.changes debs/ 2>/dev/null || true  
-    mv ../*.dsc debs/ 2>/dev/null || true
-    mv ../*.tar.* debs/ 2>/dev/null || true
-    mv ../*.buildinfo debs/ 2>/dev/null || true
-    mv ../*build* debs/ 2>/dev/null || true
+    shopt -s nullglob
+    artifacts=(../mx-viewer_*.deb ../mx-viewer_*.changes ../mx-viewer_*.dsc
+               ../mx-viewer_*.tar.* ../mx-viewer_*.buildinfo ../mx-viewer_*.build)
+    if ((${#artifacts[@]})); then
+        mv -- "${artifacts[@]}" debs/
+    fi
+    shopt -u nullglob
 
     echo "Cleaning build directory and debian artifacts..."
-    rm -rf "$BUILD_DIR"
-    rm -f debian/*.debhelper.log debian/*.substvars debian/files
-    rm -rf debian/.debhelper/ debian/mx-viewer/ obj-*/
-    rm -f translations/*.qm src/version.h
-    rm -f ../*build* ../*.buildinfo 2>/dev/null || true
+    clean_build_artifacts
 
     echo "Debian package build completed!"
     echo "Debian artifacts moved to debs/ directory"
@@ -96,11 +101,7 @@ fi
 # Clean build directory if requested
 if [ "$CLEAN" = true ]; then
     echo "Cleaning build directory and debian artifacts..."
-    rm -rf "$BUILD_DIR"
-    rm -f debian/*.debhelper.log debian/*.substvars debian/files
-    rm -rf debian/.debhelper/ debian/mx-viewer/ obj-*/
-    rm -f translations/*.qm src/version.h
-    rm -f ../*build* ../*.buildinfo 2>/dev/null || true
+    clean_build_artifacts
 fi
 
 # Create build directory
