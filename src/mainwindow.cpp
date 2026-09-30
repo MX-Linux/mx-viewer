@@ -2934,9 +2934,15 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
         return false;
     }
     QUrlQuery query(url);
-    const QString newHome = QUrl::fromPercentEncoding(query.queryItemValue("home").toUtf8()).trimmed();
+    const auto formValue = [&query](const QString &name) {
+        // URLSearchParams uses '+' for spaces; decode it before %2B becomes a literal '+'.
+        QString encoded = query.queryItemValue(name, QUrl::FullyEncoded);
+        encoded.replace(QLatin1Char('+'), QLatin1Char(' '));
+        return QUrl::fromPercentEncoding(encoded.toUtf8()).trimmed();
+    };
+    const QString newHome = formValue("home");
     const QString newSearch = query.queryItemValue("search").trimmed();
-    const QString newCustomSearch = QUrl::fromPercentEncoding(query.queryItemValue("customSearch").toUtf8()).trimmed();
+    const QString newCustomSearch = formValue("customSearch");
     const int newZoom = query.queryItemValue("zoom").toInt();
     const bool newOpenNewTab = query.queryItemValue("openNewTab") == "1";
     const bool newShowProgress = query.queryItemValue("showProgress") == "1";
