@@ -2535,6 +2535,10 @@ void MainWindow::addHelpMenuActions(QMenu *menu)
     menu->addSeparator();
     menu->addAction(settingsAction = new QAction(QIcon::fromTheme("preferences-system"), tr("&Settings")));
     settingsAction->setShortcuts({Qt::CTRL | Qt::Key_Comma, QKeySequence::Preferences});
+    settingsAction->setEnabled(!privateWindow);
+    if (privateWindow) {
+        settingsAction->setToolTip(tr("Open a regular window to change settings"));
+    }
     menu->addSeparator();
     menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Keyboard shortcuts")));
     help->setShortcut(QKeySequence::HelpContents);
@@ -2865,6 +2869,9 @@ void MainWindow::renderSettingsPage(WebView *view)
 
 void MainWindow::openSettingsPage()
 {
+    if (privateWindow) {
+        return;
+    }
     if (auto *view = currentWebView()) {
         if (view->url().scheme() == "mx-settings") {
             renderSettingsPage(view);
@@ -2883,6 +2890,10 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
 {
     if (url.scheme() != "mx-settings") {
         return false;
+    }
+    // Private windows read shared preferences but must never edit them, even through a typed URL.
+    if (privateWindow) {
+        return true;
     }
     const QString action = url.host();
     if (action == "clearcookies") {
