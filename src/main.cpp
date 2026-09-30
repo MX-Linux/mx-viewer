@@ -32,6 +32,9 @@
 #include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include <QOpenGLFunctions>
 #include <QProcess>
 #include <QStandardPaths>
 #include <QTranslator>
@@ -42,6 +45,22 @@
 #ifndef VERSION
     #define VERSION "?.?.?.?"
 #endif
+
+// Avoid the cost of Qt Quick's OpenGL rendering on software drivers.
+bool openGLIsSoftwareRendered()
+{
+    QOpenGLContext context;
+    QOffscreenSurface surface;
+    surface.create();
+    if (!context.create() || !context.makeCurrent(&surface)) {
+        return false;
+    }
+    const auto *renderer = reinterpret_cast<const char *>(context.functions()->glGetString(GL_RENDERER));
+    const QString name = QString::fromLatin1(renderer ? renderer : "");
+    context.doneCurrent();
+    return name.contains("llvmpipe") || name.contains("softpipe") || name.contains("SwiftShader")
+           || name.contains("Software Rasterizer");
+}
 
 QPair<uint, uint> getUserIDs()
 {
@@ -174,6 +193,11 @@ int main(int argc, char *argv[])
     if (!dropElevatedPrivileges(force_nobody)) {
         qDebug() << "Could not drop elevated privileges";
         exit(EXIT_FAILURE);
+    }
+
+    // Probe after dropping privileges and before the first Qt Quick window is created.
+    if (qEnvironmentVariableIsEmpty("QT_QUICK_BACKEND") && openGLIsSoftwareRendered()) {
+        qputenv("QT_QUICK_BACKEND", "software");
     }
 
     QTranslator qtTran;
