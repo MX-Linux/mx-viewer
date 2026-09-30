@@ -2977,7 +2977,12 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
         setZoomPercent(newZoom, true);
     }
 
-    applyWebSettings();
+    // Settings are shared, but each window owns a separate profile and its own CLI overrides.
+    for (auto *widget : QApplication::topLevelWidgets()) {
+        if (auto *window = qobject_cast<MainWindow *>(widget)) {
+            window->applyWebSettings();
+        }
+    }
     renderSettingsPage(currentWebView());
     return true;
 }
@@ -3001,11 +3006,20 @@ void MainWindow::applyWebSettings()
         loadImages = false;
     }
 
-    websettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, spatialNav);
-    websettings->setAttribute(QWebEngineSettings::JavascriptEnabled, enableJs);
-    websettings->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
-    websettings->setAttribute(QWebEngineSettings::LocalStorageEnabled, enableCookies);
-    websettings->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, allowPopups);
+    const auto applyPageSettings = [=](QWebEngineSettings *target) {
+        target->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, spatialNav);
+        target->setAttribute(QWebEngineSettings::JavascriptEnabled, enableJs);
+        target->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
+        target->setAttribute(QWebEngineSettings::LocalStorageEnabled, enableCookies);
+        target->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, allowPopups);
+    };
+    // New pages inherit the profile defaults; existing pages may have explicit overrides.
+    applyPageSettings(webProfile->settings());
+    for (int i = 0; i < tabWidget->count(); ++i) {
+        if (auto *view = qobject_cast<WebView *>(tabWidget->widget(i))) {
+            applyPageSettings(view->settings());
+        }
+    }
 
     auto *profile = webProfile;
     profile->setHttpAcceptLanguage(QLocale::system().name());
