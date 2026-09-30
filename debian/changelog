@@ -1,3 +1,16 @@
+mx-viewer (26.09.4) mx; urgency=medium
+
+  * Changing a setting now takes effect right away in all open windows and
+    tabs, not just the current one.
+  * Settings can no longer be changed from a private window; open a regular
+    window to change them.
+  * Keep spaces in the home page and custom search addresses entered on the
+    settings page instead of turning them into plus signs.
+  * Use less CPU on computers without graphics acceleration, such as virtual
+    machines or WSL.
+
+ -- Adrian <adrian@mxlinux.org>  Wed, 30 Sep 2026 14:39:20 -0400
+
 mx-viewer (26.09.3) mx; urgency=medium
 
   * Fix a crash when playing videos on computers without graphics
