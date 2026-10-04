@@ -210,10 +210,15 @@ int main(int argc, char *argv[])
         QApplication::installTranslator(&qtBaseTran);
     }
 
+    // The packages install to /usr/share/mx-viewer/locale; a copy in the user's data directory comes first.
     QTranslator appTran;
-    QString localePath = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation).at(0) + "/" + QApplication::applicationName() + "/locale";
-    if (appTran.load(QApplication::applicationName() + "_" + QLocale::system().name(), localePath)) {
-        QApplication::installTranslator(&appTran);
+    const QStringList localeDirs = QStandardPaths::locateAll(
+        QStandardPaths::GenericDataLocation, QApplication::applicationName() + "/locale", QStandardPaths::LocateDirectory);
+    for (const QString &localeDir : localeDirs) {
+        if (appTran.load(QApplication::applicationName() + "_" + QLocale::system().name(), localeDir)) {
+            QApplication::installTranslator(&appTran);
+            break;
+        }
     }
 
     // A plain launch (how links from other applications arrive) opens in the running browser.
