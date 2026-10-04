@@ -91,6 +91,7 @@ private:
     DownloadWidget *downloadWidget {};
     QAction *addBookmark {};
     QAction *clearDataAction {};
+    QAction *exitPageFullScreenAction {};
     QAction *menuButton {};
     QAction *reloadAction {};
     QAction *homeAction {};
@@ -269,7 +270,7 @@ private:
     QString searchUrlForQuery(const QString &query) const;
     void saveBookmarks();
     void setConnections();
-    void showFullScreenNotification();
+    void showFullScreenNotification(const QString &text);
     void tabChanged();
     void toggleFullScreen();
     void exitPageFullScreen();

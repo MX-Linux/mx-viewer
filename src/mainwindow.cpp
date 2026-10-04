@@ -197,6 +197,14 @@ void MainWindow::addActions()
     clearDataAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_Delete);
     addAction(clearDataAction);
     connect(clearDataAction, &QAction::triggered, this, &MainWindow::openClearDataDialog);
+
+    // Only while a page is full screen: a shortcut is handled before the page sees the key, so the
+    // page cannot keep Esc from getting the user out.
+    exitPageFullScreenAction = new QAction(this);
+    exitPageFullScreenAction->setShortcut(Qt::Key_Escape);
+    exitPageFullScreenAction->setEnabled(false);
+    addAction(exitPageFullScreenAction);
+    connect(exitPageFullScreenAction, &QAction::triggered, this, &MainWindow::exitPageFullScreen);
 }
 
 void MainWindow::cycleTab(int step)
@@ -691,10 +699,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     }
     if (event->matches(QKeySequence::Cancel) && findBar->isVisible()) {
         closeFindBar();
-        return;
-    }
-    if (event->key() == Qt::Key_Escape && pageFullScreen) {
-        exitPageFullScreen();
         return;
     }
     if (event->key() == Qt::Key_Escape && isFullScreen()) {

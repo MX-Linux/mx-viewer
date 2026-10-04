@@ -122,9 +122,12 @@ QUrl BookmarkBar::urlFromMimeData(const QMimeData *data)
     if (!data) {
         return {};
     }
+    // A page can start a drag with any URL; only ordinary locations become bookmarks, never javascript:,
+    // data: or internal pages.
+    static const QStringList allowedSchemes {"http", "https", "file", "ftp"};
     if (data->hasUrls()) {
         const QList<QUrl> urls = data->urls();
-        if (!urls.isEmpty() && urls.first().isValid() && !urls.first().scheme().isEmpty()) {
+        if (!urls.isEmpty() && urls.first().isValid() && allowedSchemes.contains(urls.first().scheme())) {
             return urls.first();
         }
     }
@@ -138,7 +141,6 @@ QUrl BookmarkBar::urlFromMimeData(const QMimeData *data)
         return {};
     }
     const QUrl url = QUrl::fromUserInput(text);
-    static const QStringList allowedSchemes {"http", "https", "file", "ftp"};
     return url.isValid() && allowedSchemes.contains(url.scheme()) ? url : QUrl();
 }
 

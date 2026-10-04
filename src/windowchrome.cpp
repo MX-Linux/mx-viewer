@@ -86,7 +86,7 @@ void MainWindow::centerWindow()
     move(frame.topLeft());
 }
 
-void MainWindow::showFullScreenNotification()
+void MainWindow::showFullScreenNotification(const QString &text)
 {
     constexpr int distanceTop = 100;
     constexpr int durationMs = 800;
@@ -96,7 +96,7 @@ void MainWindow::showFullScreenNotification()
     auto *effect = new QGraphicsOpacityEffect;
     label->setGraphicsEffect(effect);
     label->setStyleSheet("padding: 15px; background-color:#787878; color:white");
-    label->setText(tr("Press [F11] to exit full screen"));
+    label->setText(text);
     label->adjustSize();
     // The full-screen resize may not have arrived yet; the window will cover its own screen.
     label->move((screen()->geometry().width() - label->width()) / 2, distanceTop);
@@ -139,6 +139,10 @@ void MainWindow::handleFullScreenRequest(QWebEngineFullScreenRequest request, We
         tabWidget->setTabBarAutoHide(false);
         tabWidget->tabBar()->hide();
         statusBar()->hide();
+        // The page now covers the whole screen and could draw a fake address bar or dialog, so say how
+        // to leave; Esc works as a window shortcut, ahead of the page's own key handling.
+        exitPageFullScreenAction->setEnabled(true);
+        showFullScreenNotification(tr("Press [Esc] to exit full screen"));
     } else {
         request.accept();
         restoreFromPageFullScreen();
@@ -166,6 +170,7 @@ void MainWindow::restoreFromPageFullScreen()
     }
     pageFullScreen = false;
     pageFullScreenView = nullptr;
+    exitPageFullScreenAction->setEnabled(false);
     // Turning auto-hide back on also shows the tab bar again when there is more than one tab.
     tabWidget->setTabBarAutoHide(true);
     if (!fullScreenBeforePage) {
@@ -193,7 +198,7 @@ void MainWindow::toggleFullScreen()
         normalGeometry = saveGeometry();
         showFullScreen();
         setToolbarsVisible(false);
-        showFullScreenNotification();
+        showFullScreenNotification(tr("Press [F11] to exit full screen"));
     }
 }
 
