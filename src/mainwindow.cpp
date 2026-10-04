@@ -3807,7 +3807,6 @@ void MainWindow::done(bool ok)
     if (!ok) {
         qDebug() << "Error loading:" << view->url().toString();
     }
-    view->stop();
     // The new page has no highlights, so the old count no longer applies.
     if (findBar->isVisible()) {
         findBar->clearResult();
