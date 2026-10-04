@@ -1164,91 +1164,91 @@ You should have received a copy of the GNU General Public License along with MX 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="184"/>
+        <location filename="../src/tabwidget.cpp" line="199"/>
         <source>Minimize</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="185"/>
-        <location filename="../src/tabwidget.cpp" line="314"/>
+        <location filename="../src/tabwidget.cpp" line="200"/>
+        <location filename="../src/tabwidget.cpp" line="329"/>
         <source>Maximize</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="186"/>
+        <location filename="../src/tabwidget.cpp" line="201"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="223"/>
-        <location filename="../src/tabwidget.cpp" line="497"/>
+        <location filename="../src/tabwidget.cpp" line="238"/>
+        <location filename="../src/tabwidget.cpp" line="512"/>
         <source>New tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="314"/>
+        <location filename="../src/tabwidget.cpp" line="329"/>
         <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="500"/>
+        <location filename="../src/tabwidget.cpp" line="515"/>
         <source>Reload tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="501"/>
+        <location filename="../src/tabwidget.cpp" line="516"/>
         <source>Duplicate tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="506"/>
+        <location filename="../src/tabwidget.cpp" line="521"/>
         <source>Unpin tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="506"/>
+        <location filename="../src/tabwidget.cpp" line="521"/>
         <source>Pin tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="512"/>
-        <location filename="../src/tabwidget.cpp" line="613"/>
+        <location filename="../src/tabwidget.cpp" line="527"/>
+        <location filename="../src/tabwidget.cpp" line="628"/>
         <source>Unmute tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="512"/>
-        <location filename="../src/tabwidget.cpp" line="613"/>
+        <location filename="../src/tabwidget.cpp" line="527"/>
+        <location filename="../src/tabwidget.cpp" line="628"/>
         <source>Mute tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="518"/>
+        <location filename="../src/tabwidget.cpp" line="533"/>
         <source>Close tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="537"/>
+        <location filename="../src/tabwidget.cpp" line="552"/>
         <source>Close other tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="538"/>
+        <location filename="../src/tabwidget.cpp" line="553"/>
         <source>Close tabs to the right</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="688"/>
+        <location filename="../src/tabwidget.cpp" line="703"/>
         <source>Unsaved settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="689"/>
+        <location filename="../src/tabwidget.cpp" line="704"/>
         <source>Save changes before closing?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/tabwidget.cpp" line="743"/>
+        <location filename="../src/tabwidget.cpp" line="758"/>
         <source>New Tab</source>
         <translation type="unfinished"></translation>
     </message>
