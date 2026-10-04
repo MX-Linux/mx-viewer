@@ -89,20 +89,10 @@ void MainWindow::displaySite(QString url, const QString &title)
 
 bool MainWindow::isLocalHostInput(const QString &input) const
 {
-    const QString lower = input.toLower();
-    if (lower == "localhost") {
-        return true;
-    }
-    if (lower == "localhost.localdomain") {
-        return true;
-    }
-    if (lower.endsWith(".local")) {
-        return true;
-    }
-    if (lower == "127.0.0.1" || lower == "::1") {
-        return true;
-    }
-    return false;
+    // Only the host counts, so a port or path ("localhost:8080/admin") still opens the address.
+    const QString host = QUrl::fromUserInput(input).host().toLower();
+    return host == "localhost" || host == "localhost.localdomain" || host.endsWith(".local") || host == "127.0.0.1"
+           || host == "::1";
 }
 
 QString MainWindow::searchUrlForQuery(const QString &query) const
