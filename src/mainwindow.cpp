@@ -312,6 +312,8 @@ MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
       tabWidget {new TabWidget(webProfile, this)},
       args {&argParser}
 {
+    commandLineOverrides = {argParser.isSet("enable-spatial-navigation"), argParser.isSet("disable-js"),
+                            argParser.isSet("disable-images")};
     init();
     if (argParser.isSet("full-screen")) {
         showFullScreen();
@@ -1792,15 +1794,9 @@ void MainWindow::loadSettings()
     websettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
     setupSpellCheck();
 
-    homeAddress = settings.value("Home", "https://start.duckduckgo.com").toString();
     tabsInTitleBar = settings.value("TabsInTitleBar", true).toBool();
-    showProgress = settings.value("ShowProgressBar", false).toBool();
-    openNewTabWithHome = settings.value("OpenNewTabWithHome", true).toBool();
-    zoomPercent = settings.value("ZoomPercent", 100).toInt();
     cookiesEnabled = settings.value("EnableCookies", true).toBool();
-    clearCookiesAtExit = settings.value("ClearCookiesAtExit", false).toBool();
-    searchEngine = settings.value("SearchEngine", "DuckDuckGo").toString();
-    searchEngineCustom = settings.value("SearchEngineCustom", QString()).toString();
+    readPreferences();
     if (!settings.contains("EnableJavaScript") && settings.contains("DisableJava")) {
         settings.setValue("EnableJavaScript", !settings.value("DisableJava", false).toBool());
     }
@@ -1818,6 +1814,27 @@ void MainWindow::loadSettings()
     } else {
         resize(size);
         centerWindow();
+    }
+}
+
+void MainWindow::readPreferences()
+{
+    homeAddress = settings.value("Home", "https://start.duckduckgo.com").toString();
+    showProgress = settings.value("ShowProgressBar", false).toBool();
+    openNewTabWithHome = settings.value("OpenNewTabWithHome", true).toBool();
+    zoomPercent = settings.value("ZoomPercent", 100).toInt();
+    clearCookiesAtExit = settings.value("ClearCookiesAtExit", false).toBool();
+    searchEngine = settings.value("SearchEngine", "DuckDuckGo").toString();
+    searchEngineCustom = settings.value("SearchEngineCustom", QString()).toString();
+}
+
+void MainWindow::updateProgressConnection()
+{
+    if (loadingConn) {
+        disconnect(loadingConn);
+    }
+    if (showProgress && currentWebView()) {
+        loadingConn = connect(currentWebView(), &QWebEngineView::loadStarted, this, &MainWindow::loading);
     }
 }
 
@@ -2202,12 +2219,7 @@ void MainWindow::setConnections()
         disconnect(loadStartedConn);
     }
     loadStartedConn = connect(currentWebView(), &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
-    if (loadingConn) {
-        disconnect(loadingConn);
-    }
-    if (showProgress) {
-        loadingConn = connect(currentWebView(), &QWebEngineView::loadStarted, this, &MainWindow::loading);
-    }
+    updateProgressConnection();
     if (urlChangedConn) {
         disconnect(urlChangedConn);
     }
@@ -3065,9 +3077,12 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
         setZoomPercent(newZoom, true);
     }
 
-    // Settings are shared, but each window owns a separate profile and its own CLI overrides.
+    // Every window, private ones included, keeps its own copy of the shared preferences.
     for (auto *widget : QApplication::topLevelWidgets()) {
         if (auto *window = qobject_cast<MainWindow *>(widget)) {
+            window->readPreferences();
+            window->updateProgressConnection();
+            window->applyZoom();
             window->applyWebSettings();
         }
     }
@@ -3083,13 +3098,13 @@ void MainWindow::applyPageSettings(QWebEngineSettings *target) const
     const bool enableCookies = settings.value("EnableCookies", true).toBool();
     const bool allowPopups = settings.value("AllowPopups", true).toBool();
 
-    if (args && args->isSet("enable-spatial-navigation")) {
+    if (commandLineOverrides.spatialNavigation) {
         spatialNav = true;
     }
-    if (args && args->isSet("disable-js")) {
+    if (commandLineOverrides.disableJavaScript) {
         enableJs = false;
     }
-    if (args && args->isSet("disable-images")) {
+    if (commandLineOverrides.disableImages) {
         loadImages = false;
     }
 
@@ -3105,8 +3120,8 @@ void MainWindow::applyWebSettings()
     const bool enableCookies = settings.value("EnableCookies", true).toBool();
     const bool enableThirdPartyCookies = settings.value("EnableThirdPartyCookies", true).toBool();
 
-    // Set on each page rather than as profile defaults: regular windows share the profile, but the
-    // command line applies to its own window. New pages get them through TabWidget::viewAdded.
+    // Set on each page rather than as profile defaults, since private windows have profiles of their
+    // own. New pages get them through TabWidget::viewAdded.
     for (int i = 0; i < tabWidget->count(); ++i) {
         if (auto *view = qobject_cast<WebView *>(tabWidget->widget(i))) {
             applyPageSettings(view->settings());

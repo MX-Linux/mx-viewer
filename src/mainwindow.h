@@ -142,6 +142,14 @@ private:
     static QPointer<MainWindow> lastActiveWindow;
     static inline bool quitting {false};
     static inline QWebEngineProfile *s_sharedProfile {};
+    // Page options given on the command line; they hold for every window of this process.
+    // Zero-initialized as a static.
+    struct CommandLineOverrides {
+        bool spatialNavigation;
+        bool disableJavaScript;
+        bool disableImages;
+    };
+    static inline CommandLineOverrides commandLineOverrides;
     QHash<QString, int> privateZoom;
     bool pageFullScreen {};
     bool fullScreenBeforePage {};
@@ -221,8 +229,11 @@ private:
     void focusAddressBar();
     void focusAddressBarIfBlank();
     void applyWebSettings();
-    // Page-level settings from the preferences and this window's command line, for one page.
+    // Page-level settings from the preferences and the command line, for one page.
     void applyPageSettings(QWebEngineSettings *target) const;
+    // Re-reads the preferences every window keeps a copy of, after any window saved the settings page.
+    void readPreferences();
+    void updateProgressConnection();
     [[nodiscard]] bool otherRegularWindowOpen() const;
     static void routeDownload(QWebEngineProfile *profile, QWebEngineDownloadRequest *download);
     void setupSpellCheck();
