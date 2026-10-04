@@ -93,6 +93,17 @@ set(CMAKE_AUTORCC ON)
 set(SOURCES
     src/main.cpp
     src/mainwindow.cpp
+    src/browsercontext.cpp
+    src/bookmarks.cpp
+    src/newtabpage.cpp
+    src/historypage.cpp
+    src/settingspage.cpp
+    src/readermode.cpp
+    src/dialogs.cpp
+    src/windowchrome.cpp
+    src/navigation.cpp
+    src/iconutils.cpp
+    src/pageutils.cpp
     src/webview.cpp
     src/tabwidget.cpp
     src/addressbar.cpp
@@ -105,6 +116,9 @@ set(SOURCES
 
 set(HEADERS
     src/mainwindow.h
+    src/mainwindowhelpers.h
+    src/resizegrip.h
+    src/tabmenubar.h
     src/webview.h
     src/tabwidget.h
     src/addressbar.h

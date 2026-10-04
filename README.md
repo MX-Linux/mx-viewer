@@ -123,6 +123,23 @@ recipe before triggering the OBS source service. The release workflow keeps
 - **AddressBar**: URL input field with focus handling
 - **DownloadWidget**: Download management interface
 
+`MainWindow` implementations are grouped by responsibility in `src/`:
+
+| File | Responsibility |
+| --- | --- |
+| `mainwindow.cpp` | Window construction, actions, menus, and event handling |
+| `navigation.cpp` | Tabs, address/search navigation, session restore, and find |
+| `browsercontext.cpp` | Profile lifetime, download routing, preferences, page settings, and zoom |
+| `bookmarks.cpp` | Bookmark menus, bar, editor, and persistence |
+| `newtabpage.cpp`, `historypage.cpp`, `settingspage.cpp` | Internal page rendering and request handling |
+| `readermode.cpp` | Article extraction and reader rendering |
+| `dialogs.cpp` | Browsing-data, shortcuts, about, file, and print dialogs |
+| `windowchrome.cpp`, `resizegrip.h`, `tabmenubar.h` | Window layout, decorations, resizing, and fullscreen |
+| `iconutils.cpp`, `pageutils.cpp`, `mainwindowhelpers.h` | Shared icon, cache, bookmark-title, and form helpers |
+
+These files implement the existing `MainWindow` interface; page translations retain
+its translation context. CMake lists each source explicitly.
+
 ## Translation Contributions
 
 - Please join Translation Forum: https://forum.mxlinux.org/viewforum.php?f=96
