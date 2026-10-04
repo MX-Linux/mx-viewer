@@ -1,3 +1,12 @@
+mx-viewer (26.10) mx; urgency=medium
+
+  * Fix web pages that load extra parts right after opening, such as the
+    Try GNU APL page, which stopped with a "Service disabled" message.
+  * Make the title of the current tab readable when tabs are shown in the
+    title bar; it was white on light gray with some themes such as MX Matcha.
+
+ -- Adrian <adrian@mxlinux.org>  Sat, 03 Oct 2026 22:14:09 -0400
+
 mx-viewer (26.09.4) mx; urgency=medium
 
   * Changing a setting now takes effect right away in all open windows and

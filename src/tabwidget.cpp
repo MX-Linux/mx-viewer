@@ -104,6 +104,7 @@ public:
           tabWidget(parent)
     {
         setElideMode(Qt::ElideRight);
+        useOwnPalette();
     }
     // Recomputes the tab sizes after the room for them changed.
     void relayout()
@@ -138,8 +139,22 @@ protected:
     {
         return tabSizeHint(index);
     }
+    void changeEvent(QEvent *event) override
+    {
+        if (event->type() == QEvent::ApplicationPaletteChange) {
+            useOwnPalette();
+        }
+        QTabBar::changeEvent(event);
+    }
 
 private:
+    // In title bar mode the tabs sit in a menu bar, whose palette (light text on a dark bar with GTK themes)
+    // would otherwise pass to the tabs, while the style paints the tabs themselves in the theme's tab colors.
+    void useOwnPalette()
+    {
+        setPalette(QApplication::palette(this));
+    }
+
     TabWidget *tabWidget;
     static constexpr int preferredWidth {220};
     static constexpr int minimumWidth {100};
