@@ -1260,7 +1260,8 @@ QString MainWindow::buildNewTabPageHtml()
 void MainWindow::listHistory()
 {
     history->clear();
-    auto *showHistory = new QAction(QIcon::fromTheme("view-list-text"), tr("History"));
+    // Owned by the menu, so the next clear() deletes it.
+    auto *showHistory = new QAction(QIcon::fromTheme("view-list-text"), tr("History"), history);
     showHistory->setShortcut(Qt::CTRL | Qt::Key_H);
     connect(showHistory, &QAction::triggered, this, &MainWindow::openHistoryPage);
     history->addAction(showHistory);
@@ -2355,7 +2356,6 @@ void MainWindow::tabChanged()
         reloadAction->setIcon(reload->icon());
         reloadAction->setText(reload->text());
         reloadAction->setToolTip(reload->toolTip());
-        reloadAction->setEnabled(reload->isEnabled());
     }
     // Each tab brings its own page actions with the theme's icons.
     const QPalette palette = toolBar->palette();
@@ -2662,9 +2662,9 @@ void MainWindow::addHelpMenuActions(QMenu *menu)
 void MainWindow::setupMenuConnections(QMenu *menu)
 {
     connect(menuButton, &QAction::triggered, this, [this, menu] {
-        QPoint pos = mapToParent(toolBar->widgetForAction(menuButton)->pos());
-        pos.setY(pos.y() + toolBar->widgetForAction(menuButton)->size().height());
-        menu->popup(pos);
+        // Below the button, wherever the toolbar sits in the window (under the tabs in title bar mode).
+        const QWidget *button = toolBar->widgetForAction(menuButton);
+        menu->popup(button->mapToGlobal(QPoint(0, button->height())));
         listHistory();
     });
 }
