@@ -771,8 +771,24 @@ void TabWidget::addNewTab(WebView *webView, bool makeCurrent)
             updateTabIcon(indexOf(webView));
         }
     });
-    connect(webView, &WebView::newWebView, this, [this](WebView *view, bool makeCurrent) {
-        addNewTab(view, makeCurrent);
+    connect(webView, &WebView::newWebView, this, [this, webView](WebView *view, bool makeCurrent) {
+        addNewTab(view, false);
+        // Next to the opener, after the tabs it already opened there, so several links keep their order.
+        view->setProperty("opener", QVariant::fromValue(QPointer<WebView>(webView)));
+        // Children of a pinned opener start after the pinned group.
+        int target = std::max(indexOf(webView) + 1, pinnedCount());
+        const int last = indexOf(view);
+        while (target < last) {
+            const auto *next = webViewAt(target);
+            if (!next || next->property("opener").value<QPointer<WebView>>() != webView) {
+                break;
+            }
+            ++target;
+        }
+        tabBar()->moveTab(last, target);
+        if (makeCurrent) {
+            setCurrentIndex(indexOf(view));
+        }
     });
     // Popups opened as tabs (e.g. OAuth flows) close themselves with window.close()
     connect(webView->page(), &QWebEnginePage::windowCloseRequested, this, [this, webView] {
