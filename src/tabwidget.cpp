@@ -121,15 +121,16 @@ protected:
         if (tabWidget->isPinned(index)) {
             return size;
         }
+        // Every layout asks for each tab, so the pinned tabs come from a list kept between changes
+        // instead of a pass over all the tabs; their widths are asked fresh, as icons change them.
+        const QList<int> &pinned = tabWidget->pinnedIndices();
         int pinnedWidth = 0;
-        int unpinned = 0;
-        for (int i = 0; i < count(); ++i) {
-            if (tabWidget->isPinned(i)) {
+        for (const int i : pinned) {
+            if (i < count()) {
                 pinnedWidth += QTabBar::tabSizeHint(i).width();
-            } else {
-                ++unpinned;
             }
         }
+        const int unpinned = count() - static_cast<int>(pinned.size());
         const int available = tabWidget->tabAreaWidth() - pinnedWidth;
         const int width = unpinned > 0 ? available / unpinned : preferredWidth;
         size.setWidth(std::clamp(width, minimumWidth, preferredWidth));
@@ -375,6 +376,7 @@ bool TabWidget::handleTitleBarMouse(QWidget *source, QEvent *event)
 int TabWidget::addTab(QWidget *widget, const QString &label)
 {
     const int index = stack->addWidget(widget);
+    pinnedTabs.reset();
     bar->insertTab(index, label);
     return index;
 }
@@ -382,6 +384,8 @@ int TabWidget::addTab(QWidget *widget, const QString &label)
 // Keep the pages in the same order as the tabs after the user drags one.
 void TabWidget::moveStackWidget(int from, int to)
 {
+    // The tab bar has moved the tab already, so the pinned tabs are at new places.
+    pinnedTabs.reset();
     QWidget *page = stack->widget(from);
     if (!page) {
         return;
@@ -410,11 +414,20 @@ bool TabWidget::isPinned(int index) const
 
 int TabWidget::pinnedCount() const
 {
-    int pinned = 0;
-    for (int i = 0; i < count(); ++i) {
-        pinned += isPinned(i) ? 1 : 0;
+    return static_cast<int>(pinnedIndices().size());
+}
+
+const QList<int> &TabWidget::pinnedIndices() const
+{
+    if (!pinnedTabs) {
+        pinnedTabs.emplace();
+        for (int i = 0; i < count(); ++i) {
+            if (isPinned(i)) {
+                pinnedTabs->append(i);
+            }
+        }
     }
-    return pinned;
+    return *pinnedTabs;
 }
 
 QTabBar::ButtonPosition TabWidget::closeButtonSide() const
@@ -453,6 +466,7 @@ void TabWidget::setPinned(int index, bool pinned)
     // unpinning to just after it.
     const int target = pinned ? pinnedCount() : pinnedCount() - 1;
     view->setProperty("pinned", pinned);
+    pinnedTabs.reset();
     tabBar()->moveTab(index, target);
     const int i = indexOf(view);
     const auto side = closeButtonSide();
@@ -535,8 +549,9 @@ void TabWidget::showTabMenu(const QPoint &pos)
                 removeTab(indexOf(view));
             }
         });
-        QList<QWidget *> others;
-        QList<QWidget *> right;
+        // Guarded now: the menu runs its own event loop, in which a page can close its tab.
+        QList<QPointer<QWidget>> others;
+        QList<QPointer<QWidget>> right;
         // Pinned tabs are only closed one at a time, explicitly.
         for (int i = 0; i < count(); ++i) {
             if (isPinned(i)) {
@@ -556,11 +571,10 @@ void TabWidget::showTabMenu(const QPoint &pos)
     menu.exec(tabBar()->mapToGlobal(pos));
 }
 
-void TabWidget::closeTabs(const QList<QWidget *> &tabs)
+void TabWidget::closeTabs(const QList<QPointer<QWidget>> &tabs)
 {
     // Tabs may have been closed while the menu was open, so look each one up again.
-    QList<QPointer<QWidget>> guarded(tabs.cbegin(), tabs.cend());
-    for (const auto &tab : guarded) {
+    for (const auto &tab : tabs) {
         const int i = tab ? indexOf(tab) : -1;
         if (i >= 0 && count() > 1) {
             removeTab(i);
@@ -750,6 +764,7 @@ void TabWidget::finalizeRemoveTab(int index)
         emit tabClosed(webView->url());
     }
     stack->removeWidget(w);
+    pinnedTabs.reset();
     bar->removeTab(index);
     w->deleteLater();
     updateNewTabButton();

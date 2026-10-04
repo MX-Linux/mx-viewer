@@ -21,8 +21,10 @@
  **********************************************************************/
 #pragma once
 
+#include <QPointer>
 #include <QTabBar>
 #include <QWebEngineProfile>
+#include <optional>
 #include "webview.h"
 
 class QPushButton;
@@ -68,6 +70,8 @@ public:
     void setTabTitle(int index, const QString &title);
     [[nodiscard]] bool isPinned(int index) const;
     void setPinned(int index, bool pinned);
+    // The pinned tabs' indices in tab order, kept until tabs are added, removed, moved or (un)pinned.
+    [[nodiscard]] const QList<int> &pinnedIndices() const;
     // Ctrl+W: closes the current tab, or selects an unpinned one if it is pinned.
     // Returns false when this is the last tab, so the caller can close the window.
     bool closeCurrentTabByShortcut();
@@ -97,6 +101,7 @@ private:
     bool dragPending {};
     bool titleBarMode {};
     static constexpr int newTabButtonSpacing {2};
+    mutable std::optional<QList<int>> pinnedTabs;
     int addTab(QWidget *widget, const QString &label);
     void moveStackWidget(int from, int to);
     void updateMaximizeButton();
@@ -107,7 +112,7 @@ private:
     void updateNewTabButton();
     void showTabMenu(const QPoint &pos);
     void duplicateTab(int index);
-    void closeTabs(const QList<QWidget *> &tabs);
+    void closeTabs(const QList<QPointer<QWidget>> &tabs);
     void updateAudioButton(WebView *webView);
     WebView *webViewAt(int index) const;
     [[nodiscard]] int pinnedCount() const;
