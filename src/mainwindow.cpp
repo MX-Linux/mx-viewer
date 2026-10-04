@@ -1751,10 +1751,10 @@ void MainWindow::loadSettings()
 
 void MainWindow::centerWindow()
 {
-    QRect screenGeometry = QApplication::primaryScreen()->geometry();
-    int x = (screenGeometry.width() - width()) / 2;
-    int y = (screenGeometry.height() - height()) / 2;
-    move(x, y);
+    const QScreen *target = screen() ? screen() : QGuiApplication::primaryScreen();
+    QRect frame({}, size());
+    frame.moveCenter(target->availableGeometry().center());
+    move(frame.topLeft());
 }
 
 namespace
@@ -2176,7 +2176,8 @@ void MainWindow::showFullScreenNotification()
     label->setStyleSheet("padding: 15px; background-color:#787878; color:white");
     label->setText(tr("Press [F11] to exit full screen"));
     label->adjustSize();
-    label->move(QApplication::primaryScreen()->geometry().width() / 2 - label->width() / 2, distanceTop);
+    // The full-screen resize may not have arrived yet; the window will cover its own screen.
+    label->move((screen()->geometry().width() - label->width()) / 2, distanceTop);
     auto *a = new QPropertyAnimation(effect, "opacity");
     a->setDuration(durationMs);
     a->setStartValue(start);
