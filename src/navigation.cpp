@@ -27,7 +27,10 @@
 #include <QPointer>
 #include <QTimer>
 #include <QWebEngineFindTextResult>
+#include <QWebEngineLoadingInfo>
 #include <QWebEngineView>
+
+#include <memory>
 
 #include "mainwindowhelpers.h"
 
@@ -120,9 +123,7 @@ QString MainWindow::searchUrlForQuery(const QString &query) const
 
 void MainWindow::displaySearchResults(const QString &query)
 {
-    const QString searchUrl = searchUrlForQuery(query);
-    lastAddressMaySearch = false;
-    displaySite(searchUrl, query);
+    displaySite(searchUrlForQuery(query), query);
 }
 
 void MainWindow::openFromAddressBar()
@@ -136,11 +137,9 @@ void MainWindow::openFromAddressBarText(const QString &inputText)
     if (input.isEmpty()) {
         return;
     }
+    // A new address replaces the one still being watched.
+    disconnect(typedAddressConn);
     if (input.startsWith("http://", Qt::CaseInsensitive) || input.startsWith("https://", Qt::CaseInsensitive)) {
-        lastAddressInput = input;
-        lastAddressUrl = QUrl::fromUserInput(input);
-        lastAddressMaySearch = false;
-        lastAddressExplicitScheme = true;
         displaySite(input);
         return;
     }
@@ -155,12 +154,52 @@ void MainWindow::openFromAddressBarText(const QString &inputText)
         displaySearchResults(input);
         return;
     }
-    QUrl qurl = QUrl::fromUserInput(input);
-    lastAddressInput = input;
-    lastAddressUrl = qurl;
-    lastAddressMaySearch = true;
-    lastAddressExplicitScheme = hasExplicitScheme;
     displaySite(input);
+    if (!hasExplicitScheme) {
+        searchIfUnresolved(input);
+    }
+}
+
+// Typed text with a dot ("foo.bar") may not be an address after all: if the first load of it fails
+// because the host name does not resolve, search for the text instead. Nothing else counts, so a later
+// failure of the same address (Stop, a reload while offline) never sends it to the search engine.
+void MainWindow::searchIfUnresolved(const QString &input)
+{
+    auto *view = currentWebView();
+    if (!view) {
+        return;
+    }
+    constexpr int nameNotResolved = -105;     // net::ERR_NAME_NOT_RESOLVED
+    constexpr int nameResolutionFailed = -137; // net::ERR_NAME_RESOLUTION_FAILED
+    // Chromium reports "http://host" as "http://host/".
+    const auto normalized = [](QUrl url) {
+        if (url.path().isEmpty()) {
+            url.setPath(QStringLiteral("/"));
+        }
+        return url;
+    };
+    const QUrl expected = normalized(QUrl::fromUserInput(input));
+    const QPointer<WebView> target = view;
+    auto started = std::make_shared<bool>(false);
+    typedAddressConn = connect(view->page(), &QWebEnginePage::loadingChanged, this,
+                               [this, target, input, expected, normalized, started](const QWebEngineLoadingInfo &info) {
+        if (info.status() == QWebEngineLoadingInfo::LoadStartedStatus) {
+            // The end of a load that was already running is not this address's answer.
+            *started = *started || normalized(info.url()) == expected;
+            return;
+        }
+        if (!*started) {
+            return;
+        }
+        disconnect(typedAddressConn);
+        const int error = info.errorCode();
+        if (target && info.status() == QWebEngineLoadingInfo::LoadFailedStatus
+            && info.errorDomain() == QWebEngineLoadingInfo::ConnectionErrorDomain
+            && (error == nameNotResolved || error == nameResolutionFailed)) {
+            // After the failed load has finished putting up its error page.
+            QTimer::singleShot(0, target, [this, target, input] { target->setUrl(QUrl(searchUrlForQuery(input))); });
+        }
+    });
 }
 
 void MainWindow::setConnections()
@@ -559,11 +598,6 @@ void MainWindow::done(bool ok)
     }
     // Navigation to another site may have reset the zoom.
     applyZoom();
-    if (!ok && lastAddressMaySearch && !lastAddressExplicitScheme && view->url() == lastAddressUrl
-        && !lastAddressInput.isEmpty()) {
-        displaySearchResults(lastAddressInput);
-        return;
-    }
     if (!ok) {
         qDebug() << "Error loading:" << view->url().toString();
     }

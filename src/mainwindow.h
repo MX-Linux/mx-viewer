@@ -118,10 +118,8 @@ private:
     QProgressBar *progressBar {};
     QString searchEngine;
     QString searchEngineCustom;
-    QString lastAddressInput;
-    QUrl lastAddressUrl;
-    bool lastAddressMaySearch {};
-    bool lastAddressExplicitScheme {};
+    // While a typed address with a dot may still turn out to be a search; see searchIfUnresolved().
+    QMetaObject::Connection typedAddressConn;
     bool completingHistory {};
     int lastAddressEditLength {};
     bool lastAddressEditWasDeletion {};
@@ -223,6 +221,7 @@ private:
     void displaySite(QString url = {}, const QString &title = {});
     void displaySearchResults(const QString &query);
     void openFromAddressBarText(const QString &input);
+    void searchIfUnresolved(const QString &input);
     QString buildSettingsPageHtml();
     // Entries whose title or address contains filter (all for an empty one).
     QString buildHistoryPageHtml(const QString &filter);
