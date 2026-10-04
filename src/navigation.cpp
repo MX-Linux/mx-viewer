@@ -33,11 +33,11 @@
 
 using namespace MainWindowHelpers;
 
-void MainWindow::addNewTab(const QUrl &url, bool makeCurrent)
+WebView *MainWindow::addNewTab(const QUrl &url, bool makeCurrent)
 {
     WebView *view = tabWidget->createTab(makeCurrent);
     if (!view) {
-        return;
+        return nullptr;
     }
     if (makeCurrent) {
         setConnections();
@@ -63,6 +63,7 @@ void MainWindow::addNewTab(const QUrl &url, bool makeCurrent)
             },
             Qt::SingleShotConnection);
     }
+    return view;
 }
 
 // Display a URL in the current view.
@@ -340,9 +341,12 @@ void MainWindow::reopenClosedTab()
     }
 }
 
-void MainWindow::openLinkInNewTab(const QUrl &url)
+void MainWindow::openLinkInNewTab(const QUrl &url, WebView *opener)
 {
-    addNewTab(url, false);
+    WebView *view = addNewTab(url, false);
+    if (view && opener) {
+        tabWidget->placeAfterOpener(view, opener);
+    }
 }
 
 void MainWindow::searchInNewTab(const QString &text)

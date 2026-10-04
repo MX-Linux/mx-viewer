@@ -783,19 +783,7 @@ void TabWidget::addNewTab(WebView *webView, bool makeCurrent)
     });
     connect(webView, &WebView::newWebView, this, [this, webView](WebView *view, bool makeCurrent) {
         addNewTab(view, false);
-        // Next to the opener, after the tabs it already opened there, so several links keep their order.
-        view->setProperty("opener", QVariant::fromValue(QPointer<WebView>(webView)));
-        // Children of a pinned opener start after the pinned group.
-        int target = std::max(indexOf(webView) + 1, pinnedCount());
-        const int last = indexOf(view);
-        while (target < last) {
-            const auto *next = webViewAt(target);
-            if (!next || next->property("opener").value<QPointer<WebView>>() != webView) {
-                break;
-            }
-            ++target;
-        }
-        tabBar()->moveTab(last, target);
+        placeAfterOpener(view, webView);
         if (makeCurrent) {
             setCurrentIndex(indexOf(view));
         }
@@ -808,6 +796,26 @@ void TabWidget::addNewTab(WebView *webView, bool makeCurrent)
         }
     });
     updateNewTabButton();
+}
+
+// Next to the opener, after the tabs it already opened there, so several links keep their order.
+void TabWidget::placeAfterOpener(WebView *view, WebView *opener)
+{
+    const int last = indexOf(view);
+    if (last < 0 || indexOf(opener) < 0) {
+        return;
+    }
+    view->setProperty("opener", QVariant::fromValue(QPointer<WebView>(opener)));
+    // Children of a pinned opener start after the pinned group.
+    int target = std::max(indexOf(opener) + 1, pinnedCount());
+    while (target < last) {
+        const auto *next = webViewAt(target);
+        if (!next || next->property("opener").value<QPointer<WebView>>() != opener) {
+            break;
+        }
+        ++target;
+    }
+    tabBar()->moveTab(last, target);
 }
 
 void TabWidget::keyPressEvent(QKeyEvent *event)

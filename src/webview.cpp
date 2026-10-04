@@ -32,6 +32,7 @@
 #include <QContextMenuEvent>
 #include <QDebug>
 #include <QDataStream>
+#include <QDateTime>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -40,6 +41,8 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QKeyEvent>
+#include <QStackedWidget>
 #include <QPointer>
 #include <QTimer>
 #include <QWebEngineCertificateError>
@@ -61,6 +64,7 @@ constexpr char keychainService[] {"mx-viewer"};
 bool WebView::s_ctrlHeld = false;
 bool WebView::s_middleClick = false;
 bool WebView::s_consumed = false;
+qint64 WebView::s_clickTime = 0;
 
 WebPage::WebPage(QWebEngineProfile *profile, WebView *parent)
     : QWebEnginePage(profile, parent),
@@ -407,7 +411,7 @@ bool WebPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool
             mw = qobject_cast<MainWindow *>(QApplication::activeWindow());
         }
         if (mw) {
-            mw->openLinkInNewTab(url);
+            mw->openLinkInNewTab(url, m_webView);
         }
         return false;
     }
@@ -543,18 +547,28 @@ bool WebView::eventFilter(QObject *obj, QEvent *event)
         s_ctrlHeld = (me->modifiers() & Qt::ControlModifier);
         s_middleClick = (me->button() == Qt::MiddleButton);
         s_consumed = false;  // New click, reset consumed state
+        s_clickTime = QDateTime::currentMSecsSinceEpoch();
+    } else if (obj == focusProxy() && event->type() == QEvent::KeyPress) {
+        // A link followed from the keyboard is not the earlier click (the modifier being held for a
+        // click is not a key that follows a link).
+        const int key = static_cast<QKeyEvent *>(event)->key();
+        if (key != Qt::Key_Control && key != Qt::Key_Shift && key != Qt::Key_Alt && key != Qt::Key_Meta) {
+            clearClickState();
+        }
     }
     return QWebEngineView::eventFilter(obj, event);
 }
 
+// A click that did not follow a link (a paste, a word selection) must not divert a navigation that
+// comes much later, so the click only counts for a moment.
 bool WebView::lastClickWasNewTabRequest()
 {
-    return s_ctrlHeld || s_middleClick;
+    return (s_ctrlHeld || s_middleClick) && QDateTime::currentMSecsSinceEpoch() - s_clickTime < clickLifetimeMs;
 }
 
 bool WebView::consumeIfNewTabRequest()
 {
-    if (s_ctrlHeld || s_middleClick) {
+    if (lastClickWasNewTabRequest()) {
         s_consumed = true;
         s_ctrlHeld = false;
         s_middleClick = false;
@@ -583,14 +597,17 @@ WebView *WebView::createWindow(QWebEnginePage::WebWindowType type)
     // The link then loads in the new view's page, which must not take the click as its own and open
     // yet another tab, leaving this one empty.
     clearClickState();
+    // A page in a tab the user is not looking at never brings its popups to the front.
+    const auto *stack = qobject_cast<QStackedWidget *>(parentWidget());
+    const bool openerShown = !stack || stack->currentWidget() == this;
     if (type == QWebEnginePage::WebBrowserTab) {
-        emit newWebView(newView, !background);
+        emit newWebView(newView, !background && openerShown);
     } else if (type == QWebEnginePage::WebBrowserBackgroundTab) {
         emit newWebView(newView, false);
     } else {
         // WebBrowserWindow / WebDialog: open in a tab of this window so the view is owned, shown and
         // shares this window's profile (a separate MainWindow would own a different profile object).
-        emit newWebView(newView, true);
+        emit newWebView(newView, openerShown);
     }
     return newView;
 }

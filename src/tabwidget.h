@@ -60,6 +60,8 @@ public:
 
     WebView *createTab(bool makeCurrent = true);
     void addNewTab(WebView *webView, bool makeCurrent = true);
+    // Moves a tab next to the tab whose page opened it, after the others that page opened.
+    void placeAfterOpener(WebView *view, WebView *opener);
     void removeTab(int index);
     void setTabIcon(int index, const QIcon &icon);
     // Sets the tab tooltip, and the text unless the tab is pinned (pinned tabs show only the icon).

@@ -106,6 +106,8 @@ private:
     static bool s_ctrlHeld;
     static bool s_middleClick;
     static bool s_consumed;  // Set when acceptNavigationRequest handles the click
+    static qint64 s_clickTime; // When that click happened (ms since the epoch)
+    static constexpr qint64 clickLifetimeMs {1000};
 
     void installEventFilterOnFocusProxy();
 };

@@ -69,7 +69,8 @@ public slots:
     void done(bool ok);
     void closeCurrentTab();
     void reopenClosedTab();
-    void openLinkInNewTab(const QUrl &url);
+    // A link opened in the background; next to the page it came from, if given.
+    void openLinkInNewTab(const QUrl &url, WebView *opener = nullptr);
     void searchInNewTab(const QString &text);
     void handleFullScreenRequest(QWebEngineFullScreenRequest request, WebView *view);
     void printPage(WebView *view);
@@ -203,7 +204,7 @@ private:
     void startAddressDrag();
     void addNavigationActions();
     void addHomeAction();
-    void addNewTab(const QUrl &url = QUrl(), bool makeCurrent = true);
+    WebView *addNewTab(const QUrl &url = QUrl(), bool makeCurrent = true);
     void addToolbar();
     void addZoomActions();
     void setupAddressBar();
