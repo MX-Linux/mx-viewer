@@ -225,7 +225,7 @@ void MainWindow::openQuickInfo()
              {tr("Alt+←, Alt+→"), tr("Back/Forward")},
              {tr("Alt+Home"), tr("Home page")},
              {tr("Ctrl+R, F5"), tr("Reload")},
-             {tr("Esc"), tr("Stop loading/close Find bar/exit full screen")},
+             {tr("Esc"), tr("Stop loading/close Find bar")},
          }},
         {tr("Page"),
          {
@@ -235,6 +235,7 @@ void MainWindow::openQuickInfo()
              {tr("Ctrl+0"), tr("Reset zoom")},
              {tr("F9, Ctrl+Alt+R"), tr("Reader view")},
              {tr("F11"), tr("Full screen")},
+             {tr("Hold Esc"), tr("Exit full screen")},
              {tr("Ctrl+S"), tr("Save page")},
              {tr("Ctrl+P"), tr("Print")},
          }},

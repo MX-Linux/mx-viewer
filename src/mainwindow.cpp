@@ -25,6 +25,7 @@
 #include <QContextMenuEvent>
 #include <QCompleter>
 #include <QDrag>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -32,6 +33,7 @@
 #include <QMouseEvent>
 #include <QPointer>
 #include <QPushButton>
+#include <QTimer>
 #include <QWebEngineProfile>
 #include <QWebEngineView>
 
@@ -99,6 +101,17 @@ MainWindow::MainWindow(const QUrl &url, bool privateMode, bool restoreTabs, QWid
 void MainWindow::init()
 {
     setAttribute(Qt::WA_DeleteOnClose);
+    // Holding Esc leaves F11 full screen. Watched for the whole application, without taking the key:
+    // it goes to the page, which keeps short presses for itself.
+    escapeHoldTimer = new QTimer(this);
+    escapeHoldTimer->setSingleShot(true);
+    escapeHoldTimer->setInterval(escapeHoldMs);
+    connect(escapeHoldTimer, &QTimer::timeout, this, [this] {
+        if (isFullScreen() && !pageFullScreen) {
+            toggleFullScreen();
+        }
+    });
+    qApp->installEventFilter(this);
     toolBar->toggleViewAction()->setVisible(false);
     connect(tabWidget, &TabWidget::currentChanged, this, [this] { tabChanged(); });
     connect(tabWidget, &TabWidget::newTabButtonClicked, this, [this] { addNewTab(); });
@@ -202,21 +215,13 @@ void MainWindow::addActions()
     addAction(clearDataAction);
     connect(clearDataAction, &QAction::triggered, this, &MainWindow::openClearDataDialog);
 
-    // Only while the window is full screen: a shortcut is handled before the page sees the key, and the
-    // page keeps Esc for itself otherwise, so this is the only way Esc gets the user out.
-    exitFullScreenAction = new QAction(this);
-    exitFullScreenAction->setShortcut(Qt::Key_Escape);
-    exitFullScreenAction->setEnabled(false);
-    addAction(exitFullScreenAction);
-    connect(exitFullScreenAction, &QAction::triggered, this, [this] {
-        if (pageFullScreen) {
-            exitPageFullScreen();
-        } else if (findBar->isVisible()) {
-            closeFindBar();
-        } else if (isFullScreen()) {
-            toggleFullScreen();
-        }
-    });
+    // Only while a page is full screen: a shortcut is handled before the page sees the key, so the
+    // page cannot keep Esc from getting the user out.
+    exitPageFullScreenAction = new QAction(this);
+    exitPageFullScreenAction->setShortcut(Qt::Key_Escape);
+    exitPageFullScreenAction->setEnabled(false);
+    addAction(exitPageFullScreenAction);
+    connect(exitPageFullScreenAction, &QAction::triggered, this, &MainWindow::exitPageFullScreen);
 }
 
 void MainWindow::cycleTab(int step)
@@ -261,8 +266,30 @@ void MainWindow::startAddressDrag()
     drag->exec(Qt::CopyAction | Qt::LinkAction, Qt::CopyAction);
 }
 
+// Only the first press and the final release count; holding the key repeats both.
+void MainWindow::trackEscapeHold(QObject *watched, const QKeyEvent *event)
+{
+    if (event->key() != Qt::Key_Escape || event->isAutoRepeat()) {
+        return;
+    }
+    const auto *widget = qobject_cast<QWidget *>(watched);
+    if (!widget || widget->window() != this) {
+        return;
+    }
+    if (event->type() == QEvent::KeyRelease) {
+        escapeHoldTimer->stop();
+    } else if (isFullScreen() && !pageFullScreen && !escapeHoldTimer->isActive()) {
+        // A press passed on from a child to its parents is seen once per widget; the running timer
+        // keeps it from starting over.
+        escapeHoldTimer->start();
+    }
+}
+
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
+    if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
+        trackEscapeHold(watched, static_cast<QKeyEvent *>(event));
+    }
     if (watched == siteIconButton && siteIconButton) {
         if (event->type() == QEvent::MouseButtonPress) {
             auto *mouseEvent = static_cast<QMouseEvent *>(event);
@@ -540,17 +567,18 @@ void MainWindow::addFileMenuActions(QMenu *menu)
 
 void MainWindow::changeEvent(QEvent *event)
 {
+    // The release of a held Esc goes to whichever window is active by then.
+    if (event->type() == QEvent::ActivationChange && !isActiveWindow() && escapeHoldTimer) {
+        escapeHoldTimer->stop();
+    }
     if (event->type() == QEvent::ActivationChange && isActiveWindow() && !privateWindow) {
         lastActiveWindow = this;
     }
     if (event->type() == QEvent::PaletteChange && menuButton) {
         adaptIcons();
     }
-    if (event->type() == QEvent::WindowStateChange) {
-        if (titleBar) {
-            updateTitleBar();
-        }
-        updateExitFullScreenAction();
+    if (event->type() == QEvent::WindowStateChange && titleBar) {
+        updateTitleBar();
     }
     QMainWindow::changeEvent(event);
 }

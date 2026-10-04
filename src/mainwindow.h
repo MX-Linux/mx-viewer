@@ -40,6 +40,7 @@ class FindBar;
 class QLabel;
 class QMenuBar;
 class QToolButton;
+class QTimer;
 
 class MainWindow : public QMainWindow
 {
@@ -91,7 +92,7 @@ private:
     DownloadWidget *downloadWidget {};
     QAction *addBookmark {};
     QAction *clearDataAction {};
-    QAction *exitFullScreenAction {};
+    QAction *exitPageFullScreenAction {};
     QAction *menuButton {};
     QAction *reloadAction {};
     QAction *homeAction {};
@@ -107,6 +108,8 @@ private:
     QAction *siteIconAction {};
     QPointer<QWidget> siteIconButton;
     QPoint siteIconPressPos;
+    QTimer *escapeHoldTimer {};
+    static constexpr int escapeHoldMs {1500};
     bool toolbarsVisible {true};
     // Tabs replace the system title bar, in a frameless window with its own window buttons.
     bool tabsInTitleBar {true};
@@ -199,6 +202,7 @@ private:
     void updateTitleBar();
     void placeResizeGrips();
     void startAddressDrag();
+    void trackEscapeHold(QObject *watched, const QKeyEvent *event);
     void addNavigationActions();
     void addHomeAction();
     WebView *addNewTab(const QUrl &url = QUrl(), bool makeCurrent = true);
@@ -273,6 +277,5 @@ private:
     void toggleFullScreen();
     void exitPageFullScreen();
     void restoreFromPageFullScreen();
-    void updateExitFullScreenAction();
     void updateUrl();
 };
