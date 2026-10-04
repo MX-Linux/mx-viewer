@@ -756,6 +756,7 @@ WebView *TabWidget::createTab(bool makeCurrent)
 void TabWidget::addNewTab(WebView *webView, bool makeCurrent)
 {
     auto tab = addTab(webView, tr("New Tab"));
+    emit viewAdded(webView);
     if (makeCurrent) {
         setCurrentIndex(tab);
     }

@@ -40,7 +40,8 @@ public:
     [[nodiscard]] int activeDownloadCount() const;
     static QString withUnit(qreal bytes);
     static QString timeUnit(int seconds);
-    void downloadRequested(QWebEngineDownloadRequest* download);
+    // The profile remembers the chosen folder for the next download.
+    void downloadRequested(QWebEngineDownloadRequest* download, QWebEngineProfile* profile);
     static void updateDownload(QWebEngineDownloadRequest* download, QPushButton* pushButton, QProgressBar* progressBar);
 
 protected:

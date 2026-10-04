@@ -34,10 +34,17 @@ DownloadWidget::DownloadWidget(QWidget* parent)
 
 DownloadWidget::~DownloadWidget()
 {
+    // The profile is shared with other windows and outlives this one, so stop this window's
+    // downloads here rather than leave them running with nothing showing them.
+    for (const auto& download : std::as_const(downloads)) {
+        if (download && download->state() == QWebEngineDownloadRequest::DownloadInProgress) {
+            download->cancel();
+        }
+    }
     delete ui;
 }
 
-void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download)
+void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download, QWebEngineProfile* profile)
 {
     QString path = QFileDialog::getSaveFileName(
         this, tr("Save as"), QDir(download->downloadDirectory()).filePath(download->downloadFileName()));
@@ -45,9 +52,7 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download)
         return;
     }
     download->setDownloadDirectory(QFileInfo(path).path());
-    if (auto* profile = qobject_cast<QWebEngineProfile*>(sender())) {
-        profile->setDownloadPath(download->downloadDirectory());
-    }
+    profile->setDownloadPath(download->downloadDirectory());
     download->setDownloadFileName(QFileInfo(path).fileName());
     auto* downloadLabel = new QLabel;
     auto* pushButton = new QPushButton(QIcon::fromTheme("cancel"), tr("cancel"));

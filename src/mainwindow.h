@@ -54,6 +54,10 @@ public:
     static void openFromOtherInstance(const QString &argument);
     // Set once the application is quitting, when closing a window can no longer be refused.
     static void setQuitting();
+    // Regular windows share one profile on the "mx-viewer" storage; private windows each have their own.
+    static QWebEngineProfile *sharedProfile();
+    // Deletes any remaining window, then the shared profile, which must outlive every page using it.
+    static void releaseSharedProfile();
 
 public slots:
     void listHistory();
@@ -137,6 +141,7 @@ private:
     bool privateWindow {};
     static QPointer<MainWindow> lastActiveWindow;
     static inline bool quitting {false};
+    static inline QWebEngineProfile *s_sharedProfile {};
     QHash<QString, int> privateZoom;
     bool pageFullScreen {};
     bool fullScreenBeforePage {};
@@ -216,6 +221,10 @@ private:
     void focusAddressBar();
     void focusAddressBarIfBlank();
     void applyWebSettings();
+    // Page-level settings from the preferences and this window's command line, for one page.
+    void applyPageSettings(QWebEngineSettings *target) const;
+    [[nodiscard]] bool otherRegularWindowOpen() const;
+    static void routeDownload(QWebEngineProfile *profile, QWebEngineDownloadRequest *download);
     void setupSpellCheck();
     void setZoomPercent(int percent, bool persist);
     void setSiteZoom(int percent);

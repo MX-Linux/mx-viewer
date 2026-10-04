@@ -78,6 +78,8 @@ signals:
     void currentChanged(int index);
     void newTabButtonClicked();
     void tabClosed(const QUrl &url);
+    // Every page added as a tab, before it starts loading.
+    void viewAdded(WebView *view);
 
 private:
     QTabBar *bar {};

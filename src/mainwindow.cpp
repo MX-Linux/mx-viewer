@@ -308,7 +308,7 @@ MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
       findBar {new FindBar(this)},
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},
-      webProfile {new QWebEngineProfile("mx-viewer", this)},
+      webProfile {sharedProfile()},
       tabWidget {new TabWidget(webProfile, this)},
       args {&argParser}
 {
@@ -337,12 +337,18 @@ MainWindow::MainWindow(const QUrl &url, bool privateMode, bool restoreTabs, QWid
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},
       // A profile without a storage name is off-the-record: cookies, cache and permissions stay in memory.
-      webProfile {privateMode ? new QWebEngineProfile(this) : new QWebEngineProfile("mx-viewer", this)},
+      webProfile {privateMode ? new QWebEngineProfile : sharedProfile()},
       tabWidget {new TabWidget(webProfile, this)},
       args {nullptr}
 {
     privateWindow = privateMode;
     restoreTabsOnOpen = restoreTabs;
+    if (privateWindow) {
+        // Parented only now, after the tabs, so the window deletes its pages before their profile.
+        webProfile->setParent(this);
+        connect(webProfile, &QWebEngineProfile::downloadRequested, this,
+                [this](QWebEngineDownloadRequest *download) { routeDownload(webProfile, download); });
+    }
     init();
     if (!restoredTabs) {
         displaySite(url.toString(), QString());
@@ -377,6 +383,8 @@ void MainWindow::init()
         }
     });
     websettings = webProfile->settings();
+    // Set up every page as it is added, before it loads anything.
+    connect(tabWidget, &TabWidget::viewAdded, this, [this](WebView *view) { applyPageSettings(view->settings()); });
     loadSettings();
     addToolbar();
     setupBookmarkBar();
@@ -418,6 +426,71 @@ MainWindow::~MainWindow()
     }
     settings.setValue("Geometry", saveGeometry());
     saveMenuItems(bookmarks, 2);
+}
+
+QWebEngineProfile *MainWindow::sharedProfile()
+{
+    if (!s_sharedProfile) {
+        // One browser context per storage path: QtWebEngine does not support two profiles on the same data.
+        s_sharedProfile = new QWebEngineProfile("mx-viewer");
+        QObject::connect(s_sharedProfile, &QWebEngineProfile::downloadRequested, s_sharedProfile,
+                         [](QWebEngineDownloadRequest *download) { routeDownload(s_sharedProfile, download); });
+    }
+    return s_sharedProfile;
+}
+
+void MainWindow::releaseSharedProfile()
+{
+    // Collect first: deleting a window also deletes other top-level widgets it owns (its download list).
+    QList<QPointer<MainWindow>> windows;
+    const auto widgets = QApplication::topLevelWidgets();
+    for (auto *widget : widgets) {
+        if (auto *window = qobject_cast<MainWindow *>(widget)) {
+            windows.append(window);
+        }
+    }
+    for (const auto &window : std::as_const(windows)) {
+        delete window.data();
+    }
+    delete s_sharedProfile;
+    s_sharedProfile = nullptr;
+}
+
+// A download goes to the window whose page started it, so it is listed, and cancelled, with that window.
+void MainWindow::routeDownload(QWebEngineProfile *profile, QWebEngineDownloadRequest *download)
+{
+    MainWindow *target {nullptr};
+    if (const auto *page = download->page()) {
+        if (const auto *view = QWebEngineView::forPage(page)) {
+            target = qobject_cast<MainWindow *>(view->window());
+        }
+    }
+    if (!target || target->webProfile != profile) {
+        target = (lastActiveWindow && lastActiveWindow->webProfile == profile) ? lastActiveWindow.data() : nullptr;
+    }
+    if (!target) {
+        const auto widgets = QApplication::topLevelWidgets();
+        for (auto *widget : widgets) {
+            auto *window = qobject_cast<MainWindow *>(widget);
+            if (window && window->webProfile == profile && window->isVisible()) {
+                target = window;
+                break;
+            }
+        }
+    }
+    // Not accepted, so QtWebEngine cancels it.
+    if (target) {
+        target->downloadWidget->downloadRequested(download, profile);
+    }
+}
+
+bool MainWindow::otherRegularWindowOpen() const
+{
+    const auto widgets = QApplication::topLevelWidgets();
+    return std::any_of(widgets.cbegin(), widgets.cend(), [this](QWidget *widget) {
+        const auto *window = qobject_cast<MainWindow *>(widget);
+        return window && window != this && !window->privateWindow && window->isVisible();
+    });
 }
 
 void MainWindow::addActions()
@@ -2140,8 +2213,6 @@ void MainWindow::setConnections()
         disconnect(urlChangedConn);
     }
     urlChangedConn = connect(currentWebView(), &QWebEngineView::urlChanged, this, &MainWindow::updateUrl);
-    connect(webProfile, &QWebEngineProfile::downloadRequested, downloadWidget,
-            &DownloadWidget::downloadRequested, Qt::UniqueConnection);
     if (loadFinishedConn) {
         disconnect(loadFinishedConn);
     }
@@ -3004,14 +3075,13 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
     return true;
 }
 
-void MainWindow::applyWebSettings()
+void MainWindow::applyPageSettings(QWebEngineSettings *target) const
 {
     bool spatialNav = settings.value("SpatialNavigation", false).toBool();
     bool enableJs = settings.value("EnableJavaScript", true).toBool();
     bool loadImages = settings.value("LoadImages", true).toBool();
-    bool enableCookies = settings.value("EnableCookies", true).toBool();
-    bool enableThirdPartyCookies = settings.value("EnableThirdPartyCookies", true).toBool();
-    bool allowPopups = settings.value("AllowPopups", true).toBool();
+    const bool enableCookies = settings.value("EnableCookies", true).toBool();
+    const bool allowPopups = settings.value("AllowPopups", true).toBool();
 
     if (args && args->isSet("enable-spatial-navigation")) {
         spatialNav = true;
@@ -3023,15 +3093,20 @@ void MainWindow::applyWebSettings()
         loadImages = false;
     }
 
-    const auto applyPageSettings = [=](QWebEngineSettings *target) {
-        target->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, spatialNav);
-        target->setAttribute(QWebEngineSettings::JavascriptEnabled, enableJs);
-        target->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
-        target->setAttribute(QWebEngineSettings::LocalStorageEnabled, enableCookies);
-        target->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, allowPopups);
-    };
-    // New pages inherit the profile defaults; existing pages may have explicit overrides.
-    applyPageSettings(webProfile->settings());
+    target->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, spatialNav);
+    target->setAttribute(QWebEngineSettings::JavascriptEnabled, enableJs);
+    target->setAttribute(QWebEngineSettings::AutoLoadImages, loadImages);
+    target->setAttribute(QWebEngineSettings::LocalStorageEnabled, enableCookies);
+    target->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, allowPopups);
+}
+
+void MainWindow::applyWebSettings()
+{
+    const bool enableCookies = settings.value("EnableCookies", true).toBool();
+    const bool enableThirdPartyCookies = settings.value("EnableThirdPartyCookies", true).toBool();
+
+    // Set on each page rather than as profile defaults: regular windows share the profile, but the
+    // command line applies to its own window. New pages get them through TabWidget::viewAdded.
     for (int i = 0; i < tabWidget->count(); ++i) {
         if (auto *view = qobject_cast<WebView *>(tabWidget->widget(i))) {
             applyPageSettings(view->settings());
@@ -3712,7 +3787,7 @@ void MainWindow::setQuitting()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    // Downloads belong to this window's profile, so closing the window cancels them.
+    // The window's download list cancels the downloads it shows when it is deleted with the window.
     if (const int active = downloadWidget->activeDownloadCount(); active > 0 && !quitting) {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -3732,11 +3807,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
         }
     }
     downloadWidget->close();
-    if (clearCookiesAtExit) {
-        webProfile->cookieStore()->deleteAllCookies();
-    }
     if (privateWindow) {
+        // Its off-the-record profile goes with the window, cookies included.
         return;
+    }
+    // Regular windows share their cookies, so they are cleared only when the last one closes.
+    if (clearCookiesAtExit && !otherRegularWindowOpen()) {
+        webProfile->cookieStore()->deleteAllCookies();
     }
     settings.setValue("Geometry", saveGeometry());
 

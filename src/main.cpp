@@ -244,6 +244,7 @@ int main(int argc, char *argv[])
     });
 
     const int result = QApplication::exec();
+    MainWindow::releaseSharedProfile();
     HistoryStore::close();
     return result;
 }
