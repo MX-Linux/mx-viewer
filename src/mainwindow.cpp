@@ -1717,7 +1717,6 @@ void MainWindow::loadSettings()
     // Load first from system .conf file and then overwrite with CLI switches where available
     websettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
     websettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
-    webProfile->setHttpAcceptLanguage(QLocale::system().name());
     setupSpellCheck();
 
     homeAddress = settings.value("Home", "https://start.duckduckgo.com").toString();
@@ -3040,7 +3039,7 @@ void MainWindow::applyWebSettings()
     }
 
     auto *profile = webProfile;
-    profile->setHttpAcceptLanguage(QLocale::system().name());
+    profile->setHttpAcceptLanguage(QLocale::system().uiLanguages().join(u','));
 
     if (cookiesEnabled && !enableCookies) {
         profile->cookieStore()->deleteAllCookies();
