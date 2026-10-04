@@ -129,7 +129,6 @@ private:
     QString homeAddress;
     QToolBar *toolBar {};
     QWebEngineProfile *webProfile {};
-    QWebEngineSettings *websettings {};
     TabWidget *tabWidget {};
     bool showProgress {};
     bool openNewTabWithHome {};
@@ -163,7 +162,6 @@ private:
     QList<QPair<QUrl, QIcon>> closedTabs;
     QPointer<QMainWindow> devToolsWindow;
     QPointer<QWebEngineView> devToolsView;
-    QWebEngineScript cookieScript;
     QMetaObject::Connection loadStartedConn;
     QMetaObject::Connection loadingConn;
     QMetaObject::Connection loadFinishedConn;

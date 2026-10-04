@@ -207,8 +207,6 @@ void MainWindow::setConnections()
     if (!currentWebView()) {
         return;
     }
-    websettings = currentWebView()->settings();
-    applyWebSettings();
     if (loadStartedConn) {
         disconnect(loadStartedConn);
     }

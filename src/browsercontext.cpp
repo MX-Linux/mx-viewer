@@ -30,6 +30,7 @@
 #include <QWebEngineCookieStore>
 #include <QWebEngineProfile>
 #include <QWebEngineScript>
+#include <QWebEngineScriptCollection>
 #include <QWebEngineView>
 
 #include "mainwindowhelpers.h"
@@ -104,8 +105,8 @@ bool MainWindow::otherRegularWindowOpen() const
 void MainWindow::loadSettings()
 {
     // Load first from system .conf file and then overwrite with CLI switches where available
-    websettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
-    websettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
+    webProfile->settings()->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
+    webProfile->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
     setupSpellCheck();
 
     tabsInTitleBar = settings.value("TabsInTitleBar", true).toBool();
@@ -205,46 +206,34 @@ void MainWindow::applyWebSettings()
         profile->cookieStore()->setCookieFilter([](const QWebEngineCookieStore::FilterRequest &) {
             return false;
         });
-
-        QString jsCode = R"(
-            Object.defineProperty(navigator, 'cookieEnabled', {
-                value: false,
-                configurable: true
-            });
-        )";
-        cookieScript.setName("cookieDisabled");
-        cookieScript.setSourceCode(jsCode);
-        cookieScript.setInjectionPoint(QWebEngineScript::DocumentCreation);
-        cookieScript.setRunsOnSubFrames(true);
-        cookieScript.setWorldId(QWebEngineScript::MainWorld);
+    } else if (!enableThirdPartyCookies) {
+        profile->cookieStore()->setCookieFilter([](const QWebEngineCookieStore::FilterRequest &request) {
+            return !request.thirdParty;
+        });
     } else {
-        if (!enableThirdPartyCookies) {
-            profile->cookieStore()->setCookieFilter([](const QWebEngineCookieStore::FilterRequest &request) {
-                return !request.thirdParty;
-            });
-        } else {
-            profile->cookieStore()->setCookieFilter(nullptr);
-        }
+        profile->cookieStore()->setCookieFilter(nullptr);
+    }
 
-        QString jsCode = R"(
+    QWebEngineScript cookieScript;
+    cookieScript.setName(enableCookies ? QStringLiteral("cookieEnabled") : QStringLiteral("cookieDisabled"));
+    cookieScript.setSourceCode(QStringLiteral(R"(
             Object.defineProperty(navigator, 'cookieEnabled', {
-                value: true,
+                value: %1,
                 configurable: true
             });
-        )";
-        cookieScript.setName("cookieEnabled");
-        cookieScript.setSourceCode(jsCode);
-        cookieScript.setInjectionPoint(QWebEngineScript::DocumentCreation);
-        cookieScript.setRunsOnSubFrames(true);
-        cookieScript.setWorldId(QWebEngineScript::MainWorld);
-    }
-
-    for (int i = 0; i < tabWidget->count(); ++i) {
-        if (auto *view = qobject_cast<WebView *>(tabWidget->widget(i))) {
-            view->page()->scripts().clear();
-            view->page()->scripts().insert(cookieScript);
+        )")
+                                   .arg(enableCookies ? "true" : "false"));
+    cookieScript.setInjectionPoint(QWebEngineScript::DocumentCreation);
+    cookieScript.setRunsOnSubFrames(true);
+    cookieScript.setWorldId(QWebEngineScript::MainWorld);
+    // On the profile, so every page gets it from its first load, including tabs opened in the background.
+    QWebEngineScriptCollection *scripts = profile->scripts();
+    for (const QString &name : {QStringLiteral("cookieEnabled"), QStringLiteral("cookieDisabled")}) {
+        for (const QWebEngineScript &old : scripts->find(name)) {
+            scripts->remove(old);
         }
     }
+    scripts->insert(cookieScript);
 }
 
 // Enable spell checking when a dictionary for the system language is installed
