@@ -21,6 +21,7 @@
  **********************************************************************/
 #include "singleinstance.h"
 
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -44,6 +45,25 @@ constexpr char ack[] {"ok\n"};
 constexpr qint64 maxRequestSize {64 * 1024};
 constexpr int requestTimeoutMs {5000};
 
+// One running browser per display, so a link opened in a second graphical session of the same user
+// stays in that session.
+QString socketName()
+{
+    QString display = qEnvironmentVariable("WAYLAND_DISPLAY");
+    if (display.isEmpty()) {
+        display = qEnvironmentVariable("DISPLAY");
+        // ":0" and ":0.0" name the same display.
+        const qsizetype colon = display.lastIndexOf(QLatin1Char(':'));
+        const qsizetype dot = colon < 0 ? -1 : display.indexOf(QLatin1Char('.'), colon);
+        if (dot > colon) {
+            display.truncate(dot);
+        }
+    }
+    // A hash keeps distinct names apart ("wayland.0" and "wayland_0") and the path within sun_path.
+    const QByteArray hash = QCryptographicHash::hash(display.toUtf8(), QCryptographicHash::Sha256).toHex().left(16);
+    return QStringLiteral("mx-viewer-%1.sock").arg(QString::fromLatin1(hash));
+}
+
 // The socket goes only in a private runtime directory owned by this user (as XDG requires, mode 0700),
 // never in a shared place like /tmp where another user could create it first. Empty means
 // single-instance mode is off.
@@ -59,7 +79,7 @@ QString socketPath()
         struct stat info {};
         if (stat(QFile::encodeName(dir).constData(), &info) == 0 && S_ISDIR(info.st_mode)
             && info.st_uid == getuid() && (info.st_mode & 077) == 0) {
-            return QDir(dir).filePath(QStringLiteral("mx-viewer.sock"));
+            return QDir(dir).filePath(socketName());
         }
     }
     return {};
