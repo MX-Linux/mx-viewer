@@ -80,6 +80,8 @@ signals:
     void tabClosed(const QUrl &url);
     // Every page added as a tab, before it starts loading.
     void viewAdded(WebView *view);
+    // A settings page closed with "Save": the save request its form produced.
+    void settingsSaveRequested(const QUrl &url);
 
 private:
     QTabBar *bar {};

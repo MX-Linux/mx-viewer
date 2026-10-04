@@ -709,8 +709,17 @@ void TabWidget::removeTab(int index)
                 return;
             }
             if (choice == QMessageBox::Save) {
-                settingsView->page()->runJavaScript("document.getElementById('save').click();",
-                                                    [closeSettingsTab](const QVariant &) { closeSettingsTab(); });
+                // The page only builds the request; it is handled here before the tab goes, since a
+                // navigation started by the page could still be pending when the tab is deleted.
+                settingsView->page()->runJavaScript(
+                    "window.mxSettingsSaveUrl ? window.mxSettingsSaveUrl() : ''",
+                    [this, closeSettingsTab](const QVariant &result) {
+                        const QUrl url(result.toString());
+                        if (url.scheme() == "mx-settings" && url.host() == "save") {
+                            emit settingsSaveRequested(url);
+                        }
+                        closeSettingsTab();
+                    });
                 return;
             }
             if (choice == QMessageBox::Discard) {

@@ -126,6 +126,7 @@ void MainWindow::init()
     websettings = webProfile->settings();
     // Set up every page as it is added, before it loads anything.
     connect(tabWidget, &TabWidget::viewAdded, this, [this](WebView *view) { applyPageSettings(view->settings()); });
+    connect(tabWidget, &TabWidget::settingsSaveRequested, this, [this](const QUrl &url) { handleSettingsRequest(url); });
     loadSettings();
     addToolbar();
     setupBookmarkBar();

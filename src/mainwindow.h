@@ -155,7 +155,8 @@ private:
     bool fullScreenBeforePage {};
     QPointer<WebView> pageFullScreenView;
     QPointer<WebView> printingView;
-    bool clearingCache {};
+    // The regular windows share one cache.
+    static inline bool clearingCache {};
     const QCommandLineParser *args;
     QList<QPair<QUrl, QIcon>> closedTabs;
     QPointer<QMainWindow> devToolsWindow;
@@ -260,6 +261,9 @@ private:
     void refreshHistoryCompleter();
     void renderHistoryPage(WebView *view, const QString &filter = {});
     void renderSettingsPage(WebView *view);
+    void updateCacheSize(WebView *view);
+    static void setCacheSizeLabel(WebView *view, const QString &size);
+    void clearCache();
     QString searchUrlForQuery(const QString &query) const;
     void saveBookmarks();
     void setConnections();

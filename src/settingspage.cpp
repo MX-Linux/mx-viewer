@@ -21,9 +21,16 @@
  ****************************************************************************/
 #include "mainwindow.h"
 
+#include <QApplication>
 #include <QDateTime>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QMessageBox>
+#include <QPointer>
+#include <QThreadPool>
 #include <QTimer>
 #include <QUrlQuery>
+#include <QWebEngineCookieStore>
 #include <QWebEngineProfile>
 
 #include "mainwindowhelpers.h"
@@ -49,19 +56,8 @@ QString MainWindow::buildSettingsPageHtml()
     auto check = [](bool value) { return value ? QStringLiteral("checked") : QString(); };
     auto disabled = [](bool value) { return value ? QString() : QStringLiteral("disabled"); };
 
-    QString cacheSizeText = clearingCache ? tr("Clearing...") : tr("unknown");
-    if (!clearingCache) {
-        const auto *profile = webProfile;
-        const QStringList cacheCandidates = collectCachePaths(profile);
-        const qint64 cacheBytes = totalDirectorySize(cacheCandidates);
-        if (cacheBytes >= 0) {
-            if (cacheBytes < 1024) {
-                cacheSizeText = tr("Cleared");
-            } else {
-                cacheSizeText = DownloadWidget::withUnit(cacheBytes);
-            }
-        }
-    }
+    // The real size is filled in by updateCacheSize() once the cache has been walked off the GUI thread.
+    const QString cacheSizeText = clearingCache ? tr("Clearing...") : tr("Calculating...");
 
     const QString html = QStringLiteral(R"(<!doctype html>
 <html>
@@ -116,22 +112,26 @@ QString MainWindow::buildSettingsPageHtml()
     <label class="check"><input id="loadImages" name="loadImages" type="checkbox" value="1" %25> %26</label>
     <div class="check-row">
       <label class="check"><input id="enableCookies" name="enableCookies" type="checkbox" value="1" %27> %28</label>
-      <button class="btn btn-inline" id="clearCookies" type="button" data-confirm="%44">%41</button>
+      <button class="btn btn-inline" id="clearCookies" type="submit" form="clearCookiesForm">%41</button>
     </div>
     <label class="check"><input id="thirdPartyCookies" name="thirdPartyCookies" type="checkbox" value="1" %29 %30> %31</label>
     <label class="check"><input id="clearCookiesAtExit" name="clearCookiesAtExit" type="checkbox" value="1" %32> %33</label>
     <label class="check"><input id="allowPopups" name="allowPopups" type="checkbox" value="1" %34> %35</label>
     <label class="check"><input id="saveTabs" name="saveTabs" type="checkbox" value="1" %36> %37</label>
-    <label class="check"><input id="tabsInTitleBar" name="tabsInTitleBar" type="checkbox" value="1" %46> %47</label>
+    <label class="check"><input id="tabsInTitleBar" name="tabsInTitleBar" type="checkbox" value="1" %44> %45</label>
     <div class="check-row">
-      <div class="cache-label">%42</div>
-      <button class="btn btn-inline" id="clearCache" type="button" data-confirm="%45">%43</button>
+      <div class="cache-label" id="cacheSize">%42</div>
+      <button class="btn btn-inline" id="clearCache" type="submit" form="clearCacheForm">%43</button>
     </div>
     <div class="actions">
       <button class="btn" id="save" type="submit">%38</button>
       <button class="btn" id="reset" type="reset">%39</button>
     </div>
   </form>
+  <!-- The Clear buttons submit these forms, so they work without JavaScript and are never the main form's
+       default button for Enter. -->
+  <form id="clearCookiesForm" action="mx-settings://clearCookies" method="get"></form>
+  <form id="clearCacheForm" action="mx-settings://clearCache" method="get"></form>
   <script>
     const form = document.getElementById('settings');
     const saveBtn = document.getElementById('save');
@@ -176,13 +176,8 @@ QString MainWindow::buildSettingsPageHtml()
       const isCustom = searchSelect.value === 'Custom';
       customSearch.disabled = !isCustom;
     }
-    function saveSettings(event) {
-      if (event) {
-        event.preventDefault();
-      }
-      if (saveBtn.disabled) {
-        return;
-      }
+    // Collects the form into a save request; closing a changed settings tab asks for it too.
+    function saveUrl() {
       let customUrl = customSearch.value.trim();
       if (searchSelect.value === 'Custom' && customUrl.length > 0) {
         customUrl = normalizeCustomUrl(customUrl);
@@ -206,26 +201,22 @@ QString MainWindow::buildSettingsPageHtml()
       params.set('clearCookiesAtExit', boolValue('clearCookiesAtExit'));
       baseline = snapshot();
       updateDirtyState();
-      location.href = 'mx-settings://save?' + params.toString();
+      return 'mx-settings://save?' + params.toString();
+    }
+    window.mxSettingsSaveUrl = saveUrl;
+    function saveSettings(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      if (saveBtn.disabled) {
+        return;
+      }
+      location.href = saveUrl();
     }
     form.addEventListener('submit', saveSettings);
     resetBtn.addEventListener('click', event => {
       event.preventDefault();
       location.href = 'mx-settings://list';
-    });
-    const clearCookiesBtn = document.getElementById('clearCookies');
-    clearCookiesBtn.addEventListener('click', event => {
-      event.preventDefault();
-      if (confirm(clearCookiesBtn.dataset.confirm)) {
-        location.href = 'mx-settings://clearCookies';
-      }
-    });
-    const clearCacheBtn = document.getElementById('clearCache');
-    clearCacheBtn.addEventListener('click', event => {
-      event.preventDefault();
-      if (confirm(clearCacheBtn.dataset.confirm)) {
-        location.href = 'mx-settings://clearCache';
-      }
     });
     searchSelect.addEventListener('change', syncCustom);
     inputs.forEach(el => {
@@ -292,8 +283,6 @@ QString MainWindow::buildSettingsPageHtml()
                                  tr("Clear cookies").toHtmlEscaped(),
                                  tr("Cache size: %1").arg(cacheSizeText).toHtmlEscaped(),
                                  tr("Clear cache").toHtmlEscaped(),
-                                 tr("Clear all cookies?").toHtmlEscaped(),
-                                 tr("Clear the cache?").toHtmlEscaped(),
                                  check(tabsInTitleBar),
                                  tr("Show tabs in the title bar").toHtmlEscaped());
 
@@ -311,6 +300,51 @@ void MainWindow::renderSettingsPage(WebView *view)
     tabWidget->setTabTitle(tabWidget->indexOf(view), tr("Settings"));
     setWindowTitle(tr("Settings"));
     updateUrl();
+    if (!clearingCache) {
+        updateCacheSize(view);
+    }
+}
+
+// Walking a large cache takes a while, so it runs on a worker thread; the result goes into the page
+// that asked, unless a clear started meanwhile.
+void MainWindow::updateCacheSize(WebView *view)
+{
+    const QStringList paths = collectCachePaths(webProfile);
+    const QPointer<WebView> target = view;
+    QThreadPool::globalInstance()->start([paths, target] {
+        const qint64 bytes = totalDirectorySize(paths);
+        QMetaObject::invokeMethod(qApp, [bytes, target] {
+            if (target && !clearingCache) {
+                setCacheSizeLabel(target, bytes < 0     ? tr("unknown")
+                                          : bytes < 1024 ? tr("Cleared")
+                                                         : DownloadWidget::withUnit(bytes));
+            }
+        });
+    });
+}
+
+// Changes only the label, so whatever the user is editing on the page stays; once loaded, if the view
+// still shows the settings.
+void MainWindow::setCacheSizeLabel(WebView *view, const QString &size)
+{
+    const QPointer<WebView> target = view;
+    const QString text = QString::fromUtf8(
+        QJsonDocument(QJsonArray {tr("Cache size: %1").arg(size)}).toJson(QJsonDocument::Compact));
+    const auto apply = [target, text] {
+        if (!target || target->url().scheme() != "mx-settings") {
+            return;
+        }
+        // The application world runs even when JavaScript is turned off for pages.
+        target->page()->runJavaScript(
+            QStringLiteral("{const label = document.getElementById('cacheSize'); if (label) label.textContent = %1[0];}")
+                .arg(text),
+            QWebEngineScript::ApplicationWorld);
+    };
+    if (view->page()->isLoading()) {
+        connect(view, &QWebEngineView::loadFinished, view, apply, Qt::SingleShotConnection);
+    } else {
+        apply();
+    }
 }
 
 void MainWindow::openSettingsPage()
@@ -342,34 +376,23 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
         return true;
     }
     const QString action = url.host();
-    if (action == "clearcookies") {
-        webProfile->cookieStore()->deleteAllCookies();
-        renderSettingsPage(currentWebView());
-        return true;
-    } else if (action == "clearcache") {
-        clearingCache = true;
-        renderSettingsPage(currentWebView());
-        webProfile->clearHttpCache();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-        connect(webProfile, &QWebEngineProfile::clearHttpCacheCompleted, this, [this]() {
-            clearingCache = false;
-            if (auto *view = currentWebView()) {
-                if (view->url().scheme() == "mx-settings") {
-                    renderSettingsPage(view);
-                }
+    if (action == "clearcookies" || action == "clearcache") {
+        // Confirmed here rather than in the page, which may run without JavaScript. Deferred, so the
+        // dialog's event loop does not run inside the navigation request.
+        QTimer::singleShot(0, this, [this, action] {
+            const bool cookies = action == "clearcookies";
+            if (QMessageBox::question(this, cookies ? tr("Clear cookies") : tr("Clear cache"),
+                                      cookies ? tr("Clear all cookies?") : tr("Clear the cache?"))
+                != QMessageBox::Yes) {
+                return;
             }
-        }, Qt::SingleShotConnection);
-#else
-        // Qt < 6.7 doesn't have clearHttpCacheCompleted signal, use timer fallback
-        QTimer::singleShot(500, this, [this]() {
-            clearingCache = false;
-            if (auto *view = currentWebView()) {
-                if (view->url().scheme() == "mx-settings") {
-                    renderSettingsPage(view);
-                }
+            // Nothing on the page shows the cookies, so it is left as it is, edits included.
+            if (cookies) {
+                webProfile->cookieStore()->deleteAllCookies();
+            } else {
+                clearCache();
             }
         });
-#endif
         return true;
     }
     if (action == "list") {
@@ -445,4 +468,42 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
     }
     renderSettingsPage(currentWebView());
     return true;
+}
+
+// The regular windows share one cache, so a clear already running for any of them is not started again.
+// Every open settings page shows the progress in its label.
+void MainWindow::clearCache()
+{
+    if (clearingCache) {
+        return;
+    }
+    const auto forEachSettingsPage = [](const auto &action) {
+        for (auto *widget : QApplication::topLevelWidgets()) {
+            auto *window = qobject_cast<MainWindow *>(widget);
+            if (!window || window->privateWindow) {
+                continue;
+            }
+            for (int i = 0; i < window->tabWidget->count(); ++i) {
+                auto *view = qobject_cast<WebView *>(window->tabWidget->widget(i));
+                if (view && view->url().scheme() == "mx-settings") {
+                    action(window, view);
+                }
+            }
+        }
+    };
+    clearingCache = true;
+    forEachSettingsPage([](MainWindow *, WebView *view) { setCacheSizeLabel(view, tr("Clearing...")); });
+    const auto finished = [forEachSettingsPage] {
+        clearingCache = false;
+        forEachSettingsPage([](MainWindow *window, WebView *view) { window->updateCacheSize(view); });
+    };
+    // Tied to the profile, which outlives any window that asked.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+    connect(webProfile, &QWebEngineProfile::clearHttpCacheCompleted, webProfile, finished, Qt::SingleShotConnection);
+    webProfile->clearHttpCache();
+#else
+    // Qt < 6.7 has no clearHttpCacheCompleted signal.
+    webProfile->clearHttpCache();
+    QTimer::singleShot(500, webProfile, finished);
+#endif
 }
