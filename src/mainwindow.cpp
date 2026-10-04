@@ -120,7 +120,12 @@ void MainWindow::init()
                     }
                 }
             }
+            // Each entry keeps an icon; only the most recent ones are offered again.
+            constexpr qsizetype maxClosedTabs = 25;
             closedTabs.append({url, icon});
+            if (closedTabs.size() > maxClosedTabs) {
+                closedTabs.removeFirst();
+            }
         }
     });
     // Set up every page as it is added, before it loads anything.
@@ -171,7 +176,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::addActions()
 {
-    auto *full = new QAction(tr("Full screen"));
+    auto *full = new QAction(tr("Full screen"), this);
     full->setShortcut(Qt::Key_F11);
     addAction(full);
     connect(full, &QAction::triggered, this, &MainWindow::toggleFullScreen);
@@ -330,7 +335,7 @@ void MainWindow::addNavigationActions()
 
 void MainWindow::addHomeAction()
 {
-    homeAction = new QAction(QIcon::fromTheme("go-home", QIcon(":/icons/go-home.svg")), tr("Home"));
+    homeAction = new QAction(QIcon::fromTheme("go-home", QIcon(":/icons/go-home.svg")), tr("Home"), this);
     toolBar->addAction(homeAction);
     homeAction->setShortcut(Qt::ALT | Qt::Key_Home);
     connect(homeAction, &QAction::triggered, this, [this] { displaySite(); });
@@ -444,9 +449,9 @@ void MainWindow::setupFindBar()
 
 void MainWindow::addZoomActions()
 {
-    auto *zoomout {new QAction(QIcon::fromTheme("zoom-out", QIcon(":/icons/zoom-out.svg")), tr("Zoom out"))};
-    zoomPercentAction = new QAction("100%");
-    auto *zoomin {new QAction(QIcon::fromTheme("zoom-in", QIcon(":/icons/zoom-in.svg")), tr("Zoom In"))};
+    auto *zoomout {new QAction(QIcon::fromTheme("zoom-out", QIcon(":/icons/zoom-out.svg")), tr("Zoom out"), this)};
+    zoomPercentAction = new QAction("100%", this);
+    auto *zoomin {new QAction(QIcon::fromTheme("zoom-in", QIcon(":/icons/zoom-in.svg")), tr("Zoom In"), this)};
     toolBar->addAction(zoomout);
     toolBar->addAction(zoomPercentAction);
     toolBar->addAction(zoomin);
@@ -468,7 +473,7 @@ void MainWindow::addZoomActions()
 
 void MainWindow::setupMenuButton()
 {
-    menuButton = new QAction(QIcon::fromTheme("open-menu", QIcon(":/icons/open-menu.png")), tr("Settings"));
+    menuButton = new QAction(QIcon::fromTheme("open-menu", QIcon(":/icons/open-menu.png")), tr("Settings"), this);
     toolBar->addAction(menuButton);
     menuButton->setShortcut(Qt::Key_F10);
 }
@@ -497,7 +502,7 @@ void MainWindow::buildMenu()
 void MainWindow::addFileMenuActions(QMenu *menu)
 {
     QAction *newTab {nullptr};
-    menu->addAction(newTab = new QAction(QIcon::fromTheme("tab-new"), tr("&New tab")));
+    menu->addAction(newTab = new QAction(QIcon::fromTheme("tab-new"), tr("&New tab"), menu));
     newTab->setShortcut(Qt::CTRL | Qt::Key_T);
     connect(newTab, &QAction::triggered, this, [this] { addNewTab(); });
 
@@ -547,7 +552,7 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     QAction *downloadAction {nullptr};
     QAction *bookmarkAction {nullptr};
     QAction *manageBookmarks {nullptr};
-    menu->addAction(fullScreen = new QAction(QIcon::fromTheme("view-fullscreen"), tr("&Full screen")));
+    menu->addAction(fullScreen = new QAction(QIcon::fromTheme("view-fullscreen"), tr("&Full screen"), menu));
     auto *readerAction = new QAction(QIcon::fromTheme("view-readermode"), tr("&Reader view"), this);
     readerAction->setShortcuts({Qt::Key_F9, Qt::CTRL | Qt::ALT | Qt::Key_R});
     menu->addAction(readerAction);
@@ -564,13 +569,13 @@ void MainWindow::addViewMenuActions(QMenu *menu)
         readerAction->setText(view && view->isReaderMode() ? tr("Exit &reader view") : tr("&Reader view"));
     });
     menu->addSeparator();
-    menu->addAction(devTools = new QAction(QIcon::fromTheme("applications-development"), tr("&Developer Tools")));
+    menu->addAction(devTools = new QAction(QIcon::fromTheme("applications-development"), tr("&Developer Tools"), menu));
     devTools->setShortcut(Qt::Key_F12);
-    menu->addAction(historyAction = new QAction(QIcon::fromTheme("history"), tr("H&istory")));
+    menu->addAction(historyAction = new QAction(QIcon::fromTheme("history"), tr("H&istory"), menu));
     historyAction->setMenu(history);
-    menu->addAction(downloadAction = new QAction(QIcon::fromTheme("folder-download"), tr("&Downloads")));
+    menu->addAction(downloadAction = new QAction(QIcon::fromTheme("folder-download"), tr("&Downloads"), menu));
     downloadAction->setShortcut(Qt::CTRL | Qt::Key_J);
-    menu->addAction(bookmarkAction = new QAction(QIcon::fromTheme("emblem-favorite"), tr("&Bookmarks")));
+    menu->addAction(bookmarkAction = new QAction(QIcon::fromTheme("emblem-favorite"), tr("&Bookmarks"), menu));
     bookmarkAction->setMenu(bookmarks);
     // Its own action rather than the address bar's, whose icon is adapted to the address bar.
     QAction *bookmarkPage {nullptr};
@@ -578,7 +583,7 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     bookmarkPage->setShortcut(Qt::CTRL | Qt::Key_D);
     connect(bookmarkPage, &QAction::triggered, addBookmark, &QAction::trigger);
     connect(addBookmark, &QAction::enabledChanged, bookmarkPage, &QAction::setEnabled);
-    bookmarks->addAction(manageBookmarks = new QAction(QIcon::fromTheme("document-edit"), tr("Manage &bookmarks")));
+    bookmarks->addAction(manageBookmarks = new QAction(QIcon::fromTheme("document-edit"), tr("Manage &bookmarks"), bookmarks));
     manageBookmarks->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
     // Says what it does rather than a check mark; the shortcut is only shown, the window's action handles it.
     QAction *toggleBookmarkBar {nullptr};
@@ -592,6 +597,8 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     connect(bookmarkBarAction, &QAction::toggled, toggleBookmarkBar, updateToggleText);
     connect(toggleBookmarkBar, &QAction::triggered, bookmarkBarAction, &QAction::toggle);
     bookmarks->addSeparator();
+    // Hovering a bookmark shows its address in the status bar until the menu closes.
+    connect(bookmarks, &QMenu::aboutToHide, statusBar(), &QStatusBar::hide);
     connect(fullScreen, &QAction::triggered, this, &MainWindow::toggleFullScreen);
     connect(devTools, &QAction::triggered, this, &MainWindow::openDevTools);
     connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
@@ -603,10 +610,10 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     }
     connect(addBookmark, &QAction::triggered, this, [this] {
         QAction *bookmark {nullptr};
-        bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), QString()));
+        bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), QString(), bookmarks));
         setBookmarkTitle(bookmark, currentWebView()->title());
         bookmark->setProperty("url", currentWebView()->url());
-        connectAddress(bookmark, bookmarks);
+        connectAddress(bookmark);
         bookmarksChanged();
     });
 }
@@ -618,18 +625,18 @@ void MainWindow::addHelpMenuActions(QMenu *menu)
     QAction *about {nullptr};
     QAction *quit {nullptr};
     menu->addSeparator();
-    menu->addAction(settingsAction = new QAction(QIcon::fromTheme("preferences-system"), tr("&Settings")));
+    menu->addAction(settingsAction = new QAction(QIcon::fromTheme("preferences-system"), tr("&Settings"), menu));
     settingsAction->setShortcuts({Qt::CTRL | Qt::Key_Comma, QKeySequence::Preferences});
     settingsAction->setEnabled(!privateWindow);
     if (privateWindow) {
         settingsAction->setToolTip(tr("Open a regular window to change settings"));
     }
     menu->addSeparator();
-    menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Keyboard shortcuts")));
+    menu->addAction(help = new QAction(QIcon::fromTheme("help-contents"), tr("&Keyboard shortcuts"), menu));
     help->setShortcut(QKeySequence::HelpContents);
-    menu->addAction(about = new QAction(QIcon::fromTheme("help-about"), tr("&About")));
+    menu->addAction(about = new QAction(QIcon::fromTheme("help-about"), tr("&About"), menu));
     menu->addSeparator();
-    menu->addAction(quit = new QAction(QIcon::fromTheme("window-close"), tr("&Exit")));
+    menu->addAction(quit = new QAction(QIcon::fromTheme("window-close"), tr("&Exit"), menu));
     connect(settingsAction, &QAction::triggered, this, &MainWindow::openSettings);
     connect(help, &QAction::triggered, this, &MainWindow::openQuickInfo);
     connect(quit, &QAction::triggered, this, &MainWindow::close);

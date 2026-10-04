@@ -216,7 +216,7 @@ private:
     void adaptIcons();
     void centerWindow();
     void clearHistoryEntries();
-    void connectAddress(const QAction *action, const QMenu *menu);
+    void connectAddress(const QAction *action);
     void displaySite(QString url = {}, const QString &title = {});
     void displaySearchResults(const QString &query);
     void openFromAddressBarText(const QString &input);

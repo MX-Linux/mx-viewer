@@ -261,10 +261,10 @@ void MainWindow::addDroppedBookmark(const QUrl &url, const QString &title, int i
     if (bookmarkTitle.isEmpty()) {
         bookmarkTitle = url.host().isEmpty() ? url.toString() : url.host();
     }
-    auto *bookmark = new QAction(icon, QString());
+    auto *bookmark = new QAction(icon, QString(), bookmarks);
     setBookmarkTitle(bookmark, bookmarkTitle);
     bookmark->setProperty("url", url);
-    connectAddress(bookmark, bookmarks);
+    connectAddress(bookmark);
     insertBookmark(bookmark, index);
     bookmarksChanged();
 }
@@ -335,10 +335,10 @@ void MainWindow::loadBookmarks()
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
         QAction *bookmark {nullptr};
-        bookmarks->addAction(bookmark = new QAction(settings.value("icon").value<QIcon>(), QString()));
+        bookmarks->addAction(bookmark = new QAction(settings.value("icon").value<QIcon>(), QString(), bookmarks));
         setBookmarkTitle(bookmark, settings.value("title").toString());
         bookmark->setProperty("url", settings.value("url"));
-        connectAddress(bookmark, bookmarks);
+        connectAddress(bookmark);
     }
     settings.endArray();
 }
@@ -362,7 +362,7 @@ void MainWindow::saveBookmarks()
 }
 
 // Show the hovered URL in the status bar and connect it to launch it.
-void MainWindow::connectAddress(const QAction *action, const QMenu *menu)
+void MainWindow::connectAddress(const QAction *action)
 {
     connect(action, &QAction::hovered, this, [this, action] {
         QString url = action->property("url").toString();
@@ -377,7 +377,6 @@ void MainWindow::connectAddress(const QAction *action, const QMenu *menu)
         QString url = action->property("url").toString();
         displaySite(url);
     });
-    connect(menu, &QMenu::aboutToHide, statusBar(), &QStatusBar::hide);
 }
 
 void MainWindow::openBookmarksEditor()
@@ -497,7 +496,7 @@ void MainWindow::openBookmarksEditor()
         setBookmarkTitle(bookmark, item->text());
         bookmark->setProperty("url", item->data(Qt::UserRole).toString());
         bookmarks->addAction(bookmark);
-        connectAddress(bookmark, bookmarks);
+        connectAddress(bookmark);
     }
     bookmarksChanged();
 }
