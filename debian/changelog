@@ -1,3 +1,24 @@
+mx-viewer (26.10.1) mx; urgency=medium
+
+  * Show menus and dialogs in the system language again instead of English.
+  * Share cookies and logins between all open windows.
+  * Apply changed settings to every open window right away.
+  * Open new tabs from links next to the page they came from, and keep tabs
+    opened in the background from jumping to the front.
+  * Open addresses such as localhost:8080 instead of searching for them.
+  * Add Open and Show in folder buttons to finished downloads.
+  * With "Save tabs on closing", restore the tabs of all open windows.
+  * Keep passwords that are part of web addresses out of the history, and
+    remove history older than one year.
+  * Hold Esc to leave full screen turned on with F11; a short press still
+    goes to the page.
+  * Run more safely when started by administrator tools, switching to the
+    regular user right away.
+  * Fix a crash in the tab menu, and make opening many tabs faster.
+  * Fix the Reload button sometimes staying disabled after switching tabs.
+
+ -- Adrian <adrian@mxlinux.org>  Sun, 04 Oct 2026 16:26:41 -0400
+
 mx-viewer (26.10) mx; urgency=medium
 
   * Fix web pages that load extra parts right after opening, such as the
