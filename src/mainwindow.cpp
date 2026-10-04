@@ -298,6 +298,15 @@ protected:
 private:
     Qt::Edges edges;
 };
+
+// A value from a form submitted with GET, where '+' stands for a space; decoded before %2B becomes a
+// literal '+'.
+QString formValue(const QUrlQuery &query, const QString &name)
+{
+    QString encoded = query.queryItemValue(name, QUrl::FullyEncoded);
+    encoded.replace(QLatin1Char('+'), QLatin1Char(' '));
+    return QUrl::fromPercentEncoding(encoded.toUtf8()).trimmed();
+}
 } // namespace
 
 QPointer<MainWindow> MainWindow::lastActiveWindow;
@@ -1292,7 +1301,7 @@ void MainWindow::listHistory()
     refreshHistoryCompleter();
 }
 
-QString MainWindow::buildHistoryPageHtml()
+QString MainWindow::buildHistoryPageHtml(const QString &filter)
 {
     // The history on disk belongs to regular windows; a private window lists none of it.
     const QList<HistoryStore::Entry> entries = privateWindow ? QList<HistoryStore::Entry>() : HistoryStore::entries();
@@ -1329,9 +1338,13 @@ QString MainWindow::buildHistoryPageHtml()
             groupLabel = label;
         }
         const QString title = entry.title.isEmpty() ? entry.url : entry.title;
+        const QString searchText = (title + " " + entry.url).toLower();
+        // The page filters as the user types; this serves a search submitted without JavaScript.
+        if (!searchText.contains(filter.toLower())) {
+            continue;
+        }
         const QString titleEscaped = title.toHtmlEscaped();
         const QString urlEscaped = entry.url.toHtmlEscaped();
-        const QString searchText = (title + " " + entry.url).toLower().toHtmlEscaped();
         const QString timeText = visited.isValid() ? locale.toString(visited.time(), QLocale::ShortFormat) : QString();
         QString iconHtml;
         if (!entry.icon.isEmpty()) {
@@ -1341,6 +1354,9 @@ QString MainWindow::buildHistoryPageHtml()
         } else {
             iconHtml = QStringLiteral("<span class=\"icon placeholder\"></span>");
         }
+        // Plain links and a form, so the page also works with JavaScript turned off.
+        const QString deleteUrl = QStringLiteral("mx-history://delete?id=%1&q=%2")
+                                      .arg(QString::number(entry.id), QString::fromLatin1(QUrl::toPercentEncoding(filter)));
         rows.append(QStringLiteral(
                         "<li class=\"entry\" data-search=\"%1\">"
                         "<span class=\"time\">%8</span>"
@@ -1348,12 +1364,12 @@ QString MainWindow::buildHistoryPageHtml()
                         "<div class=\"content\">"
                         "<div class=\"row\">"
                         "<a class=\"title\" href=\"%3\">%4</a>"
-                        "<button class=\"delete\" data-id=\"%5\">%6</button>"
+                        "<a class=\"delete\" href=\"%5\">%6</a>"
                         "</div>"
                         "<div class=\"url\">%7</div>"
                         "</div>"
                         "</li>")
-                        .arg(searchText, iconHtml, urlEscaped, titleEscaped, QString::number(entry.id),
+                        .arg(searchText.toHtmlEscaped(), iconHtml, urlEscaped, titleEscaped, deleteUrl.toHtmlEscaped(),
                              tr("Delete").toHtmlEscaped(), urlEscaped, timeText.toHtmlEscaped()));
     }
     closeGroup();
@@ -1370,8 +1386,9 @@ QString MainWindow::buildHistoryPageHtml()
     body { font-family: sans-serif; margin: 24px; color: #1f2328; background: #ffffff; }
     h1 { font-size: 22px; margin: 0 0 12px; }
     .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
-    .search { flex: 1 1 240px; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 6px; }
-    .clear { padding: 8px 12px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 6px; cursor: pointer; }
+    .search-form { flex: 1 1 240px; display: flex; }
+    .search { flex: 1 1 auto; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 6px; }
+    .clear { padding: 8px 12px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 6px; cursor: pointer; color: inherit; text-decoration: none; }
     .list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
     .group { margin-bottom: 20px; }
     .day { font-size: 15px; margin: 0 0 8px; color: #57606a; }
@@ -1383,15 +1400,17 @@ QString MainWindow::buildHistoryPageHtml()
     .row { display: flex; align-items: center; gap: 10px; }
     .title { color: #0969da; text-decoration: none; font-weight: 600; flex: 1 1 auto; }
     .url { color: #57606a; font-size: 12px; word-break: break-all; }
-    .delete { padding: 4px 8px; border: 1px solid #d0d7de; background: #fff; border-radius: 6px; cursor: pointer; }
+    .delete { padding: 4px 8px; border: 1px solid #d0d7de; background: #fff; border-radius: 6px; cursor: pointer; color: inherit; text-decoration: none; font-size: 13px; }
     .empty { padding: 16px; border: 1px dashed #d0d7de; border-radius: 8px; color: #57606a; }
   </style>
 </head>
 <body>
   <h1>%1</h1>
   <div class="controls">
-    <input id="search" class="search" type="search" placeholder="%2" autofocus>
-    <button id="clear" class="clear">%3</button>
+    <form class="search-form" action="mx-history://list" method="get">
+      <input id="search" name="q" class="search" type="search" placeholder="%2" value="%5" autofocus>
+    </form>
+    <a id="clear" class="clear" href="mx-history://clear">%3</a>
   </div>
   %4
   <script>
@@ -1408,19 +1427,8 @@ QString MainWindow::buildHistoryPageHtml()
       });
     }
     search.addEventListener('input', applyFilter);
-    document.querySelectorAll('button.delete').forEach(btn => {
-      btn.addEventListener('click', event => {
-        event.preventDefault();
-        location.href = 'mx-history://delete?id=' + btn.dataset.id;
-      });
-    });
-    const clearButton = document.getElementById('clear');
-    clearButton.addEventListener('click', event => {
-      event.preventDefault();
-      if (confirm('%5')) {
-        location.href = 'mx-history://clear';
-      }
-    });
+    // The form is for pages without JavaScript; submitting would drop the rows the live filter hides.
+    search.form.addEventListener('submit', event => event.preventDefault());
   </script>
 </body>
 </html>)")
@@ -1429,17 +1437,17 @@ QString MainWindow::buildHistoryPageHtml()
                                  groups.isEmpty()
                                      ? QStringLiteral("<div class=\"empty\">%1</div>").arg(emptyText.toHtmlEscaped())
                                      : groups.join("\n"),
-                                 tr("Clear all history entries?").toHtmlEscaped());
+                                 filter.toHtmlEscaped());
 
     return html;
 }
 
-void MainWindow::renderHistoryPage(WebView *view)
+void MainWindow::renderHistoryPage(WebView *view, const QString &filter)
 {
     if (!view) {
         return;
     }
-    view->setHtml(buildHistoryPageHtml(), QUrl("mx-history://list"));
+    view->setHtml(buildHistoryPageHtml(filter), QUrl("mx-history://list"));
     view->show();
     tabWidget->setTabTitle(tabWidget->indexOf(view), tr("History"));
     setWindowTitle(tr("History"));
@@ -1484,16 +1492,33 @@ bool MainWindow::handleHistoryRequest(const QUrl &url)
         return false;
     }
     const QString action = url.host();
-    if (action == "delete") {
-        QUrlQuery query(url);
-        removeHistoryEntry(query.queryItemValue("id").toLongLong());
-    } else if (action == "clear") {
-        clearHistoryEntries();
-    } else {
+    const QUrlQuery query(url);
+    if (action == "list") {
+        renderHistoryPage(currentWebView(), formValue(query, "q"));
+        return true;
+    }
+    if (action == "clear") {
+        // Confirmed here rather than in the page, which may run without JavaScript. Deferred, so the
+        // dialog's event loop does not run inside the navigation request.
+        QTimer::singleShot(0, this, [this] {
+            if (QMessageBox::question(this, tr("Clear history"), tr("Clear all history entries?"))
+                != QMessageBox::Yes) {
+                return;
+            }
+            clearHistoryEntries();
+            refreshHistoryCompleter();
+            if (auto *view = currentWebView(); view && view->url().scheme() == "mx-history") {
+                renderHistoryPage(view);
+            }
+        });
+        return true;
+    }
+    if (action != "delete") {
         return false;
     }
+    removeHistoryEntry(query.queryItemValue("id").toLongLong());
     refreshHistoryCompleter();
-    renderHistoryPage(currentWebView());
+    renderHistoryPage(currentWebView(), formValue(query, "q"));
     return true;
 }
 
@@ -2740,7 +2765,7 @@ QString MainWindow::buildSettingsPageHtml()
     </div>
     <div class="row">
       <label for="customSearch">%13</label>
-      <input id="customSearch" name="customSearch" class="input" type="text" value="%14" placeholder="https://example.com/?q=%s">
+      <input id="customSearch" name="customSearch" class="input" type="text" value="%14" placeholder="https://example.com/?q=%s" data-confirm="%40">
     </div>
     <div class="row">
       <label for="zoom">%15</label>
@@ -2753,7 +2778,7 @@ QString MainWindow::buildSettingsPageHtml()
     <label class="check"><input id="loadImages" name="loadImages" type="checkbox" value="1" %25> %26</label>
     <div class="check-row">
       <label class="check"><input id="enableCookies" name="enableCookies" type="checkbox" value="1" %27> %28</label>
-      <button class="btn btn-inline" id="clearCookies" type="button">%41</button>
+      <button class="btn btn-inline" id="clearCookies" type="button" data-confirm="%44">%41</button>
     </div>
     <label class="check"><input id="thirdPartyCookies" name="thirdPartyCookies" type="checkbox" value="1" %29 %30> %31</label>
     <label class="check"><input id="clearCookiesAtExit" name="clearCookiesAtExit" type="checkbox" value="1" %32> %33</label>
@@ -2762,7 +2787,7 @@ QString MainWindow::buildSettingsPageHtml()
     <label class="check"><input id="tabsInTitleBar" name="tabsInTitleBar" type="checkbox" value="1" %46> %47</label>
     <div class="check-row">
       <div class="cache-label">%42</div>
-      <button class="btn btn-inline" id="clearCache" type="button">%43</button>
+      <button class="btn btn-inline" id="clearCache" type="button" data-confirm="%45">%43</button>
     </div>
     <div class="actions">
       <button class="btn" id="save" type="submit">%38</button>
@@ -2801,7 +2826,7 @@ QString MainWindow::buildSettingsPageHtml()
     }
     function normalizeCustomUrl(url) {
       if (!url.includes('%s') && !url.includes('?q=')) {
-        const add = confirm('%40');
+        const add = confirm(customSearch.dataset.confirm);
         if (add) {
           const join = url.includes('?') ? '&' : '?';
           return url + join + 'q=%s';
@@ -2853,14 +2878,14 @@ QString MainWindow::buildSettingsPageHtml()
     const clearCookiesBtn = document.getElementById('clearCookies');
     clearCookiesBtn.addEventListener('click', event => {
       event.preventDefault();
-      if (confirm('%44')) {
+      if (confirm(clearCookiesBtn.dataset.confirm)) {
         location.href = 'mx-settings://clearCookies';
       }
     });
     const clearCacheBtn = document.getElementById('clearCache');
     clearCacheBtn.addEventListener('click', event => {
       event.preventDefault();
-      if (confirm('%45')) {
+      if (confirm(clearCacheBtn.dataset.confirm)) {
         location.href = 'mx-settings://clearCache';
       }
     });
@@ -3017,15 +3042,9 @@ bool MainWindow::handleSettingsRequest(const QUrl &url)
         return false;
     }
     QUrlQuery query(url);
-    const auto formValue = [&query](const QString &name) {
-        // URLSearchParams uses '+' for spaces; decode it before %2B becomes a literal '+'.
-        QString encoded = query.queryItemValue(name, QUrl::FullyEncoded);
-        encoded.replace(QLatin1Char('+'), QLatin1Char(' '));
-        return QUrl::fromPercentEncoding(encoded.toUtf8()).trimmed();
-    };
-    const QString newHome = formValue("home");
+    const QString newHome = formValue(query, "home");
     const QString newSearch = query.queryItemValue("search").trimmed();
-    const QString newCustomSearch = formValue("customSearch");
+    const QString newCustomSearch = formValue(query, "customSearch");
     const int newZoom = query.queryItemValue("zoom").toInt();
     const bool newOpenNewTab = query.queryItemValue("openNewTab") == "1";
     const bool newShowProgress = query.queryItemValue("showProgress") == "1";

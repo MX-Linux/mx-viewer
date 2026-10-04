@@ -220,7 +220,8 @@ private:
     void displaySearchResults(const QString &query);
     void openFromAddressBarText(const QString &input);
     QString buildSettingsPageHtml();
-    QString buildHistoryPageHtml();
+    // Entries whose title or address contains filter (all for an empty one).
+    QString buildHistoryPageHtml(const QString &filter);
     QString buildNewTabPageHtml();
     void renderNewTabPage(WebView *view);
     void findInPage(QWebEnginePage::FindFlags flags);
@@ -257,7 +258,7 @@ private:
     void openSavedTab(const QUrl &url, bool makeCurrent);
     void removeHistoryEntry(qint64 id);
     void refreshHistoryCompleter();
-    void renderHistoryPage(WebView *view);
+    void renderHistoryPage(WebView *view, const QString &filter = {});
     void renderSettingsPage(WebView *view);
     QString searchUrlForQuery(const QString &query) const;
     void saveMenuItems(const QMenu *menu, int offset);
