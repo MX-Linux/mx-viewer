@@ -757,15 +757,24 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     settings.setValue("Geometry", saveGeometry());
 
-    if (settings.value("SaveTabs", false).toBool()) {
-        settings.beginWriteArray("SavedTabs");
+    // Saved when the last regular window closes, or from every window when the program quits; a window
+    // closed while others stay open takes its tabs with it.
+    if (settings.value("SaveTabs", false).toBool() && (quitting || !otherRegularWindowOpen())) {
+        if (!quitting) {
+            sessionTabs.clear();
+        }
         for (int i = 0; i < tabWidget->count(); ++i) {
-            settings.setArrayIndex(i);
-            auto *webView = qobject_cast<WebView *>(tabWidget->widget(i));
-            if (webView) {
-                settings.setValue("url", webView->url().toString());
-                settings.setValue("pinned", tabWidget->isPinned(i));
+            if (const auto *webView = qobject_cast<WebView *>(tabWidget->widget(i))) {
+                sessionTabs.append({webView->url().toString(), tabWidget->isPinned(i)});
             }
+        }
+        // Removed first, so entries past the end of a shorter list are not left behind.
+        settings.remove("SavedTabs");
+        settings.beginWriteArray("SavedTabs");
+        for (qsizetype i = 0; i < sessionTabs.size(); ++i) {
+            settings.setArrayIndex(static_cast<int>(i));
+            settings.setValue("url", sessionTabs.at(i).first);
+            settings.setValue("pinned", sessionTabs.at(i).second);
         }
         settings.endArray();
     }

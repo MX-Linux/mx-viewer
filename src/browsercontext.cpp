@@ -346,4 +346,6 @@ void MainWindow::applyZoom()
 void MainWindow::setQuitting()
 {
     quitting = true;
+    // Collected anew from the windows that close now, not from one closed earlier in the session.
+    sessionTabs.clear();
 }

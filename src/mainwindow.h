@@ -157,6 +157,8 @@ private:
     QPointer<WebView> printingView;
     // The regular windows share one cache.
     static inline bool clearingCache {};
+    // Tabs (address, pinned) collected from the windows closing as the program quits.
+    static inline QList<QPair<QString, bool>> sessionTabs;
     const QCommandLineParser *args;
     QList<QPair<QUrl, QIcon>> closedTabs;
     QPointer<QMainWindow> devToolsWindow;

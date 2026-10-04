@@ -171,9 +171,12 @@ void MainWindow::setupBookmarkBar()
     bookmarkBar->setVisible(bookmarkBarAction->isChecked());
     connect(bookmarkBarAction, &QAction::toggled, this, [this](bool checked) {
         bookmarkBar->setVisible(checked && toolbarsVisible);
-        if (!privateWindow) {
-            settings.setValue("BookmarkBar", checked);
+        // A private window changes only its own bar: it must not store the preference, which the
+        // other windows would do when updated.
+        if (privateWindow) {
+            return;
         }
+        settings.setValue("BookmarkBar", checked);
         // Shown or hidden in every window, as the setting applies to all of them.
         for (auto *widget : QApplication::topLevelWidgets()) {
             auto *window = qobject_cast<MainWindow *>(widget);

@@ -164,16 +164,22 @@ void MainWindow::openClearDataDialog()
         if (privateWindow) {
             webProfile->clearAllVisitedLinks(); // The window's own off-the-record profile.
             closedTabs.clear();
-        } else if (age == 0) {
-            clearHistoryEntries();
-            webProfile->clearAllVisitedLinks();
-            closedTabs.clear();
         } else {
-            // Entries without a timestamp predate this feature, so they are older than any range offered.
-            const qint64 cutoff = QDateTime::currentSecsSinceEpoch() - age;
-            HistoryStore::removeSince(cutoff);
-            // Closed tabs carry no time; they are all from this session, which is usually recent.
-            closedTabs.clear();
+            if (age == 0) {
+                clearHistoryEntries();
+                webProfile->clearAllVisitedLinks();
+            } else {
+                // Entries without a timestamp predate this feature, so they are older than any range offered.
+                HistoryStore::removeSince(QDateTime::currentSecsSinceEpoch() - age);
+            }
+            // Closed tabs carry no time; they are all from this session, which is usually recent. Every
+            // regular window keeps its own list, and all of them belong to the history being cleared.
+            for (auto *widget : QApplication::topLevelWidgets()) {
+                auto *window = qobject_cast<MainWindow *>(widget);
+                if (window && !window->privateWindow) {
+                    window->closedTabs.clear();
+                }
+            }
         }
         if (auto *view = currentWebView(); view && view->url().scheme() == "mx-history") {
             renderHistoryPage(view);
