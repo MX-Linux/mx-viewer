@@ -202,13 +202,21 @@ void MainWindow::addActions()
     addAction(clearDataAction);
     connect(clearDataAction, &QAction::triggered, this, &MainWindow::openClearDataDialog);
 
-    // Only while a page is full screen: a shortcut is handled before the page sees the key, so the
-    // page cannot keep Esc from getting the user out.
-    exitPageFullScreenAction = new QAction(this);
-    exitPageFullScreenAction->setShortcut(Qt::Key_Escape);
-    exitPageFullScreenAction->setEnabled(false);
-    addAction(exitPageFullScreenAction);
-    connect(exitPageFullScreenAction, &QAction::triggered, this, &MainWindow::exitPageFullScreen);
+    // Only while the window is full screen: a shortcut is handled before the page sees the key, and the
+    // page keeps Esc for itself otherwise, so this is the only way Esc gets the user out.
+    exitFullScreenAction = new QAction(this);
+    exitFullScreenAction->setShortcut(Qt::Key_Escape);
+    exitFullScreenAction->setEnabled(false);
+    addAction(exitFullScreenAction);
+    connect(exitFullScreenAction, &QAction::triggered, this, [this] {
+        if (pageFullScreen) {
+            exitPageFullScreen();
+        } else if (findBar->isVisible()) {
+            closeFindBar();
+        } else if (isFullScreen()) {
+            toggleFullScreen();
+        }
+    });
 }
 
 void MainWindow::cycleTab(int step)
@@ -538,8 +546,11 @@ void MainWindow::changeEvent(QEvent *event)
     if (event->type() == QEvent::PaletteChange && menuButton) {
         adaptIcons();
     }
-    if (event->type() == QEvent::WindowStateChange && titleBar) {
-        updateTitleBar();
+    if (event->type() == QEvent::WindowStateChange) {
+        if (titleBar) {
+            updateTitleBar();
+        }
+        updateExitFullScreenAction();
     }
     QMainWindow::changeEvent(event);
 }
@@ -705,10 +716,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     }
     if (event->matches(QKeySequence::Cancel) && findBar->isVisible()) {
         closeFindBar();
-        return;
-    }
-    if (event->key() == Qt::Key_Escape && isFullScreen()) {
-        toggleFullScreen();
         return;
     }
     if (event->matches(QKeySequence::Cancel)) {

@@ -91,7 +91,7 @@ private:
     DownloadWidget *downloadWidget {};
     QAction *addBookmark {};
     QAction *clearDataAction {};
-    QAction *exitPageFullScreenAction {};
+    QAction *exitFullScreenAction {};
     QAction *menuButton {};
     QAction *reloadAction {};
     QAction *homeAction {};
@@ -273,5 +273,6 @@ private:
     void toggleFullScreen();
     void exitPageFullScreen();
     void restoreFromPageFullScreen();
+    void updateExitFullScreenAction();
     void updateUrl();
 };

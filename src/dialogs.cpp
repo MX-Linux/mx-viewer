@@ -225,7 +225,7 @@ void MainWindow::openQuickInfo()
              {tr("Alt+←, Alt+→"), tr("Back/Forward")},
              {tr("Alt+Home"), tr("Home page")},
              {tr("Ctrl+R, F5"), tr("Reload")},
-             {tr("Esc"), tr("Stop loading/close Find bar")},
+             {tr("Esc"), tr("Stop loading/close Find bar/exit full screen")},
          }},
         {tr("Page"),
          {

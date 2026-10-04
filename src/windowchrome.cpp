@@ -141,7 +141,7 @@ void MainWindow::handleFullScreenRequest(QWebEngineFullScreenRequest request, We
         statusBar()->hide();
         // The page now covers the whole screen and could draw a fake address bar or dialog, so say how
         // to leave; Esc works as a window shortcut, ahead of the page's own key handling.
-        exitPageFullScreenAction->setEnabled(true);
+        updateExitFullScreenAction();
         showFullScreenNotification(tr("Press [Esc] to exit full screen"));
     } else {
         request.accept();
@@ -170,7 +170,7 @@ void MainWindow::restoreFromPageFullScreen()
     }
     pageFullScreen = false;
     pageFullScreenView = nullptr;
-    exitPageFullScreenAction->setEnabled(false);
+    updateExitFullScreenAction();
     // Turning auto-hide back on also shows the tab bar again when there is more than one tab.
     tabWidget->setTabBarAutoHide(true);
     if (!fullScreenBeforePage) {
@@ -198,7 +198,15 @@ void MainWindow::toggleFullScreen()
         normalGeometry = saveGeometry();
         showFullScreen();
         setToolbarsVisible(false);
-        showFullScreenNotification(tr("Press [F11] to exit full screen"));
+        showFullScreenNotification(tr("Press [Esc] to exit full screen"));
+    }
+}
+
+// Esc leaves full screen, both a page's and the one F11 turns on.
+void MainWindow::updateExitFullScreenAction()
+{
+    if (exitFullScreenAction) {
+        exitFullScreenAction->setEnabled(pageFullScreen || isFullScreen());
     }
 }
 
