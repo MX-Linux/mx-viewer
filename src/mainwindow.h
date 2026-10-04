@@ -261,7 +261,7 @@ private:
     void renderHistoryPage(WebView *view, const QString &filter = {});
     void renderSettingsPage(WebView *view);
     QString searchUrlForQuery(const QString &query) const;
-    void saveMenuItems(const QMenu *menu, int offset);
+    void saveBookmarks();
     void setConnections();
     void showFullScreenNotification();
     void tabChanged();

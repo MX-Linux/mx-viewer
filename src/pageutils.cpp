@@ -22,7 +22,6 @@
 
 #include <QDir>
 #include <QDirIterator>
-#include <QFile>
 #include <QFileInfo>
 #include <QUrlQuery>
 #include <QWebEngineProfile>
@@ -76,19 +75,6 @@ QStringList collectCachePaths(const QWebEngineProfile *profile)
         subdirs << cachePath + "/" + entry;
     }
     return subdirs;
-}
-
-bool removeCachePath(const QString &path)
-{
-    QFileInfo info(path);
-    if (!info.exists()) {
-        return false;
-    }
-    if (info.isFile() || info.isSymLink()) {
-        return QFile::remove(path);
-    }
-    QDir dir(path);
-    return dir.removeRecursively();
 }
 
 // A value from a form submitted with GET, where '+' stands for a space; decoded before %2B becomes a

@@ -22,7 +22,6 @@
 #include "mainwindow.h"
 
 #include <QAbstractItemView>
-#include <QBuffer>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -307,7 +306,7 @@ void MainWindow::bookmarksChanged()
     if (privateWindow) {
         return;
     }
-    saveMenuItems(bookmarks, 2);
+    saveBookmarks();
     for (auto *widget : QApplication::topLevelWidgets()) {
         auto *window = qobject_cast<MainWindow *>(widget);
         if (window && window != this) {
@@ -341,37 +340,20 @@ void MainWindow::loadBookmarks()
     settings.endArray();
 }
 
-void MainWindow::saveMenuItems(const QMenu *menu, int offset)
+void MainWindow::saveBookmarks()
 {
-    // Offset is for skipping "Clear history" item, separator, etc.
     // Removed first, so entries past the end of a shorter list are not left behind.
-    settings.remove(menu->objectName());
-    settings.beginWriteArray(menu->objectName());
-    if (menu->objectName() == "Bookmarks") {
-        int index = 0;
-        for (auto *action : menu->actions()) {
-            if (!action->property("url").isValid()) {
-                continue;
-            }
-            settings.setArrayIndex(index++);
-            settings.setValue("title", bookmarkTitle(action));
-            settings.setValue("url", action->property("url").toString());
-            settings.setValue("icon", action->icon());
+    settings.remove("Bookmarks");
+    settings.beginWriteArray("Bookmarks");
+    int index = 0;
+    for (auto *action : bookmarks->actions()) {
+        if (!action->property("url").isValid()) {
+            continue;
         }
-    } else {
-        for (int i = offset; i < menu->actions().count(); ++i) {
-            settings.setArrayIndex(i - offset);
-            settings.setValue("title", menu->actions().at(i)->text());
-            settings.setValue("url", menu->actions().at(i)->property("url").toString());
-
-            QPixmap iconPixmap = menu->actions().at(i)->icon().pixmap(QSize(16, 16));
-            QByteArray iconByteArray;
-            QBuffer buffer(&iconByteArray);
-            if (buffer.open(QIODevice::WriteOnly)) {
-                iconPixmap.save(&buffer, "PNG");
-                settings.setValue("icon", iconByteArray);
-            }
-        }
+        settings.setArrayIndex(index++);
+        settings.setValue("title", bookmarkTitle(action));
+        settings.setValue("url", action->property("url").toString());
+        settings.setValue("icon", action->icon());
     }
     settings.endArray();
 }

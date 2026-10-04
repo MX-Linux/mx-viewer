@@ -166,7 +166,7 @@ MainWindow::~MainWindow()
         return;
     }
     settings.setValue("Geometry", saveGeometry());
-    saveMenuItems(bookmarks, 2);
+    saveBookmarks();
 }
 
 void MainWindow::addActions()
