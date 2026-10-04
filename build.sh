@@ -32,6 +32,22 @@ clean_build_artifacts() {
     rm -f ../mx-viewer_*.build ../mx-viewer_*.buildinfo
 }
 
+# The source package must hold only files tracked by git. dpkg-source packs the whole directory,
+# including untracked leftovers such as other build systems' output; debian/source/options lists
+# the known ones, and this catches the rest.
+check_source_tarball() {
+    local tarball=$1 extra
+    extra=$(comm -23 \
+        <(tar -tf "$tarball" | sed -n 's|^[^/]*/||p' | grep -v -e '^$' -e '/$' | sort) \
+        <(git ls-files | sort))
+    if [ -n "$extra" ]; then
+        echo "Error: $tarball contains files that are not tracked by git:" >&2
+        echo "$extra" | sed 's/^/  /' >&2
+        echo "Remove them, or add a tar-ignore line to debian/source/options, and build again." >&2
+        return 1
+    fi
+}
+
 # Default values
 BUILD_DIR="build"
 BUILD_TYPE="Release"
@@ -92,6 +108,9 @@ if [ "$DEBIAN_BUILD" = true ]; then
 
     echo "Cleaning build directory and debian artifacts..."
     clean_build_artifacts
+
+    version=$(dpkg-parsechangelog -S Version)
+    check_source_tarball "debs/mx-viewer_${version}.tar.xz"
 
     echo "Debian package build completed!"
     echo "Debian artifacts moved to debs/ directory"
