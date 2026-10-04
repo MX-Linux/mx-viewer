@@ -25,8 +25,8 @@
 
 #include <algorithm>
 
-DownloadWidget::DownloadWidget(QWidget* parent)
-    : QWidget(parent),
+DownloadWidget::DownloadWidget(QWidget* browserWindow)
+    : browserWindow(browserWindow),
       ui(new Ui::DownloadWidget)
 {
     ui->setupUi(this);
@@ -46,8 +46,9 @@ DownloadWidget::~DownloadWidget()
 
 void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download, QWebEngineProfile* profile)
 {
+    QWidget* dialogParent = browserWindow ? browserWindow.data() : this;
     QString path = QFileDialog::getSaveFileName(
-        this, tr("Save as"), QDir(download->downloadDirectory()).filePath(download->downloadFileName()));
+        dialogParent, tr("Save as"), QDir(download->downloadDirectory()).filePath(download->downloadFileName()));
     if (path.isEmpty()) {
         return;
     }
@@ -57,11 +58,23 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download, QWeb
     auto* downloadLabel = new QLabel;
     auto* pushButton = new QPushButton(QIcon::fromTheme("cancel"), tr("cancel"));
     auto* progressBar = new QProgressBar(this);
+    // Offered once the file is complete.
+    auto* finishedActions = new QWidget;
+    auto* actionsLayout = new QHBoxLayout(finishedActions);
+    actionsLayout->setContentsMargins(0, 0, 0, 0);
+    auto* openButton = new QPushButton(QIcon::fromTheme("document-open"), tr("Open"), finishedActions);
+    openButton->setToolTip(tr("Open the file"));
+    auto* folderButton = new QPushButton(QIcon::fromTheme("folder-open"), tr("Show in folder"), finishedActions);
+    folderButton->setToolTip(tr("Open the folder that contains the file"));
+    actionsLayout->addWidget(openButton);
+    actionsLayout->addWidget(folderButton);
+    finishedActions->hide();
     downloadLabel->setText(download->downloadFileName());
     int row = ui->gridLayout->rowCount();
     ui->gridLayout->removeItem(ui->verticalSpacer);
     ui->gridLayout->addWidget(downloadLabel, row, 0);
     ui->gridLayout->addWidget(progressBar, row, 1);
+    ui->gridLayout->addWidget(finishedActions, row, 2);
     ui->gridLayout->addWidget(pushButton, row, 3);
     ui->gridLayout->addItem(ui->verticalSpacer, row + 1, 1);
 
@@ -74,24 +87,37 @@ void DownloadWidget::downloadRequested(QWebEngineDownloadRequest* download, QWeb
     download->accept();
     downloads.append(download);
 
-    connect(pushButton, &QPushButton::pressed, this, [this, download, pushButton, downloadLabel, progressBar] {
-        if (download->state() == QWebEngineDownloadRequest::DownloadInProgress) {
-            download->cancel();
-        } else {
-            downloads.removeAll(download);
-            ui->gridLayout->removeWidget(downloadLabel);
-            ui->gridLayout->removeWidget(pushButton);
-            ui->gridLayout->removeWidget(progressBar);
-            downloadLabel->deleteLater();
-            pushButton->deleteLater();
-            progressBar->deleteLater();
-        }
-    });
+    const QString filePath = QDir(download->downloadDirectory()).filePath(download->downloadFileName());
+    connect(openButton, &QPushButton::clicked, this,
+            [filePath] { QDesktopServices::openUrl(QUrl::fromLocalFile(filePath)); });
+    connect(folderButton, &QPushButton::clicked, this,
+            [filePath] { QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(filePath).path())); });
+
+    connect(pushButton, &QPushButton::pressed, this,
+            [this, download, pushButton, downloadLabel, progressBar, finishedActions] {
+                if (download->state() == QWebEngineDownloadRequest::DownloadInProgress) {
+                    download->cancel();
+                } else {
+                    downloads.removeAll(download);
+                    ui->gridLayout->removeWidget(downloadLabel);
+                    ui->gridLayout->removeWidget(pushButton);
+                    ui->gridLayout->removeWidget(progressBar);
+                    ui->gridLayout->removeWidget(finishedActions);
+                    downloadLabel->deleteLater();
+                    pushButton->deleteLater();
+                    progressBar->deleteLater();
+                    finishedActions->deleteLater();
+                }
+            });
 
     connect(download, &QWebEngineDownloadRequest::receivedBytesChanged, this,
-            [download, pushButton, progressBar] { updateDownload(download, pushButton, progressBar); });
+            [download, pushButton, progressBar, finishedActions] {
+                updateDownload(download, pushButton, progressBar, finishedActions);
+            });
     connect(download, &QWebEngineDownloadRequest::stateChanged, this,
-            [download, pushButton, progressBar] { updateDownload(download, pushButton, progressBar); });
+            [download, pushButton, progressBar, finishedActions] {
+                updateDownload(download, pushButton, progressBar, finishedActions);
+            });
 }
 
 int DownloadWidget::activeDownloadCount() const
@@ -126,7 +152,7 @@ QString DownloadWidget::timeUnit(int seconds)
 }
 
 void DownloadWidget::updateDownload(QWebEngineDownloadRequest* download, QPushButton* pushButton,
-                                     QProgressBar* progressBar)
+                                     QProgressBar* progressBar, QWidget* finishedActions)
 {
     auto totalBytes = static_cast<qreal>(download->totalBytes());
     auto receivedBytes = static_cast<qreal>(download->receivedBytes());
@@ -170,6 +196,7 @@ void DownloadWidget::updateDownload(QWebEngineDownloadRequest* download, QPushBu
         break;
     }
 
+    finishedActions->setVisible(state == QWebEngineDownloadRequest::DownloadCompleted);
     if (state == QWebEngineDownloadRequest::DownloadInProgress) {
         pushButton->setIcon(QIcon::fromTheme("process-stop"));
         pushButton->setText(tr("Cancel"));
