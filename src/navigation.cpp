@@ -311,7 +311,8 @@ void MainWindow::openFromOtherInstance(const QString &argument)
     } else {
         target->addNewTab(url, true);
         if (target->isMinimized()) {
-            target->showNormal();
+            // showNormal() would also drop a maximized or full-screen state.
+            target->setWindowState(target->windowState() & ~Qt::WindowMinimized);
         }
     }
     target->raise();
