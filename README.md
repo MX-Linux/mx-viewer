@@ -88,6 +88,10 @@ make
 # Using Clang compiler
 cmake -DUSE_CLANG=ON ..
 make
+
+# Fail on compiler warnings (build.sh and CI do this)
+cmake -DWARNINGS_AS_ERRORS=ON ..
+make
 ```
 
 ### Debian Package Build

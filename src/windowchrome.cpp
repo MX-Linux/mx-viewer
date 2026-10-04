@@ -107,7 +107,7 @@ void MainWindow::showFullScreenNotification()
     a->setEasingCurve(QEasingCurve::InBack);
     a->start(QPropertyAnimation::DeleteWhenStopped);
     label->show();
-    QTimer::singleShot(4000, this, [label, effect, end, start] {
+    QTimer::singleShot(4000, this, [label, effect] {
         auto *a = new QPropertyAnimation(effect, "opacity");
         a->setDuration(durationMs);
         a->setStartValue(end);

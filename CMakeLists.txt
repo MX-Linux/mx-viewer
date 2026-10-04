@@ -39,11 +39,22 @@ else()
     endif()
 endif()
 
+# Build with Clang. The compiler has to be chosen before project() enables the language; an explicit
+# -DCMAKE_CXX_COMPILER wins.
+option(USE_CLANG "Use clang compiler" OFF)
+if(USE_CLANG AND NOT CMAKE_CXX_COMPILER)
+    set(CMAKE_CXX_COMPILER clang++)
+endif()
+
 project(mx-viewer
     VERSION ${PROJECT_VERSION_FROM_CHANGELOG}
     DESCRIPTION "MX Viewer - Lightweight web browser for MX Linux"
     LANGUAGES CXX
 )
+if(USE_CLANG AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    message(WARNING "USE_CLANG is ignored: this build directory already uses ${CMAKE_CXX_COMPILER}. "
+                    "Configure a fresh build directory to build with Clang.")
+endif()
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -60,15 +71,6 @@ if(CMAKE_GENERATOR STREQUAL "Ninja")
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         add_compile_options(-fcolor-diagnostics)
     endif()
-endif()
-
-# Option to use clang for testing builds
-option(USE_CLANG "Use clang compiler" OFF)
-if(USE_CLANG)
-    set(CMAKE_C_COMPILER clang)
-    set(CMAKE_CXX_COMPILER clang++)
-    set(CMAKE_CXX_COMPILER_ID "Clang")
-    message(STATUS "Using clang compiler")
 endif()
 
 # Find Qt6 components
@@ -161,17 +163,23 @@ target_link_libraries(mx-viewer
     Qt6Keychain::Qt6Keychain
 )
 
-# Set compiler flags
+# Set compiler flags. Warnings fail the build only when asked (build.sh and CI do), so a newer
+# compiler with new warnings cannot break distribution package builds.
+option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 target_compile_options(mx-viewer PRIVATE
+    -Wall
+    -Wextra
     -Wpedantic
     -Werror=return-type
     -Werror=switch
     -Werror=uninitialized
-    -Werror
 )
+if(WARNINGS_AS_ERRORS)
+    target_compile_options(mx-viewer PRIVATE -Werror)
+endif()
 
 # Add compiler-specific flags
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR USE_CLANG)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(mx-viewer PRIVATE -Werror=return-stack-address)
 else()
     target_compile_options(mx-viewer PRIVATE -Werror=return-local-addr)
@@ -193,13 +201,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_definitions(mx-viewer PRIVATE NDEBUG)
     target_compile_options(mx-viewer PRIVATE -O3)
 
-    # Add LTO - different flags for different compilers
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR USE_CLANG)
-        target_compile_options(mx-viewer PRIVATE -flto=thin)
-        target_link_options(mx-viewer PRIVATE -flto=thin)
+    # Link-time optimization, with the flags CMake knows for the compiler in use.
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error LANGUAGES CXX)
+    if(ipo_supported)
+        set_property(TARGET mx-viewer PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
     else()
-        target_compile_options(mx-viewer PRIVATE -flto=auto)
-        target_link_options(mx-viewer PRIVATE -flto=auto)
+        message(STATUS "Link-time optimization not available: ${ipo_error}")
     endif()
 endif()
 
