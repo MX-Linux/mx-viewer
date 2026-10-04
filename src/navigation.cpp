@@ -301,7 +301,8 @@ void MainWindow::tabChanged()
                                               palette.color(QPalette::WindowText)));
         }
     }
-    addressBar->setText(currentWebView()->url().scheme() == "mx-newtab" ? QString() : currentWebView()->url().toString());
+    // As updateUrl() shows it, without a password.
+    addressBar->setText(currentWebView()->url().scheme() == "mx-newtab" ? QString() : currentWebView()->url().toDisplayString());
     if (addressBar->text().isEmpty()) {
         addressBar->setFocus();
     }

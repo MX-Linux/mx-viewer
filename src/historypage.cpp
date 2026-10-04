@@ -305,7 +305,9 @@ void MainWindow::refreshHistoryCompleter()
     QStringList completions;
     QStringList hosts;
     QSet<QString> seenHosts;
-    const QStringList urls = HistoryStore::recentUrls();
+    // The most recent ones are plenty for completion and keep this quick on every address bar focus.
+    constexpr int maxCompletions = 2000;
+    const QStringList urls = HistoryStore::recentUrls(maxCompletions);
     completions.reserve(urls.size());
     for (const QString &urlValue : urls) {
         if (urlValue.isEmpty() || urlValue == "about:blank") {

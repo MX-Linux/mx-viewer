@@ -42,8 +42,18 @@ struct Entry {
 
 // Oldest first, in the order the pages were visited.
 QList<Entry> entries();
-// Each URL once, most recently visited first.
-QStringList recentUrls();
+
+struct Site {
+    QString site;    // scheme://host[:port]
+    int visits {};
+    qint64 lastId {}; // the most recent visit, for ordering
+    QByteArray icon;
+};
+// Every web site visited, with its visit count. Callers rank them, so that sites they count as one
+// (http and https of a host) are added up first.
+QList<Site> sites();
+// Each URL once, most recently visited first, at most limit of them.
+QStringList recentUrls(int limit);
 // Returns false if the visit could not be recorded.
 bool addVisit(const QUrl &url, const QString &title);
 void setIcon(const QUrl &url, const QByteArray &png);

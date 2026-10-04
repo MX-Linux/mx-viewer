@@ -36,6 +36,7 @@ namespace
 {
 const QString connectionName = QStringLiteral("history");
 constexpr int schemaVersion = 1;
+constexpr qint64 retentionSeconds = 365LL * 24 * 60 * 60;
 
 // Icons are stored once per site instead of once per visit.
 QString siteKey(const QUrl &url)
@@ -92,12 +93,26 @@ void migrateFromSettings(const QSqlDatabase &db)
     settings.endArray();
 }
 
+void removeUnusedIcons(const QSqlDatabase &db)
+{
+    exec(db, "DELETE FROM icons WHERE site NOT IN (SELECT site FROM visits WHERE site IS NOT NULL)");
+}
+
+// In WAL mode deleted rows stay in the log's frames until a checkpoint writes them back; truncating it
+// leaves no copy of removed history on disk.
+void purgeDeleted(const QSqlDatabase &db)
+{
+    exec(db, "PRAGMA wal_checkpoint(TRUNCATE)");
+}
+
 bool setUp(QSqlDatabase &db)
 {
     // WAL lets instances read while another one writes; it can't be changed inside a transaction.
     exec(db, "PRAGMA journal_mode=WAL");
-    // Deleted history is overwritten on disk rather than left in free pages.
+    // Deleted history is overwritten on disk rather than left in free pages, and the write-ahead log
+    // is truncated after each checkpoint instead of keeping old pages around.
     exec(db, "PRAGMA secure_delete=ON");
+    exec(db, "PRAGMA journal_size_limit=0");
     // Take the write lock up front so two instances starting together don't both migrate.
     if (!exec(db, "BEGIN IMMEDIATE")) {
         return false;
@@ -129,6 +144,14 @@ bool setUp(QSqlDatabase &db)
     if (settings.childGroups().contains("History")) {
         settings.remove("History");
     }
+    // History is kept for a year; visits without a time predate timestamps and are left alone.
+    QSqlQuery prune(db);
+    prune.prepare("DELETE FROM visits WHERE time > 0 AND time < ?");
+    prune.addBindValue(QDateTime::currentSecsSinceEpoch() - retentionSeconds);
+    if (exec(prune) && prune.numRowsAffected() > 0) {
+        removeUnusedIcons(db);
+        purgeDeleted(db);
+    }
     return true;
 }
 
@@ -157,11 +180,6 @@ QSqlDatabase database()
     }
     return db;
 }
-
-void removeUnusedIcons(const QSqlDatabase &db)
-{
-    exec(db, "DELETE FROM icons WHERE site NOT IN (SELECT site FROM visits WHERE site IS NOT NULL)");
-}
 } // namespace
 
 QList<HistoryStore::Entry> HistoryStore::entries()
@@ -185,7 +203,31 @@ QList<HistoryStore::Entry> HistoryStore::entries()
     return result;
 }
 
-QStringList HistoryStore::recentUrls()
+QList<HistoryStore::Site> HistoryStore::sites()
+{
+    QList<Site> result;
+    const auto db = database();
+    if (!db.isOpen()) {
+        return result;
+    }
+    // Counted in the database, so one row per site leaves it, not every visit with its icon.
+    QSqlQuery query(db);
+    query.setForwardOnly(true);
+    query.prepare("SELECT visits.site, COUNT(*), MAX(visits.id), icons.icon FROM visits "
+                  "LEFT JOIN icons ON icons.site = visits.site "
+                  "WHERE visits.site LIKE 'http://%' OR visits.site LIKE 'https://%' "
+                  "GROUP BY visits.site");
+    if (!exec(query)) {
+        return result;
+    }
+    while (query.next()) {
+        result.append({query.value(0).toString(), query.value(1).toInt(), query.value(2).toLongLong(),
+                       query.value(3).toByteArray()});
+    }
+    return result;
+}
+
+QStringList HistoryStore::recentUrls(int limit)
 {
     QStringList result;
     const auto db = database();
@@ -194,7 +236,8 @@ QStringList HistoryStore::recentUrls()
     }
     QSqlQuery query(db);
     query.setForwardOnly(true);
-    query.prepare("SELECT url FROM visits GROUP BY url ORDER BY MAX(id) DESC");
+    query.prepare("SELECT url FROM visits GROUP BY url ORDER BY MAX(id) DESC LIMIT ?");
+    query.addBindValue(limit);
     if (!exec(query)) {
         return result;
     }
@@ -206,13 +249,18 @@ QStringList HistoryStore::recentUrls()
 
 bool HistoryStore::addVisit(const QUrl &url, const QString &title)
 {
+    // Generated content has no address worth going back to.
+    if (url.scheme() == "data" || url.scheme() == "blob") {
+        return false;
+    }
     const auto db = database();
     if (!db.isOpen()) {
         return false;
     }
     QSqlQuery query(db);
     query.prepare("INSERT INTO visits (url, title, time, site) VALUES (?, ?, ?, ?)");
-    query.addBindValue(url.toString());
+    // A user name and password in the address are never written to disk.
+    query.addBindValue(url.adjusted(QUrl::RemoveUserInfo).toString());
     query.addBindValue(title);
     query.addBindValue(QDateTime::currentSecsSinceEpoch());
     query.addBindValue(siteKey(url));
@@ -243,6 +291,7 @@ void HistoryStore::remove(qint64 id)
     query.addBindValue(id);
     if (exec(query)) {
         removeUnusedIcons(db);
+        purgeDeleted(db);
     }
 }
 
@@ -257,6 +306,7 @@ void HistoryStore::removeSince(qint64 cutoff)
     query.addBindValue(cutoff);
     if (exec(query)) {
         removeUnusedIcons(db);
+        purgeDeleted(db);
     }
 }
 
@@ -270,6 +320,7 @@ void HistoryStore::clear()
     exec(db, "DELETE FROM icons");
     // Give the space back.
     exec(db, "VACUUM");
+    purgeDeleted(db);
 }
 
 void HistoryStore::close()

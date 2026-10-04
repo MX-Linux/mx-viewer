@@ -78,30 +78,32 @@ QString MainWindow::buildNewTabPageHtml()
         struct Site {
             QUrl root;
             int visits {};
-            qsizetype lastIndex {};
+            qint64 lastId {};
             QByteArray icon;
         };
+        // http and https of one host:port count as one site; different ports are different sites.
         QHash<QString, Site> sites;
-        const QList<HistoryStore::Entry> entries = HistoryStore::entries();
-        for (qsizetype i = 0; i < entries.size(); ++i) {
-            const QUrl url(entries.at(i).url);
-            if (url.host().isEmpty() || (url.scheme() != "http" && url.scheme() != "https")) {
+        const QList<HistoryStore::Site> visited = HistoryStore::sites();
+        for (const HistoryStore::Site &entry : visited) {
+            const QUrl url(entry.site);
+            if (url.host().isEmpty()) {
                 continue;
             }
-            // Keyed by port too, so local servers on different ports are separate sites.
             Site &site = sites[url.host() + ':' + QString::number(url.port())];
-            // adjusted() keeps the port and IPv6 brackets that rebuilding the URL from host() would lose.
-            site.root = url.adjusted(QUrl::RemoveUserInfo | QUrl::RemovePath | QUrl::RemoveQuery | QUrl::RemoveFragment);
-            site.root.setPath("/");
-            ++site.visits;
-            site.lastIndex = i;
-            if (!entries.at(i).icon.isEmpty()) {
-                site.icon = entries.at(i).icon;
+            site.visits += entry.visits;
+            if (entry.lastId > site.lastId) {
+                // The most recently used scheme; adjusted() keeps the port and IPv6 brackets.
+                site.lastId = entry.lastId;
+                site.root = url.adjusted(QUrl::RemoveUserInfo | QUrl::RemovePath | QUrl::RemoveQuery | QUrl::RemoveFragment);
+                site.root.setPath("/");
+            }
+            if (site.icon.isEmpty()) {
+                site.icon = entry.icon;
             }
         }
         QList<Site> ranked = sites.values();
         std::sort(ranked.begin(), ranked.end(), [](const Site &a, const Site &b) {
-            return a.visits != b.visits ? a.visits > b.visits : a.lastIndex > b.lastIndex;
+            return a.visits != b.visits ? a.visits > b.visits : a.lastId > b.lastId;
         });
         for (const Site &site : std::as_const(ranked)) {
             // Host with brackets and port, as typed; user info was removed from root.
