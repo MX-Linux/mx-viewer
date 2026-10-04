@@ -304,7 +304,7 @@ QPointer<MainWindow> MainWindow::lastActiveWindow;
 
 MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
     : QMainWindow(parent),
-      downloadWidget {new DownloadWidget},
+      downloadWidget {new DownloadWidget(this)},
       findBar {new FindBar(this)},
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},
@@ -332,7 +332,7 @@ MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
 
 MainWindow::MainWindow(const QUrl &url, bool privateMode, bool restoreTabs, QWidget *parent)
     : QMainWindow(parent),
-      downloadWidget {new DownloadWidget},
+      downloadWidget {new DownloadWidget(this)},
       findBar {new FindBar(this)},
       progressBar {new QProgressBar(this)},
       toolBar {new QToolBar(this)},

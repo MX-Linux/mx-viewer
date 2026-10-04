@@ -33,7 +33,8 @@ class DownloadWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit DownloadWidget(QWidget* parent = nullptr);
+    // Stays a top-level window; browserWindow parents the save dialog so it opens over the browser.
+    explicit DownloadWidget(QWidget* browserWindow);
     ~DownloadWidget() override;
 
     // Downloads from this window that are still transferring; they stop when the window closes.
@@ -41,13 +42,15 @@ public:
     static QString withUnit(qreal bytes);
     static QString timeUnit(int seconds);
     void downloadRequested(QWebEngineDownloadRequest* download);
-    static void updateDownload(QWebEngineDownloadRequest* download, QPushButton* pushButton, QProgressBar* progressBar);
+    static void updateDownload(QWebEngineDownloadRequest* download, QPushButton* pushButton, QProgressBar* progressBar,
+                               QWidget* finishedActions);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
 
 private:
     QSettings settings;
+    QPointer<QWidget> browserWindow;
     Ui::DownloadWidget* ui;
     QList<QPointer<QWebEngineDownloadRequest>> downloads;
 };
