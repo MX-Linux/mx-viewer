@@ -38,6 +38,8 @@
 #include <QOpenGLFunctions>
 #include <QStandardPaths>
 #include <QTranslator>
+
+#include <memory>
 #include <cstdlib>
 #include <cstring>
 #include <string_view>
@@ -282,7 +284,10 @@ bool dropElevatedPrivileges(bool forceNobody)
 
 int main(int argc, char *argv[])
 {
-    if (qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY")
+    const QByteArray option = argc == 2 ? QByteArray(argv[1]) : QByteArray();
+    const bool informational = option == "-h" || option == "--help" || option == "--help-all"
+                               || option == "-v" || option == "--version";
+    if (!informational && qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY")
         && qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
         qWarning("mx-viewer: no display available (DISPLAY and WAYLAND_DISPLAY are both unset); "
                 "a graphical session is required to run this program.");
@@ -296,23 +301,27 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
-    QGuiApplication::setQuitOnLastWindowClosed(true);
-    // Set Qt platform to XCB (X11) if not already set and we're in X11 environment
-    if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
-        if (!qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY")) {
+    std::unique_ptr<QCoreApplication> app;
+    if (informational) {
+        app = std::make_unique<QCoreApplication>(argc, argv);
+    } else {
+        QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+        QGuiApplication::setQuitOnLastWindowClosed(true);
+        // Set Qt platform to XCB (X11) if not already set and we're in X11 environment
+        if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM") && !qEnvironmentVariableIsEmpty("DISPLAY")
+            && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY")) {
             qputenv("QT_QPA_PLATFORM", "xcb");
         }
+
+        // Debian's hunspell-* packages ship Chromium-format dictionaries here; QtWebEngine
+        // only looks next to the binary or in the Qt data path unless told otherwise.
+        if (qEnvironmentVariableIsEmpty("QTWEBENGINE_DICTIONARIES_PATH") && QDir("/usr/share/hunspell-bdic").exists()) {
+            qputenv("QTWEBENGINE_DICTIONARIES_PATH", "/usr/share/hunspell-bdic");
+        }
+
+        app = std::make_unique<QApplication>(argc, argv);
     }
 
-    // Debian's hunspell-* packages ship Chromium-format dictionaries here; QtWebEngine
-    // only looks next to the binary or in the Qt data path unless told otherwise.
-    if (qEnvironmentVariableIsEmpty("QTWEBENGINE_DICTIONARIES_PATH") && QDir("/usr/share/hunspell-bdic").exists()) {
-        qputenv("QTWEBENGINE_DICTIONARIES_PATH", "/usr/share/hunspell-bdic");
-    }
-
-    QApplication app(argc, argv);
-    QApplication::setWindowIcon(QIcon::fromTheme(QApplication::applicationName()));
     QApplication::setApplicationVersion(VERSION);
     QApplication::setOrganizationName("MX-Linux");
 
@@ -337,7 +346,9 @@ int main(int argc, char *argv[])
                                  QObject::tr("URL of the page you want to load")
                                      + "\ne.g., https://google.com, google.com, file:///home/user/file.html");
     parser.addPositionalArgument(QObject::tr("Title"), QObject::tr("Window title for the viewer"), "[title]");
-    parser.process(app);
+    parser.process(*app);
+
+    QApplication::setWindowIcon(QIcon::fromTheme(QApplication::applicationName()));
 
     // A plain launch (how links from other applications arrive) opens in the running browser.
     // Help-viewer style calls with a title or options always get their own window, and so does a
@@ -348,7 +359,7 @@ int main(int argc, char *argv[])
         if (SingleInstance::forward(parser.positionalArguments().value(0))) {
             return EXIT_SUCCESS;
         }
-        SingleInstance::listen(&app, &MainWindow::openFromOtherInstance);
+        SingleInstance::listen(app.get(), &MainWindow::openFromOtherInstance);
     }
 
     // Only for a window this process shows itself, not for a link passed on to the running browser.
@@ -383,7 +394,7 @@ int main(int argc, char *argv[])
 
     // Ensure proper cleanup on application exit
     // Close every browser window (including private ones) so each saves its state
-    QObject::connect(&app, &QApplication::aboutToQuit, [] {
+    QObject::connect(app.get(), &QCoreApplication::aboutToQuit, [] {
         MainWindow::setQuitting();
         const auto widgets = QApplication::topLevelWidgets();
         for (auto *widget : widgets) {
