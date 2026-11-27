@@ -20,6 +20,7 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include "mainwindow.h"
+#include "singleinstance.h"
 #include "findbar.h"
 
 #include <QContextMenuEvent>
@@ -811,7 +812,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     // Saved when the last regular window closes, or from every window when the program quits; a window
     // closed while others stay open takes its tabs with it.
-    if (settings.value("SaveTabs", false).toBool() && (quitting || !otherRegularWindowOpen())) {
+    if (SingleInstance::ownsSavedSession() && settings.value("SaveTabs", false).toBool()
+        && (quitting || !otherRegularWindowOpen())) {
         if (!quitting) {
             sessionTabs.clear();
         }

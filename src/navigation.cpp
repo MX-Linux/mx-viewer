@@ -20,6 +20,7 @@
  * along with MX Viewer.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include "mainwindow.h"
+#include "singleinstance.h"
 #include "findbar.h"
 
 #include <QFile>
@@ -415,7 +416,7 @@ void MainWindow::updateUrl()
 
 bool MainWindow::restoreSavedTabs()
 {
-    if (privateWindow || savedTabsRestored) {
+    if (privateWindow || savedTabsRestored || !SingleInstance::ownsSavedSession()) {
         return false;
     }
     int size = settings.beginReadArray("SavedTabs");

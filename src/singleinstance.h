@@ -33,6 +33,8 @@ namespace SingleInstance
 {
 // Returns true if a running instance accepted the request; the caller should then exit.
 bool forward(const QString &argument);
+// True for the plain browser holding the lock for the shared SavedTabs snapshot.
+bool ownsSavedSession();
 // Starts accepting requests from later launches; handler receives the forwarded argument
 // (an empty string asks for a new tab).
 void listen(QObject *parent, const std::function<void(const QString &)> &handler);

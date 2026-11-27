@@ -28,6 +28,7 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QLockFile>
+#include <QSettings>
 #include <QTimer>
 #include <QUrl>
 
@@ -44,6 +45,22 @@ constexpr int ackTimeoutMs {3000};
 constexpr char ack[] {"ok\n"};
 constexpr qint64 maxRequestSize {64 * 1024};
 constexpr int requestTimeoutMs {5000};
+
+// All displays use the same settings file. Only one plain browser may restore or replace SavedTabs.
+std::unique_ptr<QLockFile> sessionLock;
+
+void claimSavedSession()
+{
+    const QFileInfo settingsFile(QSettings().fileName());
+    if (!QDir().mkpath(settingsFile.absolutePath())) {
+        return;
+    }
+    auto candidate = std::make_unique<QLockFile>(settingsFile.filePath() + ".session.lock");
+    candidate->setStaleLockTime(0);
+    if (candidate->tryLock()) {
+        sessionLock = std::move(candidate);
+    }
+}
 
 // One running browser per display, so a link opened in a second graphical session of the same user
 // stays in that session.
@@ -135,10 +152,17 @@ bool SingleInstance::forward(const QString &argument)
     return socket.readLine() == ack;
 }
 
+bool SingleInstance::ownsSavedSession()
+{
+    return sessionLock != nullptr;
+}
+
 void SingleInstance::listen(QObject *parent, const std::function<void(const QString &)> &handler)
 {
     const QString path = socketPath();
     if (path.isEmpty()) {
+        // Forwarding is unavailable, but a plain launch can still own the saved session.
+        claimSavedSession();
         return;
     }
     // With UserAccessOption, listen() renames its socket over an existing one, so it would silently take
@@ -163,6 +187,7 @@ void SingleInstance::listen(QObject *parent, const std::function<void(const QStr
         lock.reset(); // Nobody is serving, so don't keep later launches out.
         return;
     }
+    claimSavedSession();
     QObject::connect(server, &QLocalServer::newConnection, server, [server, handler] {
         while (QLocalSocket *socket = server->nextPendingConnection()) {
             QObject::connect(socket, &QLocalSocket::disconnected, socket, &QObject::deleteLater);
