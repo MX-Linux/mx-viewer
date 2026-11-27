@@ -60,6 +60,32 @@ MX Viewer implements several security measures:
 - **Working directory isolation**: Changes to `/tmp` after privilege drop
 - **Secure execution**: Prevents privilege escalation after rights are dropped
 
+## AppImage
+
+The x86-64 AppImage is attached to non-Arch GitHub releases. Make it executable
+and run it as your desktop user. It accepts the same URLs, local files and
+options as the installed viewer. If FUSE is unavailable, use
+`--appimage-extract-and-run`.
+
+The release build uses Debian 13 and bundles Qt WebEngine, its renderer and
+locales, and the SQLite history driver. The host provides graphics drivers,
+fonts, trusted certificates, and its desktop keyring for saved passwords.
+Use this build on systems with glibc 2.41 or newer and support for Chromium's
+Linux sandbox.
+
+To build locally on x86-64 Debian 13:
+
+```sh
+sudo apt install build-essential cmake ninja-build dpkg-dev curl file \
+    qt6-base-dev qt6-tools-dev qt6-tools-dev-tools qt6-svg-plugins qt6-translations-l10n \
+    qt6-wayland qt6-webengine-dev libqt6webengine6-data qtkeychain-qt6-dev libqt6sql6-sqlite
+./make-appimage.sh
+```
+
+The script verifies and caches the packaging tools and writes
+`build-appimage/mx-viewer-<version>-x86_64.AppImage`, using the version from
+`debian/changelog`.
+
 ## Building
 
 ### Requirements
