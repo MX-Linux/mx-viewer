@@ -825,5 +825,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
             settings.setValue("pinned", sessionTabs.at(i).second);
         }
         settings.endArray();
+        savedTabsRestored = false;
     }
 }

@@ -142,6 +142,7 @@ private:
     bool cookiesEnabled {true};
     bool clearCookiesAtExit {false};
     bool restoredTabs {};
+    static inline bool savedTabsRestored {};
     bool restoreTabsOnOpen {true};
     bool privateWindow {};
     static QPointer<MainWindow> lastActiveWindow;

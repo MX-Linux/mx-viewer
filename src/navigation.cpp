@@ -409,6 +409,9 @@ void MainWindow::updateUrl()
 
 bool MainWindow::restoreSavedTabs()
 {
+    if (privateWindow || savedTabsRestored) {
+        return false;
+    }
     int size = settings.beginReadArray("SavedTabs");
     if (size == 0) {
         settings.endArray();
@@ -426,7 +429,7 @@ bool MainWindow::restoreSavedTabs()
         }
     }
     settings.endArray();
-    settings.remove("SavedTabs");
+    savedTabsRestored = !savedUrls.isEmpty();
 
     if (!savedUrls.isEmpty()) {
         // Open the first saved tab before dropping the initial one, since closing the only tab
