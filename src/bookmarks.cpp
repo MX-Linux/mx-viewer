@@ -24,12 +24,16 @@
 #include <QAbstractItemView>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QDir>
+#include <QFileInfo>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
+#include <QUuid>
 #include <QVBoxLayout>
 
 #include "mainwindowhelpers.h"
@@ -109,28 +113,33 @@ void MainWindow::showBookmarkMenu(QAction *bookmark, QPoint globalPos, bool from
         top->hide();
     };
     const QUrl url = target->property("url").toUrl();
-    if (chosen == moveUp) {
-        insertBookmark(target, index - 1);
-        bookmarksChanged();
-    } else if (chosen == moveDown) {
-        insertBookmark(target, index + 1);
-        bookmarksChanged();
-    } else if (chosen == openInTab) {
+    if (chosen == openInTab) {
         openLinkInNewTab(url);
     } else if (chosen == openInWindow || chosen == openInPrivate) {
         closeMenus();
         openInNewWindow(url, chosen == openInPrivate);
-    } else if (chosen == edit) {
-        if (editBookmark(target)) {
-            bookmarksChanged();
-        }
-    } else if (chosen == remove) {
-        bookmarks->removeAction(target);
-        target->deleteLater();
-        bookmarksChanged();
     } else if (chosen == manage) {
         closeMenus();
         openBookmarksEditor();
+    } else {
+        const QString id = target->property("id").toString();
+        auto lock = lockBookmarks();
+        auto *item = bookmarkById(id);
+        if (!lock || !item) {
+            return;
+        }
+        if (chosen == edit) {
+            if (!editBookmark(item)) {
+                return;
+            }
+        } else if (chosen == remove) {
+            bookmarks->removeAction(item);
+            item->deleteLater();
+        } else if (chosen == moveUp || chosen == moveDown) {
+            const int current = bookmarkList().indexOf(item);
+            insertBookmark(item, qMax(0, current + (chosen == moveUp ? -1 : 1)));
+        }
+        bookmarksChanged();
     }
 }
 
@@ -216,12 +225,18 @@ void MainWindow::insertBookmark(QAction *bookmark, int index)
 // "to" is the drop position in the list as it was before the move.
 void MainWindow::moveBookmark(int from, int to)
 {
-    QAction *bookmark = bookmarkList().value(from);
-    if (!bookmark) {
+    const auto list = bookmarkList();
+    if (!list.value(from) || from == to || from + 1 == to) {
         return;
     }
-    insertBookmark(bookmark, to > from ? to - 1 : to);
-    bookmarksChanged();
+    const QString id = list.at(from)->property("id").toString();
+    const QString before = list.value(to) ? list.at(to)->property("id").toString() : QString();
+    auto lock = lockBookmarks();
+    auto *item = bookmarkById(id);
+    if (lock && item) {
+        bookmarks->insertAction(bookmarkById(before), item);
+        bookmarksChanged();
+    }
 }
 
 void MainWindow::addDroppedBookmark(const QUrl &url, const QString &title, int index)
@@ -229,12 +244,19 @@ void MainWindow::addDroppedBookmark(const QUrl &url, const QString &title, int i
     if (!url.isValid()) {
         return;
     }
+    auto *anchor = bookmarkList().value(index);
+    const QString before = anchor ? anchor->property("id").toString() : QString();
+    auto lock = lockBookmarks();
+    if (!lock) {
+        return;
+    }
+    anchor = bookmarkById(before);
     // An address already bookmarked is moved to where it was dropped instead of added twice.
-    const QList<QAction *> list = bookmarkList();
-    for (int i = 0; i < list.count(); ++i) {
-        if (list.at(i)->property("url").toUrl() == url) {
-            if (i != index && i + 1 != index) {
-                moveBookmark(i, index);
+    for (auto *item : bookmarkList()) {
+        if (item->property("url").toUrl() == url) {
+            if (item != anchor) {
+                bookmarks->insertAction(anchor, item);
+                bookmarksChanged();
             }
             return;
         }
@@ -265,7 +287,7 @@ void MainWindow::addDroppedBookmark(const QUrl &url, const QString &title, int i
     setBookmarkTitle(bookmark, bookmarkTitle);
     bookmark->setProperty("url", url);
     connectAddress(bookmark);
-    insertBookmark(bookmark, index);
+    bookmarks->insertAction(anchor, bookmark);
     bookmarksChanged();
 }
 
@@ -302,6 +324,38 @@ bool MainWindow::editBookmark(QAction *bookmark)
     return true;
 }
 
+QAction *MainWindow::bookmarkById(const QString &id) const
+{
+    for (auto *action : bookmarkList()) {
+        if (action->property("id").toString() == id) {
+            return action;
+        }
+    }
+    return nullptr;
+}
+
+// Serialize the complete read/edit/write operation, including edits made in a dialog.
+std::unique_ptr<QLockFile> MainWindow::lockBookmarks()
+{
+    if (privateWindow) {
+        return {};
+    }
+    const QFileInfo file(settings.fileName());
+    auto lock = std::make_unique<QLockFile>(file.filePath() + ".bookmarks.lock");
+    lock->setStaleLockTime(0);
+    if (!QDir().mkpath(file.absolutePath()) || !lock->tryLock()) {
+        QMessageBox::warning(this, tr("Bookmarks"), tr("Could not lock the bookmarks for editing. Try again later."));
+        return {};
+    }
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        QMessageBox::warning(this, tr("Bookmarks"), tr("Could not read the bookmarks."));
+        return {};
+    }
+    reloadBookmarks();
+    return lock;
+}
+
 // Saves the bookmarks and shows the change in every window.
 void MainWindow::bookmarksChanged()
 {
@@ -310,6 +364,11 @@ void MainWindow::bookmarksChanged()
         return;
     }
     saveBookmarks();
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        QMessageBox::warning(this, tr("Bookmarks"), tr("Could not save the bookmarks."));
+        return;
+    }
     for (auto *widget : QApplication::topLevelWidgets()) {
         auto *window = qobject_cast<MainWindow *>(widget);
         if (window && window != this) {
@@ -336,6 +395,8 @@ void MainWindow::loadBookmarks()
         settings.setArrayIndex(i);
         QAction *bookmark {nullptr};
         bookmarks->addAction(bookmark = new QAction(settings.value("icon").value<QIcon>(), QString(), bookmarks));
+        // Legacy entries get the same identity in every process until their first locked save.
+        bookmark->setProperty("id", settings.value("id", QStringLiteral("legacy-%1").arg(i)));
         setBookmarkTitle(bookmark, settings.value("title").toString());
         bookmark->setProperty("url", settings.value("url"));
         connectAddress(bookmark);
@@ -354,6 +415,10 @@ void MainWindow::saveBookmarks()
             continue;
         }
         settings.setArrayIndex(index++);
+        if (!action->property("id").isValid()) {
+            action->setProperty("id", QUuid::createUuid().toString(QUuid::WithoutBraces));
+        }
+        settings.setValue("id", action->property("id"));
         settings.setValue("title", bookmarkTitle(action));
         settings.setValue("url", action->property("url").toString());
         settings.setValue("icon", action->icon());
@@ -381,6 +446,10 @@ void MainWindow::connectAddress(const QAction *action)
 
 void MainWindow::openBookmarksEditor()
 {
+    auto lock = lockBookmarks();
+    if (!lock) {
+        return;
+    }
     QDialog dialog(this);
     dialog.setWindowTitle(tr("Manage bookmarks"));
     dialog.resize(520, 420);
@@ -415,6 +484,7 @@ void MainWindow::openBookmarksEditor()
             continue;
         }
         auto *item = new QListWidgetItem(action->icon(), bookmarkTitle(action), list);
+        item->setData(Qt::UserRole + 1, action->property("id"));
         item->setData(Qt::UserRole, action->property("url").toString());
     }
 
@@ -493,6 +563,7 @@ void MainWindow::openBookmarksEditor()
     for (int i = 0; i < list->count(); ++i) {
         auto *item = list->item(i);
         auto *bookmark = new QAction(item->icon(), QString(), bookmarks);
+        bookmark->setProperty("id", item->data(Qt::UserRole + 1));
         setBookmarkTitle(bookmark, item->text());
         bookmark->setProperty("url", item->data(Qt::UserRole).toString());
         bookmarks->addAction(bookmark);

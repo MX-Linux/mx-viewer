@@ -184,7 +184,6 @@ MainWindow::~MainWindow()
         return;
     }
     settings.setValue("Geometry", saveGeometry());
-    saveBookmarks();
 }
 
 void MainWindow::addActions()
@@ -642,12 +641,16 @@ void MainWindow::addViewMenuActions(QMenu *menu)
     connect(devTools, &QAction::triggered, this, &MainWindow::openDevTools);
     connect(downloadAction, &QAction::triggered, downloadWidget, &QWidget::show);
     connect(manageBookmarks, &QAction::triggered, this, &MainWindow::openBookmarksEditor);
-    // Bookmarks are saved when a window closes; a private window must not overwrite the regular list.
+    // Private windows can open bookmarks but cannot edit the shared list.
     if (privateWindow) {
         addBookmark->setEnabled(false);
         manageBookmarks->setEnabled(false);
     }
     connect(addBookmark, &QAction::triggered, this, [this] {
+        auto lock = lockBookmarks();
+        if (!lock) {
+            return;
+        }
         QAction *bookmark {nullptr};
         bookmarks->addAction(bookmark = new QAction(currentWebView()->icon(), QString(), bookmarks));
         setBookmarkTitle(bookmark, currentWebView()->title());

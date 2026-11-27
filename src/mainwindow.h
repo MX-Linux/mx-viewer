@@ -27,7 +27,10 @@
 #include "tabwidget.h"
 #include "webview.h"
 
+#include <memory>
+
 #include <QHash>
+#include <QLockFile>
 #include <QPointer>
 #include <QWebEngineFullScreenRequest>
 
@@ -191,6 +194,8 @@ private:
     void updateBookmarkBar();
     void setToolbarsVisible(bool visible);
     [[nodiscard]] QList<QAction *> bookmarkList() const;
+    std::unique_ptr<QLockFile> lockBookmarks();
+    QAction *bookmarkById(const QString &id) const;
     void insertBookmark(QAction *bookmark, int index);
     void moveBookmark(int from, int to);
     void addDroppedBookmark(const QUrl &url, const QString &title, int index);
