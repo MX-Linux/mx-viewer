@@ -104,8 +104,9 @@ void MainWindow::toggleReaderMode()
                                  .arg(field("lang"), field("dir"), field("title"), meta,
                                       article.value("content").toString());
         // setHtml() passes the page as a data: URL, which is limited to 2 MB once encoded.
-        constexpr qsizetype maxReaderSize {1400 * 1024};
-        if (html.toUtf8().size() > maxReaderSize) {
+        constexpr qsizetype prefixSize = sizeof("data:text/html;charset=UTF-8,") - 1;
+        constexpr qsizetype maxPayload = 2 * 1024 * 1024 - prefixSize;
+        if (html.size() > maxPayload || QUrl::toPercentEncoding(html).size() > maxPayload) {
             auto *box = new QMessageBox(QMessageBox::Information, tr("Reader view"),
                                         tr("This article is too large for reader view."), QMessageBox::Ok, this);
             box->setAttribute(Qt::WA_DeleteOnClose);
