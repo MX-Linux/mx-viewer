@@ -217,13 +217,15 @@ bool openDatabase(QSqlDatabase &db)
         return false;
     }
     db.setDatabaseName(dir + "/history.db");
-    // Wait for another instance's write instead of failing at once.
-    db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=5000;QSQLITE_ENABLE_REGEXP");
+    // Initialization can be retried from a focus or page-load event. Briefly allow an ordinary
+    // competing commit to finish; a longer-lived lock goes through the retry cooldown.
+    db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=50;QSQLITE_ENABLE_REGEXP");
     if (!db.open()) {
         qWarning() << "History database:" << db.lastError().text();
         return false;
     }
-    if (!setUp(db)) {
+    // Once initialized, retain the usual write timeout for recording and removing history.
+    if (!setUp(db) || !exec(db, "PRAGMA busy_timeout=5000")) {
         db.close();
         return false;
     }
