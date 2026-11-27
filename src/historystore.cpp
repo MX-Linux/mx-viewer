@@ -35,7 +35,7 @@
 namespace
 {
 const QString connectionName = QStringLiteral("history");
-constexpr int schemaVersion = 1;
+constexpr int schemaVersion = 2;
 constexpr qint64 retentionSeconds = 365LL * 24 * 60 * 60;
 
 // Icons are stored once per site instead of once per visit.
@@ -62,7 +62,7 @@ bool exec(const QSqlDatabase &db, const QString &statement)
 }
 
 // Copies the history that older versions kept in the settings file, once.
-void migrateFromSettings(const QSqlDatabase &db)
+bool migrateFromSettings(const QSqlDatabase &db)
 {
     QSettings settings;
     const int size = settings.beginReadArray("History");
@@ -76,21 +76,54 @@ void migrateFromSettings(const QSqlDatabase &db)
         if (url.isEmpty()) {
             continue;
         }
-        const QString site = siteKey(QUrl(url));
-        visit.addBindValue(url);
-        visit.addBindValue(settings.value("title").toString());
+        const QUrl parsed(url);
+        const QString clean = parsed.toString(QUrl::RemoveUserInfo);
+        const QString site = siteKey(parsed);
+        const QString title = settings.value("title").toString();
+        visit.addBindValue(clean);
+        visit.addBindValue(title == url ? clean : title);
         visit.addBindValue(settings.value("time").toLongLong());
         visit.addBindValue(site);
-        exec(visit);
+        if (!exec(visit)) {
+            return false;
+        }
         // Later entries overwrite earlier ones, so each site keeps its most recent icon.
         const QByteArray png = settings.value("icon").toByteArray();
         if (!png.isEmpty()) {
             icon.addBindValue(site);
             icon.addBindValue(png);
-            exec(icon);
+            if (!exec(icon)) {
+                return false;
+            }
         }
     }
     settings.endArray();
+    return true;
+}
+
+bool cleanVisitUrls(const QSqlDatabase &db)
+{
+    QSqlQuery visits(db);
+    visits.prepare("SELECT id, url FROM visits WHERE instr(url, '@') > 0 ORDER BY id");
+    if (!exec(visits)) {
+        return false;
+    }
+    QSqlQuery update(db);
+    update.prepare("UPDATE visits SET url = ?, title = CASE WHEN title = url THEN ? ELSE title END WHERE id = ?");
+    while (visits.next()) {
+        const QUrl url(visits.value(1).toString());
+        if (url.userInfo().isEmpty()) {
+            continue;
+        }
+        const QString clean = url.toString(QUrl::RemoveUserInfo);
+        update.bindValue(0, clean);
+        update.bindValue(1, clean);
+        update.bindValue(2, visits.value(0));
+        if (!exec(update)) {
+            return false;
+        }
+    }
+    return !visits.lastError().isValid();
 }
 
 void removeUnusedIcons(const QSqlDatabase &db)
@@ -119,24 +152,35 @@ bool setUp(QSqlDatabase &db)
     }
     QSqlQuery version(db);
     version.prepare("PRAGMA user_version");
-    const bool fresh = exec(version) && version.next() && version.value(0).toInt() < schemaVersion;
-    if (fresh) {
+    if (!exec(version) || !version.next()) {
+        exec(db, "ROLLBACK");
+        return false;
+    }
+    const int oldVersion = version.value(0).toInt();
+    version.finish();
+    if (oldVersion == 0) {
         const bool created
             = exec(db, "CREATE TABLE IF NOT EXISTS visits (id INTEGER PRIMARY KEY, url TEXT NOT NULL, "
                        "title TEXT, time INTEGER NOT NULL DEFAULT 0, site TEXT)")
               && exec(db, "CREATE INDEX IF NOT EXISTS visits_time ON visits (time)")
               && exec(db, "CREATE INDEX IF NOT EXISTS visits_url ON visits (url)")
               && exec(db, "CREATE TABLE IF NOT EXISTS icons (site TEXT PRIMARY KEY, icon BLOB)");
-        if (!created) {
+        if (!created || !migrateFromSettings(db)) {
             exec(db, "ROLLBACK");
             return false;
         }
-        migrateFromSettings(db);
-        exec(db, QStringLiteral("PRAGMA user_version=%1").arg(schemaVersion));
+    }
+    if ((oldVersion == 1 && !cleanVisitUrls(db))
+        || (oldVersion < schemaVersion && !exec(db, QStringLiteral("PRAGMA user_version=%1").arg(schemaVersion)))) {
+        exec(db, "ROLLBACK");
+        return false;
     }
     if (!exec(db, "COMMIT")) {
         exec(db, "ROLLBACK");
         return false;
+    }
+    if (oldVersion == 1) {
+        purgeDeleted(db);
     }
     // Drop the copy in the settings file only once the database holds it; also covers an instance
     // that found the migration already done by another one.
