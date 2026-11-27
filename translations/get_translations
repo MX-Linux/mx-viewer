@@ -1,65 +1,65 @@
 #!/usr/bin/env bash
+set -eu
+shopt -s nullglob
 
-# Get script directory and determine app name
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-APPNAME="$(basename "$PROJECT_DIR")"
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+project_dir=$(dirname -- "$script_dir")
+app=mx-viewer
 
-echodo() {
-  echo "${@}"
-  ${@}
-}
+if ! command -v tx >/dev/null; then
+    echo "Transifex client (tx) is required to refresh translations." >&2
+    exit 1
+fi
+for lupdate in lupdate lupdate-qt6 /usr/lib/qt6/bin/lupdate /usr/bin/lupdate /usr/local/bin/lupdate; do
+    if command -v "$lupdate" >/dev/null; then
+        break
+    fi
+done
+if ! command -v "$lupdate" >/dev/null; then
+    echo "Qt lupdate is required to refresh translations." >&2
+    exit 1
+fi
 
-# Prepare transifex
-if [ ! -s  .tx/config ]; then
-   mkdir -p .tx
-   cat <<EOF > .tx/config
+# Keep the same depth as translations/ so lupdate writes the correct relative source locations.
+stage=$(mktemp -d "$project_dir/.translations.XXXXXXXX")
+trap 'rm -rf -- "$stage"' EXIT
+cd "$stage"
+mkdir .tx
+if [[ -s "$script_dir/.tx/config" ]]; then
+    cp -- "$script_dir/.tx/config" .tx/config
+    if ! grep -q '^minimum_perc' .tx/config; then
+        echo "minimum_perc = 25" >> .tx/config
+    fi
+else
+    cat > .tx/config <<EOF
 [main]
 host = https://www.transifex.com
 
-[o:anticapitalista:p:antix-development:r:$APPNAME]
-file_filter = ./${APPNAME}_<lang>.ts
-source_file = ${APPNAME}_en.ts
+[o:anticapitalista:p:antix-development:r:$app]
+file_filter = ./${app}_<lang>.ts
+source_file = ${app}_en.ts
 source_lang = en
-type        = ts
+type = ts
 minimum_perc = 25
 EOF
 fi
 
-# Migrate percent checking
-if [ -z "$(grep minimum_perc .tx/config)" ]; then
-        echo "minimum_perc = 25" >> .tx/config
-fi
-
-# Remove existing translations
-find . -type f -name '*.ts' -not -name '*en.ts' -delete
-
-# Get all translations
-if command -v tx >/dev/null; then
-   echodo tx pull -r antix-development.$APPNAME --all
-fi
-
-# en_US duplicates the English source catalog and should not be shipped.
-rm -f "${APPNAME}_en_US.ts"
-
-# Find lupdate command in common locations
-LUPDATE=""
-for cmd in lupdate lupdate-qt6 /usr/lib/qt6/bin/lupdate /usr/bin/lupdate /usr/local/bin/lupdate; do
-    if command -v "$cmd" >/dev/null 2>&1; then
-        LUPDATE="$cmd"
-        break
-    fi
-done
-
-if [ -z "$LUPDATE" ]; then
-    echo "Error: lupdate command not found. Please install Qt development tools."
+cp -- "$script_dir/${app}_en.ts" .
+tx pull -r "antix-development.$app" --all
+rm -f -- "${app}_en_US.ts"
+catalogs=("${app}_"*.ts)
+if (( ${#catalogs[@]} < 2 )); then
+    echo "Transifex returned no translated catalogs." >&2
     exit 1
 fi
+"$lupdate" "$project_dir/src" -ts "${app}_en.ts"
 
-echo "Using lupdate: $LUPDATE"
-
-# Update all .ts files from source files
-SOURCE_FILES=$(find ../src -name "*.cpp" -o -name "*.h" -o -name "*.ui" 2>/dev/null)
-if [ -n "$SOURCE_FILES" ]; then
-    "$LUPDATE" $SOURCE_FILES -ts *en.ts
-fi
+# Install the refreshed set before retiring languages no longer supplied by Transifex.
+obsolete=()
+for old in "$script_dir/${app}_"*.ts; do
+    if [[ ! -f "${old##*/}" ]]; then
+        obsolete+=("$old")
+    fi
+done
+mv -- "${catalogs[@]}" "$script_dir/"
+rm -f -- "${obsolete[@]}"
