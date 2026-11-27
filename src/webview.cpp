@@ -391,7 +391,7 @@ bool WebPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool
         if (!mw) {
             mw = qobject_cast<MainWindow *>(QApplication::activeWindow());
         }
-        if (mw && mw->handleHistoryRequest(url)) {
+        if (mw && mw->handleHistoryRequest(m_webView, url)) {
             return false;
         }
     }

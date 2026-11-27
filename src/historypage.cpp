@@ -23,12 +23,15 @@
 #include "historystore.h"
 
 #include <QDateTime>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QLabel>
 #include <QLocale>
 #include <QSet>
 #include <QMessageBox>
 #include <QTimer>
 #include <QUrlQuery>
+#include <QWebEngineScript>
 
 #include "mainwindowhelpers.h"
 
@@ -79,7 +82,7 @@ void MainWindow::listHistory()
     refreshHistoryCompleter();
 }
 
-QString MainWindow::buildHistoryPageHtml(const QString &filter, int page)
+QString MainWindow::historyResultsHtml(const QString &filter, int page)
 {
     // The history on disk belongs to regular windows; a private window lists none of it.
     auto entries = privateWindow ? QList<HistoryStore::Entry>() : HistoryStore::entries(filter, page);
@@ -170,7 +173,15 @@ QString MainWindow::buildHistoryPageHtml(const QString &filter, int page)
     }
     closeGroup();
 
-    const QString emptyText = tr("No history entries.");
+    if (groups.isEmpty()) {
+        groups.append(QStringLiteral("<div class=\"empty\">%1</div>").arg(tr("No history entries.").toHtmlEscaped()));
+    }
+    return QStringLiteral("<style>%1</style>%2<nav class=\"controls\">%3</nav>")
+        .arg(iconStyles.join("\n"), groups.join("\n"), links.join(" "));
+}
+
+QString MainWindow::buildHistoryPageHtml(const QString &filter, int page)
+{
     const QString html = QStringLiteral(R"(<!doctype html>
 <html>
 <head>
@@ -198,7 +209,6 @@ QString MainWindow::buildHistoryPageHtml(const QString &filter, int page)
     .url { color: #57606a; font-size: 12px; word-break: break-all; }
     .delete { padding: 4px 8px; border: 1px solid #d0d7de; background: #fff; border-radius: 6px; cursor: pointer; color: inherit; text-decoration: none; font-size: 13px; }
     .empty { padding: 16px; border: 1px dashed #d0d7de; border-radius: 8px; color: #57606a; }
-    %7
   </style>
 </head>
 <body>
@@ -209,11 +219,10 @@ QString MainWindow::buildHistoryPageHtml(const QString &filter, int page)
     </form>
     <a id="clear" class="clear" href="mx-history://clear">%3</a>
   </div>
-  %4
-  <nav class="controls">%6</nav>
+  <div id="results">%4</div>
   <script>
     const search = document.getElementById('search');
-    search.setSelectionRange(search.value.length, search.value.length);
+    search.form.action = 'mx-history://search';
     let timer;
     search.addEventListener('input', () => {
       clearTimeout(timer);
@@ -224,10 +233,7 @@ QString MainWindow::buildHistoryPageHtml(const QString &filter, int page)
 </html>)")
                             .arg(tr("History").toHtmlEscaped(), tr("Search history").toHtmlEscaped(),
                                  tr("Clear history").toHtmlEscaped(),
-                                 groups.isEmpty()
-                                     ? QStringLiteral("<div class=\"empty\">%1</div>").arg(emptyText.toHtmlEscaped())
-                                     : groups.join("\n"),
-                                 filter.toHtmlEscaped(), links.join(" "), iconStyles.join("\n"));
+                                 historyResultsHtml(filter, page), filter.toHtmlEscaped());
 
     return html;
 }
@@ -276,7 +282,7 @@ void MainWindow::clearHistoryEntries()
     HistoryStore::clear();
 }
 
-bool MainWindow::handleHistoryRequest(const QUrl &url)
+bool MainWindow::handleHistoryRequest(WebView *view, const QUrl &url)
 {
     if (url.scheme() != "mx-history") {
         return false;
@@ -284,8 +290,26 @@ bool MainWindow::handleHistoryRequest(const QUrl &url)
     const QString action = url.host();
     const QUrlQuery query(url);
     const int page = qMax(0, query.queryItemValue("page").toInt());
+    if (action == "search") {
+        // Keep the input (including its focus and selection) alive. Ignore replies to an older
+        // query or to a History document the user has since left.
+        if (view->url().scheme() == "mx-history") {
+            const QString filter = formValue(query, "q").left(256);
+            const QString data = QString::fromUtf8(QJsonDocument(QJsonArray {filter, historyResultsHtml(filter, 0)})
+                                                       .toJson(QJsonDocument::Compact));
+            view->page()->runJavaScript(QStringLiteral(R"(
+                if (location.protocol === 'mx-history:') {
+                    const [filter, html] = %1;
+                    const input = document.getElementById('search');
+                    if (input && input.value.trim() === filter)
+                        document.getElementById('results').innerHTML = html;
+                }
+            )").arg(data), QWebEngineScript::ApplicationWorld);
+        }
+        return true;
+    }
     if (action == "visit") {
-        if (auto *view = currentWebView(); view && !privateWindow) {
+        if (!privateWindow) {
             const QUrl target = HistoryStore::visitUrl(query.queryItemValue("id").toLongLong());
             if (!target.isEmpty()) {
                 QTimer::singleShot(0, view, [view, target] { view->setUrl(target); });
@@ -294,12 +318,10 @@ bool MainWindow::handleHistoryRequest(const QUrl &url)
         return true;
     }
     // Finish rejecting the link navigation before setHtml starts the replacement load.
-    const auto renderResults = [this, &query, page] {
-        if (auto *view = currentWebView()) {
-            QTimer::singleShot(0, view, [this, view, filter = formValue(query, "q"), page] {
-                renderHistoryPage(view, filter, page);
-            });
-        }
+    const auto renderResults = [this, view, &query, page] {
+        QTimer::singleShot(0, view, [this, view, filter = formValue(query, "q"), page] {
+            renderHistoryPage(view, filter, page);
+        });
     };
     if (action == "list") {
         renderResults();

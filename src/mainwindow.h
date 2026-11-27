@@ -66,7 +66,7 @@ public:
 public slots:
     void listHistory();
     void openHistoryPage();
-    bool handleHistoryRequest(const QUrl &url);
+    bool handleHistoryRequest(WebView *view, const QUrl &url);
     void findBackward();
     void findForward();
     void loading();
@@ -240,6 +240,7 @@ private:
     void searchIfUnresolved(const QString &input);
     QString buildSettingsPageHtml();
     // Entries whose title or address contains filter (all for an empty one).
+    QString historyResultsHtml(const QString &filter, int page);
     QString buildHistoryPageHtml(const QString &filter, int page);
     QString buildNewTabPageHtml();
     void renderNewTabPage(WebView *view);
