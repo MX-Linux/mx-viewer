@@ -36,13 +36,15 @@ clean_build_artifacts() {
 # including untracked leftovers such as other build systems' output; debian/source/options lists
 # the known ones, and this catches the rest.
 check_source_tarball() {
-    local tarball=$1 extra
+    local tarball=$1 archive_files tracked_files extra
+    archive_files=$(tar -tf "$tarball") || return 1
+    tracked_files=$(git ls-files) || return 1
     extra=$(comm -23 \
-        <(tar -tf "$tarball" | sed -n 's|^[^/]*/||p' | grep -v -e '^$' -e '/$' | sort) \
-        <(git ls-files | sort))
+        <(sed -n 's|^[^/]*/||p' <<< "$archive_files" | grep -v -e '^$' -e '/$' | sort) \
+        <(sort <<< "$tracked_files")) || return 1
     if [ -n "$extra" ]; then
         echo "Error: $tarball contains files that are not tracked by git:" >&2
-        echo "$extra" | sed 's/^/  /' >&2
+        printf '%s\n' "$extra" | sed 's/^/  /' >&2
         echo "Remove them, or add a tar-ignore line to debian/source/options, and build again." >&2
         return 1
     fi
