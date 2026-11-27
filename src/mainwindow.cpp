@@ -25,6 +25,7 @@
 #include <QContextMenuEvent>
 #include <QCompleter>
 #include <QDateTime>
+#include <QDir>
 #include <QDrag>
 #include <QKeyEvent>
 #include <QLabel>
@@ -61,16 +62,18 @@ MainWindow::MainWindow(const QCommandLineParser &argParser, QWidget *parent)
         showFullScreen();
         setToolbarsVisible(false);
     }
-    QString url;
-    QString title;
-    if (args && !args->positionalArguments().isEmpty()) {
-        url = args->positionalArguments().at(0);
-        title = (args->positionalArguments().size() > 1) ? args->positionalArguments().at(1) : url;
-    }
+    const auto positional = argParser.positionalArguments();
+    const QString url = positional.value(0);
+    commandLineTitle = positional.value(1);
     if (!restoredTabs) {
-        displaySite(url, title);
+        displaySite(url, positional.value(1, url));
     } else if (!url.isEmpty()) {
-        addNewTab(QUrl::fromUserInput(url), true);
+        addNewTab(QUrl::fromUserInput(url, QDir::currentPath()), true);
+    }
+    if (!commandLineTitle.isEmpty()) {
+        titledView = currentWebView();
+        titledUrl = QUrl::fromUserInput(url.isEmpty() ? homeAddress : url, QDir::currentPath());
+        setWindowTitle(commandLineTitle);
     }
 }
 

@@ -300,11 +300,21 @@ void MainWindow::tabChanged()
     if (addressBar->text().isEmpty()) {
         addressBar->setFocus();
     }
-    setWindowTitle(currentWebView()->title());
+    updateWindowTitle(currentWebView());
     setConnections();
     if (devToolsWindow && devToolsView) {
         currentWebView()->page()->setDevToolsPage(devToolsView->page());
     }
+}
+
+void MainWindow::updateWindowTitle(WebView *view)
+{
+    // requestedUrl also identifies the document when the initial request was redirected.
+    const auto match = QUrl::RemoveFragment | QUrl::StripTrailingSlash;
+    const bool titledDocument = view == titledView
+                                && (view->url().matches(titledUrl, match)
+                                    || view->page()->requestedUrl().matches(titledUrl, match));
+    setWindowTitle(titledDocument ? commandLineTitle : view->title());
 }
 
 void MainWindow::openInNewWindow(const QUrl &url, bool privateMode)
@@ -609,5 +619,5 @@ void MainWindow::done(bool ok)
     progressBar->setValue(0);
     progressBar->hide();
     tabWidget->setTabTitle(tabWidget->currentIndex(), view->title());
-    setWindowTitle(view->title());
+    updateWindowTitle(view);
 }

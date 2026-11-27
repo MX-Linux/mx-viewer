@@ -145,6 +145,9 @@ private:
     static inline bool savedTabsRestored {};
     bool restoreTabsOnOpen {true};
     bool privateWindow {};
+    QPointer<WebView> titledView;
+    QUrl titledUrl;
+    QString commandLineTitle;
     static QPointer<MainWindow> lastActiveWindow;
     static inline bool quitting {false};
     static inline QWebEngineProfile *s_sharedProfile {};
@@ -284,6 +287,7 @@ private:
     void setConnections();
     void showFullScreenNotification(const QString &text);
     void tabChanged();
+    void updateWindowTitle(WebView *view);
     void toggleFullScreen();
     void exitPageFullScreen();
     void restoreFromPageFullScreen();
