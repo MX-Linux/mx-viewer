@@ -1,3 +1,30 @@
+mx-viewer (26.11) mx; urgency=medium
+
+  * Browse history one page at a time and search all saved visits by title
+    or address without losing your place in the search box.
+  * Keep addresses from regular browsing out of private window suggestions.
+  * Remove usernames and passwords embedded in web addresses from history
+    saved by older versions.
+  * When clearing browsing history for a time range, keep the option to
+    reopen tabs closed before that period.
+  * Prevent an old History page from deleting a newer visit after the
+    original visit has been removed.
+  * Resume recording history without restarting MX Viewer if history was
+    temporarily unavailable at startup.
+  * Keep bookmark edits made in one window from being lost in another.
+  * Keep saved tabs available after a crash and prevent separate help
+    windows or a second desktop session from overwriting them.
+  * Keep the Back, Forward and Stop buttons when moving the active tab.
+  * Keep the toolbar hidden when loading a page in full screen.
+  * Keep a window title set on the command line when returning to the
+    document it was set for.
+  * Show a message when an article is too large to open in reader view.
+  * Show command-line help and version information without a graphical
+    session.
+  * Add an x86-64 AppImage to GitHub releases.
+
+ -- Adrian <adrian@mxlinux.org>  Fri, 27 Nov 2026 17:05:20 -0500
+
 mx-viewer (26.10.1) mx; urgency=medium
 
   * Show menus and dialogs in the system language again instead of English.

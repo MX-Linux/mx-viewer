@@ -178,92 +178,102 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/mainwindow.cpp" line="192"/>
-        <location filename="../src/dialogs.cpp" line="237"/>
+        <location filename="../src/dialogs.cpp" line="238"/>
+        <location filename="../src/mainwindow.cpp" line="196"/>
         <source>Full screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="77"/>
-        <location filename="../src/bookmarks.cpp" line="401"/>
+        <location filename="../src/bookmarks.cpp" line="81"/>
+        <location filename="../src/bookmarks.cpp" line="470"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="80"/>
-        <location filename="../src/bookmarks.cpp" line="402"/>
+        <location filename="../src/bookmarks.cpp" line="84"/>
+        <location filename="../src/bookmarks.cpp" line="471"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="88"/>
-        <location filename="../src/historypage.cpp" line="151"/>
+        <location filename="../src/bookmarks.cpp" line="92"/>
+        <location filename="../src/historypage.cpp" line="172"/>
         <source>Delete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="373"/>
+        <location filename="../src/mainwindow.cpp" line="377"/>
         <source>Home</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="489"/>
+        <location filename="../src/mainwindow.cpp" line="493"/>
         <source>Zoom In</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="487"/>
+        <location filename="../src/mainwindow.cpp" line="491"/>
         <source>Zoom out</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="460"/>
+        <location filename="../src/mainwindow.cpp" line="464"/>
         <source>Add bookmark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="247"/>
-        <location filename="../src/historypage.cpp" line="41"/>
-        <location filename="../src/historypage.cpp" line="213"/>
-        <location filename="../src/historypage.cpp" line="230"/>
-        <location filename="../src/historypage.cpp" line="231"/>
+        <location filename="../src/dialogs.cpp" line="248"/>
+        <location filename="../src/historypage.cpp" line="44"/>
+        <location filename="../src/historypage.cpp" line="234"/>
+        <location filename="../src/historypage.cpp" line="248"/>
+        <location filename="../src/historypage.cpp" line="249"/>
         <source>History</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/historypage.cpp" line="48"/>
+        <location filename="../src/historypage.cpp" line="51"/>
         <source>Recent tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/historypage.cpp" line="61"/>
+        <location filename="../src/historypage.cpp" line="64"/>
         <source>No recent tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/historypage.cpp" line="155"/>
+        <location filename="../src/historypage.cpp" line="100"/>
+        <source>Previous</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/historypage.cpp" line="103"/>
+        <source>Next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/historypage.cpp" line="177"/>
         <source>No history entries.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/historypage.cpp" line="213"/>
+        <location filename="../src/historypage.cpp" line="234"/>
         <source>Search history</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/historypage.cpp" line="214"/>
-        <location filename="../src/historypage.cpp" line="282"/>
+        <location filename="../src/historypage.cpp" line="235"/>
+        <location filename="../src/historypage.cpp" line="334"/>
         <source>Clear history</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/historypage.cpp" line="282"/>
+        <location filename="../src/historypage.cpp" line="334"/>
         <source>Clear all history entries?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="511"/>
-        <location filename="../src/dialogs.cpp" line="251"/>
+        <location filename="../src/dialogs.cpp" line="252"/>
+        <location filename="../src/mainwindow.cpp" line="515"/>
         <location filename="../src/settingspage.cpp" line="242"/>
         <location filename="../src/settingspage.cpp" line="300"/>
         <location filename="../src/settingspage.cpp" line="301"/>
@@ -271,114 +281,114 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="399"/>
+        <location filename="../src/dialogs.cpp" line="400"/>
         <source>Select file to open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="400"/>
+        <location filename="../src/dialogs.cpp" line="401"/>
         <source>Hypertext Files (*.htm *.html);;All Files (*.*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="259"/>
+        <location filename="../src/dialogs.cpp" line="260"/>
         <source>Keyboard Shortcuts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="232"/>
+        <location filename="../src/dialogs.cpp" line="233"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="227"/>
+        <location filename="../src/dialogs.cpp" line="228"/>
         <source>Reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="250"/>
+        <location filename="../src/dialogs.cpp" line="251"/>
         <source>Browse file to open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="228"/>
+        <location filename="../src/dialogs.cpp" line="229"/>
         <source>Esc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="225"/>
+        <location filename="../src/dialogs.cpp" line="226"/>
         <source>Back/Forward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="254"/>
+        <location filename="../src/dialogs.cpp" line="255"/>
         <source>Open this help dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="540"/>
+        <location filename="../src/mainwindow.cpp" line="544"/>
         <source>&amp;New tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="594"/>
+        <location filename="../src/mainwindow.cpp" line="598"/>
         <source>&amp;Full screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="611"/>
+        <location filename="../src/mainwindow.cpp" line="615"/>
         <source>&amp;Developer Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="613"/>
+        <location filename="../src/mainwindow.cpp" line="617"/>
         <source>H&amp;istory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="615"/>
+        <location filename="../src/mainwindow.cpp" line="619"/>
         <source>&amp;Downloads</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="617"/>
+        <location filename="../src/mainwindow.cpp" line="621"/>
         <source>&amp;Bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="621"/>
-        <location filename="../src/bookmarks.cpp" line="140"/>
-        <location filename="../src/dialogs.cpp" line="244"/>
+        <location filename="../src/bookmarks.cpp" line="149"/>
+        <location filename="../src/dialogs.cpp" line="245"/>
+        <location filename="../src/mainwindow.cpp" line="625"/>
         <source>Bookmark current address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="625"/>
+        <location filename="../src/mainwindow.cpp" line="629"/>
         <source>Manage &amp;bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="667"/>
+        <location filename="../src/mainwindow.cpp" line="675"/>
         <source>&amp;Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="676"/>
+        <location filename="../src/mainwindow.cpp" line="684"/>
         <source>&amp;About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="678"/>
+        <location filename="../src/mainwindow.cpp" line="686"/>
         <source>&amp;Exit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="310"/>
+        <location filename="../src/dialogs.cpp" line="311"/>
         <source>About MX Viewer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="338"/>
+        <location filename="../src/dialogs.cpp" line="339"/>
         <source>This is a VERY basic browser based on Qt WebEngine.
 
 The main purpose is to provide a basic document viewer for MX documentation. It could be used for LIMITED internet browsing, but it&apos;s not recommended to be used for anything important or secure because it&apos;s not a fully featured browser and its security/privacy features were not tested.
@@ -391,30 +401,30 @@ You should have received a copy of the GNU General Public License along with MX 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="703"/>
-        <location filename="../src/dialogs.cpp" line="253"/>
+        <location filename="../src/dialogs.cpp" line="254"/>
+        <location filename="../src/mainwindow.cpp" line="711"/>
         <source>Developer Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="155"/>
         <location filename="../src/mainwindow.cpp" line="160"/>
+        <location filename="../src/mainwindow.cpp" line="165"/>
         <source>Private</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="156"/>
+        <location filename="../src/mainwindow.cpp" line="161"/>
         <source>Private window: history, tabs and site data are not saved</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="213"/>
+        <location filename="../src/mainwindow.cpp" line="217"/>
         <source>Clear browsing data...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/dialogs.cpp" line="107"/>
-        <location filename="../src/dialogs.cpp" line="249"/>
+        <location filename="../src/dialogs.cpp" line="250"/>
         <source>Clear browsing data</source>
         <translation type="unfinished"></translation>
     </message>
@@ -489,9 +499,9 @@ You should have received a copy of the GNU General Public License along with MX 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="236"/>
+        <location filename="../src/dialogs.cpp" line="237"/>
         <location filename="../src/readermode.cpp" line="79"/>
-        <location filename="../src/readermode.cpp" line="109"/>
+        <location filename="../src/readermode.cpp" line="110"/>
         <source>Reader view</source>
         <translation type="unfinished"></translation>
     </message>
@@ -501,33 +511,48 @@ You should have received a copy of the GNU General Public License along with MX 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/readermode.cpp" line="110"/>
+        <location filename="../src/readermode.cpp" line="111"/>
         <source>This article is too large for reader view.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="83"/>
+        <location filename="../src/bookmarks.cpp" line="87"/>
         <source>Open in new tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="84"/>
+        <location filename="../src/bookmarks.cpp" line="88"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="85"/>
+        <location filename="../src/bookmarks.cpp" line="89"/>
         <source>Open in new private window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="87"/>
+        <location filename="../src/bookmarks.cpp" line="91"/>
         <source>Edit...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="276"/>
+        <location filename="../src/bookmarks.cpp" line="298"/>
         <source>Edit bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/bookmarks.cpp" line="347"/>
+        <source>Could not lock the bookmarks for editing. Try again later.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/bookmarks.cpp" line="352"/>
+        <source>Could not read the bookmarks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/bookmarks.cpp" line="369"/>
+        <source>Could not save the bookmarks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
@@ -539,6 +564,9 @@ You should have received a copy of the GNU General Public License along with MX 
         </translation>
     </message>
     <message>
+        <location filename="../src/bookmarks.cpp" line="347"/>
+        <location filename="../src/bookmarks.cpp" line="352"/>
+        <location filename="../src/bookmarks.cpp" line="369"/>
         <location filename="../src/newtabpage.cpp" line="126"/>
         <source>Bookmarks</source>
         <translation type="unfinished"></translation>
@@ -559,27 +587,27 @@ You should have received a copy of the GNU General Public License along with MX 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/historypage.cpp" line="106"/>
+        <location filename="../src/historypage.cpp" line="126"/>
         <source>Earlier</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/historypage.cpp" line="108"/>
+        <location filename="../src/historypage.cpp" line="128"/>
         <source>Today</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/historypage.cpp" line="110"/>
+        <location filename="../src/historypage.cpp" line="130"/>
         <source>Yesterday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="463"/>
+        <location filename="../src/mainwindow.cpp" line="467"/>
         <source>Drag to the bookmarks bar to bookmark this page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="496"/>
+        <location filename="../src/mainwindow.cpp" line="500"/>
         <source>Reset zoom for this site</source>
         <translation type="unfinished"></translation>
     </message>
@@ -589,344 +617,344 @@ You should have received a copy of the GNU General Public License along with MX 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="212"/>
+        <location filename="../src/dialogs.cpp" line="213"/>
         <source>Tabs and windows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="214"/>
+        <location filename="../src/dialogs.cpp" line="215"/>
         <source>Ctrl+T</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="214"/>
+        <location filename="../src/dialogs.cpp" line="215"/>
         <source>New tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="215"/>
+        <location filename="../src/dialogs.cpp" line="216"/>
         <source>Ctrl+Shift+N</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="215"/>
+        <location filename="../src/dialogs.cpp" line="216"/>
         <source>New private window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="216"/>
+        <location filename="../src/dialogs.cpp" line="217"/>
         <source>Ctrl+W</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="216"/>
+        <location filename="../src/dialogs.cpp" line="217"/>
         <source>Close tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="217"/>
+        <location filename="../src/dialogs.cpp" line="218"/>
         <source>Ctrl+Shift+T</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="217"/>
+        <location filename="../src/dialogs.cpp" line="218"/>
         <source>Reopen closed tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="218"/>
+        <location filename="../src/dialogs.cpp" line="219"/>
         <source>Ctrl+Tab, Ctrl+PgDn</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="218"/>
+        <location filename="../src/dialogs.cpp" line="219"/>
         <source>Next tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="219"/>
+        <location filename="../src/dialogs.cpp" line="220"/>
         <source>Ctrl+Shift+Tab, Ctrl+PgUp</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="219"/>
+        <location filename="../src/dialogs.cpp" line="220"/>
         <source>Previous tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="220"/>
+        <location filename="../src/dialogs.cpp" line="221"/>
         <source>Ctrl+1 … Ctrl+9</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="220"/>
+        <location filename="../src/dialogs.cpp" line="221"/>
         <source>Go to tab 1 … 9</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="222"/>
+        <location filename="../src/dialogs.cpp" line="223"/>
         <source>Navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="224"/>
+        <location filename="../src/dialogs.cpp" line="225"/>
         <source>Ctrl+L, Alt+D, F6</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="224"/>
+        <location filename="../src/dialogs.cpp" line="225"/>
         <source>Focus the address bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="225"/>
+        <location filename="../src/dialogs.cpp" line="226"/>
         <source>Alt+←, Alt+→</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="226"/>
+        <location filename="../src/dialogs.cpp" line="227"/>
         <source>Alt+Home</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="226"/>
+        <location filename="../src/dialogs.cpp" line="227"/>
         <source>Home page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="227"/>
+        <location filename="../src/dialogs.cpp" line="228"/>
         <source>Ctrl+R, F5</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="228"/>
+        <location filename="../src/dialogs.cpp" line="229"/>
         <source>Stop loading/close Find bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="230"/>
+        <location filename="../src/dialogs.cpp" line="231"/>
         <source>Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="232"/>
+        <location filename="../src/dialogs.cpp" line="233"/>
         <source>Ctrl+F, /</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="233"/>
+        <location filename="../src/dialogs.cpp" line="234"/>
         <source>F3, Shift+F3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="233"/>
+        <location filename="../src/dialogs.cpp" line="234"/>
         <source>Find next/previous</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="234"/>
+        <location filename="../src/dialogs.cpp" line="235"/>
         <source>Ctrl++, Ctrl+-</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="234"/>
+        <location filename="../src/dialogs.cpp" line="235"/>
         <source>Zoom in/out</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="235"/>
+        <location filename="../src/dialogs.cpp" line="236"/>
         <source>Ctrl+0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="235"/>
+        <location filename="../src/dialogs.cpp" line="236"/>
         <source>Reset zoom</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="236"/>
+        <location filename="../src/dialogs.cpp" line="237"/>
         <source>F9, Ctrl+Alt+R</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="237"/>
+        <location filename="../src/dialogs.cpp" line="238"/>
         <source>F11</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="238"/>
+        <location filename="../src/dialogs.cpp" line="239"/>
         <source>Hold Esc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="238"/>
+        <location filename="../src/dialogs.cpp" line="239"/>
         <source>Exit full screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="239"/>
+        <location filename="../src/dialogs.cpp" line="240"/>
         <source>Ctrl+S</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="239"/>
+        <location filename="../src/dialogs.cpp" line="240"/>
         <source>Save page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="240"/>
+        <location filename="../src/dialogs.cpp" line="241"/>
         <source>Ctrl+P</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="240"/>
+        <location filename="../src/dialogs.cpp" line="241"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="242"/>
+        <location filename="../src/dialogs.cpp" line="243"/>
         <source>Browser</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="244"/>
+        <location filename="../src/dialogs.cpp" line="245"/>
         <source>Ctrl+D</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="245"/>
+        <location filename="../src/dialogs.cpp" line="246"/>
         <source>Ctrl+Shift+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="246"/>
+        <location filename="../src/dialogs.cpp" line="247"/>
         <source>Ctrl+Shift+B</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="246"/>
+        <location filename="../src/dialogs.cpp" line="247"/>
         <source>Show or hide the bookmarks bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="247"/>
+        <location filename="../src/dialogs.cpp" line="248"/>
         <source>Ctrl+H</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="248"/>
+        <location filename="../src/dialogs.cpp" line="249"/>
         <source>Ctrl+J</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="248"/>
+        <location filename="../src/dialogs.cpp" line="249"/>
         <source>Downloads</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="249"/>
+        <location filename="../src/dialogs.cpp" line="250"/>
         <source>Ctrl+Shift+Del</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="250"/>
+        <location filename="../src/dialogs.cpp" line="251"/>
         <source>Ctrl+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="251"/>
+        <location filename="../src/dialogs.cpp" line="252"/>
         <source>Ctrl+,</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="252"/>
+        <location filename="../src/dialogs.cpp" line="253"/>
         <source>F10</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="252"/>
+        <location filename="../src/dialogs.cpp" line="253"/>
         <source>Menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="253"/>
+        <location filename="../src/dialogs.cpp" line="254"/>
         <source>F12</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="254"/>
+        <location filename="../src/dialogs.cpp" line="255"/>
         <source>F1, ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="321"/>
+        <location filename="../src/dialogs.cpp" line="322"/>
         <source>Version %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="378"/>
+        <location filename="../src/dialogs.cpp" line="379"/>
         <source>License</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="544"/>
+        <location filename="../src/mainwindow.cpp" line="548"/>
         <source>&amp;Save page...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="555"/>
+        <location filename="../src/mainwindow.cpp" line="559"/>
         <source>&amp;Print...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="561"/>
+        <location filename="../src/mainwindow.cpp" line="565"/>
         <source>New p&amp;rivate window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="441"/>
-        <location filename="../src/dialogs.cpp" line="454"/>
+        <location filename="../src/dialogs.cpp" line="442"/>
+        <location filename="../src/dialogs.cpp" line="455"/>
         <source>Print page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/dialogs.cpp" line="454"/>
+        <location filename="../src/dialogs.cpp" line="455"/>
         <source>Printing failed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="595"/>
-        <location filename="../src/mainwindow.cpp" line="608"/>
+        <location filename="../src/mainwindow.cpp" line="599"/>
+        <location filename="../src/mainwindow.cpp" line="612"/>
         <source>&amp;Reader view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="600"/>
+        <location filename="../src/mainwindow.cpp" line="604"/>
         <source>Show bookmarks &amp;bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="608"/>
+        <location filename="../src/mainwindow.cpp" line="612"/>
         <source>Exit &amp;reader view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="633"/>
+        <location filename="../src/mainwindow.cpp" line="637"/>
         <source>Hide bookmarks bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="633"/>
+        <location filename="../src/mainwindow.cpp" line="637"/>
         <source>Show bookmarks bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="671"/>
+        <location filename="../src/mainwindow.cpp" line="679"/>
         <source>Open a regular window to change settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="674"/>
+        <location filename="../src/mainwindow.cpp" line="682"/>
         <source>&amp;Keyboard shortcuts</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1032,12 +1060,12 @@ You should have received a copy of the GNU General Public License along with MX 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="779"/>
+        <location filename="../src/mainwindow.cpp" line="787"/>
         <source>Downloads in progress</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/mainwindow.cpp" line="780"/>
+        <location filename="../src/mainwindow.cpp" line="788"/>
         <source>%n download(s) still in progress. Closing this window will cancel them.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -1045,12 +1073,12 @@ You should have received a copy of the GNU General Public License along with MX 
         </translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="781"/>
+        <location filename="../src/mainwindow.cpp" line="789"/>
         <source>Cancel downloads and close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="782"/>
+        <location filename="../src/mainwindow.cpp" line="790"/>
         <source>Keep window open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1108,22 +1136,22 @@ You should have received a copy of the GNU General Public License along with MX 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="90"/>
-        <location filename="../src/bookmarks.cpp" line="142"/>
-        <location filename="../src/bookmarks.cpp" line="385"/>
-        <location filename="../src/dialogs.cpp" line="245"/>
+        <location filename="../src/bookmarks.cpp" line="94"/>
+        <location filename="../src/bookmarks.cpp" line="151"/>
+        <location filename="../src/bookmarks.cpp" line="454"/>
+        <location filename="../src/dialogs.cpp" line="246"/>
         <source>Manage bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="282"/>
-        <location filename="../src/bookmarks.cpp" line="396"/>
+        <location filename="../src/bookmarks.cpp" line="304"/>
+        <location filename="../src/bookmarks.cpp" line="465"/>
         <source>Title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="283"/>
-        <location filename="../src/bookmarks.cpp" line="397"/>
+        <location filename="../src/bookmarks.cpp" line="305"/>
+        <location filename="../src/bookmarks.cpp" line="466"/>
         <source>URL</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1133,7 +1161,7 @@ You should have received a copy of the GNU General Public License along with MX 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/bookmarks.cpp" line="403"/>
+        <location filename="../src/bookmarks.cpp" line="472"/>
         <source>Remove</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1151,52 +1179,52 @@ You should have received a copy of the GNU General Public License along with MX 
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/main.cpp" line="321"/>
+        <location filename="../src/main.cpp" line="330"/>
         <source>This tool will display the URL content in a window, window title is optional</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="324"/>
+        <location filename="../src/main.cpp" line="333"/>
         <source>Start program in full-screen mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="325"/>
+        <location filename="../src/main.cpp" line="334"/>
         <source>Disable load images automatically from websites</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="326"/>
+        <location filename="../src/main.cpp" line="335"/>
         <source>Disable JavaScript</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="330"/>
+        <location filename="../src/main.cpp" line="339"/>
         <source>Drop program&apos;s rights to &apos;nobody&apos;. By default, if run as root, the rights are dropped to normal user. This option might provide additional protection, but the program would not be able to write its cache and cookies to the user directory, so it might break some functionality.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="335"/>
+        <location filename="../src/main.cpp" line="344"/>
         <source>Enable spatial navigation with keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="336"/>
+        <location filename="../src/main.cpp" line="345"/>
         <source>URL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="337"/>
+        <location filename="../src/main.cpp" line="346"/>
         <source>URL of the page you want to load</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="339"/>
+        <location filename="../src/main.cpp" line="348"/>
         <source>Title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="339"/>
+        <location filename="../src/main.cpp" line="348"/>
         <source>Window title for the viewer</source>
         <translation type="unfinished"></translation>
     </message>
