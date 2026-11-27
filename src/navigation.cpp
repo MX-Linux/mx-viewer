@@ -207,10 +207,6 @@ void MainWindow::setConnections()
     if (!currentWebView()) {
         return;
     }
-    if (loadStartedConn) {
-        disconnect(loadStartedConn);
-    }
-    loadStartedConn = connect(currentWebView(), &QWebEngineView::loadStarted, toolBar, &QToolBar::show);
     updateProgressConnection();
     if (urlChangedConn) {
         disconnect(urlChangedConn);

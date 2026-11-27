@@ -174,7 +174,6 @@ private:
     QList<ClosedTab> closedTabs;
     QPointer<QMainWindow> devToolsWindow;
     QPointer<QWebEngineView> devToolsView;
-    QMetaObject::Connection loadStartedConn;
     QMetaObject::Connection loadingConn;
     QMetaObject::Connection loadFinishedConn;
     QMetaObject::Connection urlChangedConn;
