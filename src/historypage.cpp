@@ -302,6 +302,11 @@ bool MainWindow::handleHistoryRequest(const QUrl &url)
 
 void MainWindow::refreshHistoryCompleter()
 {
+    if (privateWindow) {
+        historyCompletionModel->setStringList({});
+        historyCompletionHosts.clear();
+        return;
+    }
     QStringList completions;
     QStringList hosts;
     QSet<QString> seenHosts;
