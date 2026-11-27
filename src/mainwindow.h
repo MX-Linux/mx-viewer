@@ -238,7 +238,7 @@ private:
     void searchIfUnresolved(const QString &input);
     QString buildSettingsPageHtml();
     // Entries whose title or address contains filter (all for an empty one).
-    QString buildHistoryPageHtml(const QString &filter);
+    QString buildHistoryPageHtml(const QString &filter, int page);
     QString buildNewTabPageHtml();
     void renderNewTabPage(WebView *view);
     void findInPage(QWebEnginePage::FindFlags flags);
@@ -275,7 +275,7 @@ private:
     void openSavedTab(const QUrl &url, bool makeCurrent);
     void removeHistoryEntry(qint64 id);
     void refreshHistoryCompleter();
-    void renderHistoryPage(WebView *view, const QString &filter = {});
+    void renderHistoryPage(WebView *view, const QString &filter = {}, int page = 0);
     void renderSettingsPage(WebView *view);
     void updateCacheSize(WebView *view);
     static void setCacheSizeLabel(WebView *view, const QString &size);

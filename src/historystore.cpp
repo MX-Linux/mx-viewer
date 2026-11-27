@@ -24,6 +24,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -222,7 +223,7 @@ QSqlDatabase database()
     }
     db.setDatabaseName(dir + "/history.db");
     // Wait for another instance's write instead of failing at once.
-    db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=5000");
+    db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=5000;QSQLITE_ENABLE_REGEXP");
     if (!db.open()) {
         qWarning() << "History database:" << db.lastError().text();
         return db;
@@ -234,7 +235,7 @@ QSqlDatabase database()
 }
 } // namespace
 
-QList<HistoryStore::Entry> HistoryStore::entries()
+QList<HistoryStore::Entry> HistoryStore::entries(const QString &filter, int page)
 {
     QList<Entry> result;
     const auto db = database();
@@ -243,8 +244,20 @@ QList<HistoryStore::Entry> HistoryStore::entries()
     }
     QSqlQuery query(db);
     query.setForwardOnly(true);
-    query.prepare("SELECT visits.id, visits.title, visits.url, icons.icon, visits.time FROM visits "
-                  "LEFT JOIN icons ON icons.site = visits.site ORDER BY visits.id");
+    // Bound the display fields too: a single old URL, title or imported icon can exceed setHtml's limit.
+    // The extra URL character signals that the link needs to look up the full address by ID.
+    QString sql = QStringLiteral("SELECT visits.id, substr(title, 1, 512), substr(url, 1, 1025), "
+                                 "CASE WHEN length(icon) <= 8192 THEN icon END, time FROM visits "
+                                 "LEFT JOIN icons ON icons.site = visits.site ");
+    if (!filter.isEmpty()) {
+        sql += "WHERE (coalesce(title, '') || ' ' || url) REGEXP ? ";
+    }
+    query.prepare(sql + "ORDER BY visits.id DESC LIMIT ? OFFSET ?");
+    if (!filter.isEmpty()) {
+        query.addBindValue("(?i)" + QRegularExpression::escape(filter));
+    }
+    query.addBindValue(pageSize + 1);
+    query.addBindValue(qint64(page) * pageSize);
     if (!exec(query)) {
         return result;
     }
@@ -253,6 +266,18 @@ QList<HistoryStore::Entry> HistoryStore::entries()
                        query.value(3).toByteArray(), query.value(4).toLongLong()});
     }
     return result;
+}
+
+QUrl HistoryStore::visitUrl(qint64 id)
+{
+    const auto db = database();
+    if (!db.isOpen()) {
+        return {};
+    }
+    QSqlQuery query(db);
+    query.prepare("SELECT url FROM visits WHERE id = ?");
+    query.addBindValue(id);
+    return exec(query) && query.next() ? QUrl(query.value(0).toString()) : QUrl();
 }
 
 QList<HistoryStore::Site> HistoryStore::sites()

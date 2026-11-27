@@ -79,10 +79,28 @@ void MainWindow::listHistory()
     refreshHistoryCompleter();
 }
 
-QString MainWindow::buildHistoryPageHtml(const QString &filter)
+QString MainWindow::buildHistoryPageHtml(const QString &filter, int page)
 {
     // The history on disk belongs to regular windows; a private window lists none of it.
-    const QList<HistoryStore::Entry> entries = privateWindow ? QList<HistoryStore::Entry>() : HistoryStore::entries();
+    auto entries = privateWindow ? QList<HistoryStore::Entry>() : HistoryStore::entries(filter, page);
+    const bool hasNext = entries.size() > HistoryStore::pageSize;
+    if (hasNext) {
+        entries.removeLast();
+    }
+    const QString encodedFilter = QString::fromLatin1(QUrl::toPercentEncoding(filter));
+    const auto pageLink = [&](int number, const QString &label) {
+        return QStringLiteral("<a class=\"clear\" href=\"mx-history://list?page=%1&amp;q=%2\">%3</a>")
+            .arg(QString::number(number), encodedFilter, label.toHtmlEscaped());
+    };
+    QStringList links;
+    if (page > 0) {
+        links.append(pageLink(page - 1, tr("Previous")));
+    }
+    if (hasNext) {
+        links.append(pageLink(page + 1, tr("Next")));
+    }
+    QHash<QByteArray, int> iconIds;
+    QStringList iconStyles;
 
     // Newest first, under a heading per day. Entries are stored in the order they were visited, and
     // the oldest ones may have no time recorded.
@@ -98,8 +116,7 @@ QString MainWindow::buildHistoryPageHtml(const QString &filter)
             rows.clear();
         }
     };
-    for (qsizetype i = entries.size() - 1; i >= 0; --i) {
-        const HistoryStore::Entry &entry = entries.at(i);
+    for (const auto &entry : std::as_const(entries)) {
         const QDateTime visited = entry.time > 0 ? QDateTime::fromSecsSinceEpoch(entry.time) : QDateTime();
         QString label;
         if (!visited.isValid()) {
@@ -116,38 +133,39 @@ QString MainWindow::buildHistoryPageHtml(const QString &filter)
             groupLabel = label;
         }
         const QString title = entry.title.isEmpty() ? entry.url : entry.title;
-        const QString searchText = (title + " " + entry.url).toLower();
-        // The page filters as the user types; this serves a search submitted without JavaScript.
-        if (!searchText.contains(filter.toLower())) {
-            continue;
-        }
-        const QString titleEscaped = title.toHtmlEscaped();
-        const QString urlEscaped = entry.url.toHtmlEscaped();
+        const QString titleEscaped = title.left(512).toHtmlEscaped();
+        const QString urlEscaped = entry.url.left(512).toHtmlEscaped();
+        const QString href = entry.url.size() <= 1024 ? entry.url.toHtmlEscaped()
+                                                      : QStringLiteral("mx-history://visit?id=%1").arg(entry.id);
         const QString timeText = visited.isValid() ? locale.toString(visited.time(), QLocale::ShortFormat) : QString();
         QString iconHtml;
         if (!entry.icon.isEmpty()) {
-            const QString iconBase64 = QString::fromLatin1(entry.icon.toBase64());
-            iconHtml = QStringLiteral("<img class=\"icon\" alt=\"\" src=\"data:image/png;base64,%1\">")
-                           .arg(iconBase64);
+            if (!iconIds.contains(entry.icon)) {
+                const int id = iconIds.size();
+                iconIds.insert(entry.icon, id);
+                iconStyles.append(QStringLiteral(".icon%1 {background-image:url(data:image/png;base64,%2)}")
+                                      .arg(QString::number(id), QString::fromLatin1(entry.icon.toBase64())));
+            }
+            iconHtml = QStringLiteral("<span class=\"icon icon%1\"></span>").arg(iconIds.value(entry.icon));
         } else {
             iconHtml = QStringLiteral("<span class=\"icon placeholder\"></span>");
         }
         // Plain links and a form, so the page also works with JavaScript turned off.
-        const QString deleteUrl = QStringLiteral("mx-history://delete?id=%1&q=%2")
-                                      .arg(QString::number(entry.id), QString::fromLatin1(QUrl::toPercentEncoding(filter)));
+        const QString deleteUrl = QStringLiteral("mx-history://delete?id=%1&page=%2&q=%3")
+                                      .arg(QString::number(entry.id), QString::number(page), encodedFilter);
         rows.append(QStringLiteral(
-                        "<li class=\"entry\" data-search=\"%1\">"
-                        "<span class=\"time\">%8</span>"
-                        "%2"
+                        "<li class=\"entry\">"
+                        "<span class=\"time\">%7</span>"
+                        "%1"
                         "<div class=\"content\">"
                         "<div class=\"row\">"
-                        "<a class=\"title\" href=\"%3\">%4</a>"
-                        "<a class=\"delete\" href=\"%5\">%6</a>"
+                        "<a class=\"title\" href=\"%2\">%3</a>"
+                        "<a class=\"delete\" href=\"%4\">%5</a>"
                         "</div>"
-                        "<div class=\"url\">%7</div>"
+                        "<div class=\"url\">%6</div>"
                         "</div>"
                         "</li>")
-                        .arg(searchText.toHtmlEscaped(), iconHtml, urlEscaped, titleEscaped, deleteUrl.toHtmlEscaped(),
+                        .arg(iconHtml, href, titleEscaped, deleteUrl.toHtmlEscaped(),
                              tr("Delete").toHtmlEscaped(), urlEscaped, timeText.toHtmlEscaped()));
     }
     closeGroup();
@@ -172,7 +190,7 @@ QString MainWindow::buildHistoryPageHtml(const QString &filter)
     .day { font-size: 15px; margin: 0 0 8px; color: #57606a; }
     .entry { display: grid; grid-template-columns: auto 24px 1fr; gap: 10px; padding: 10px 12px; border: 1px solid #eaeef2; border-radius: 8px; }
     .time { color: #57606a; font-size: 13px; width: 5.5em; text-align: right; padding-top: 2px; font-variant-numeric: tabular-nums; }
-    .icon { width: 20px; height: 20px; border-radius: 4px; }
+    .icon { width: 20px; height: 20px; border-radius: 4px; background-size: contain; }
     .icon.placeholder { background: #eaeef2; }
     .content { display: flex; flex-direction: column; gap: 4px; }
     .row { display: flex; align-items: center; gap: 10px; }
@@ -180,33 +198,27 @@ QString MainWindow::buildHistoryPageHtml(const QString &filter)
     .url { color: #57606a; font-size: 12px; word-break: break-all; }
     .delete { padding: 4px 8px; border: 1px solid #d0d7de; background: #fff; border-radius: 6px; cursor: pointer; color: inherit; text-decoration: none; font-size: 13px; }
     .empty { padding: 16px; border: 1px dashed #d0d7de; border-radius: 8px; color: #57606a; }
+    %7
   </style>
 </head>
 <body>
   <h1>%1</h1>
   <div class="controls">
     <form class="search-form" action="mx-history://list" method="get">
-      <input id="search" name="q" class="search" type="search" placeholder="%2" value="%5" autofocus>
+      <input id="search" name="q" class="search" type="search" maxlength="256" placeholder="%2" value="%5" autofocus>
     </form>
     <a id="clear" class="clear" href="mx-history://clear">%3</a>
   </div>
   %4
+  <nav class="controls">%6</nav>
   <script>
     const search = document.getElementById('search');
-    const entries = Array.from(document.querySelectorAll('li.entry'));
-    function applyFilter() {
-      const term = search.value.trim().toLowerCase();
-      entries.forEach(entry => {
-        entry.style.display = entry.dataset.search.includes(term) ? '' : 'none';
-      });
-      document.querySelectorAll('section.group').forEach(group => {
-        const visible = Array.from(group.querySelectorAll('li.entry')).some(entry => entry.style.display !== 'none');
-        group.style.display = visible ? '' : 'none';
-      });
-    }
-    search.addEventListener('input', applyFilter);
-    // The form is for pages without JavaScript; submitting would drop the rows the live filter hides.
-    search.form.addEventListener('submit', event => event.preventDefault());
+    search.setSelectionRange(search.value.length, search.value.length);
+    let timer;
+    search.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => search.form.requestSubmit(), 350);
+    });
   </script>
 </body>
 </html>)")
@@ -215,17 +227,17 @@ QString MainWindow::buildHistoryPageHtml(const QString &filter)
                                  groups.isEmpty()
                                      ? QStringLiteral("<div class=\"empty\">%1</div>").arg(emptyText.toHtmlEscaped())
                                      : groups.join("\n"),
-                                 filter.toHtmlEscaped());
+                                 filter.toHtmlEscaped(), links.join(" "), iconStyles.join("\n"));
 
     return html;
 }
 
-void MainWindow::renderHistoryPage(WebView *view, const QString &filter)
+void MainWindow::renderHistoryPage(WebView *view, const QString &filter, int page)
 {
     if (!view) {
         return;
     }
-    view->setHtml(buildHistoryPageHtml(filter), QUrl("mx-history://list"));
+    view->setHtml(buildHistoryPageHtml(filter.left(256), page), QUrl("mx-history://list"));
     view->show();
     tabWidget->setTabTitle(tabWidget->indexOf(view), tr("History"));
     setWindowTitle(tr("History"));
@@ -271,8 +283,26 @@ bool MainWindow::handleHistoryRequest(const QUrl &url)
     }
     const QString action = url.host();
     const QUrlQuery query(url);
+    const int page = qMax(0, query.queryItemValue("page").toInt());
+    if (action == "visit") {
+        if (auto *view = currentWebView(); view && !privateWindow) {
+            const QUrl target = HistoryStore::visitUrl(query.queryItemValue("id").toLongLong());
+            if (!target.isEmpty()) {
+                QTimer::singleShot(0, view, [view, target] { view->setUrl(target); });
+            }
+        }
+        return true;
+    }
+    // Finish rejecting the link navigation before setHtml starts the replacement load.
+    const auto renderResults = [this, &query, page] {
+        if (auto *view = currentWebView()) {
+            QTimer::singleShot(0, view, [this, view, filter = formValue(query, "q"), page] {
+                renderHistoryPage(view, filter, page);
+            });
+        }
+    };
     if (action == "list") {
-        renderHistoryPage(currentWebView(), formValue(query, "q"));
+        renderResults();
         return true;
     }
     if (action == "clear") {
@@ -296,7 +326,7 @@ bool MainWindow::handleHistoryRequest(const QUrl &url)
     }
     removeHistoryEntry(query.queryItemValue("id").toLongLong());
     refreshHistoryCompleter();
-    renderHistoryPage(currentWebView(), formValue(query, "q"));
+    renderResults();
     return true;
 }
 

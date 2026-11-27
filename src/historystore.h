@@ -40,8 +40,10 @@ struct Entry {
     qint64 time {};  // seconds since epoch; 0 for entries logged before timestamps were recorded
 };
 
-// Oldest first, in the order the pages were visited.
-QList<Entry> entries();
+// Newest matching visits first, plus one lookahead row to tell whether another page exists.
+constexpr int pageSize = 25;
+QList<Entry> entries(const QString &filter, int page);
+QUrl visitUrl(qint64 id);
 
 struct Site {
     QString site;    // scheme://host[:port]
