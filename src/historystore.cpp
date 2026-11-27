@@ -23,6 +23,7 @@
 
 #include <QDateTime>
 #include <QDebug>
+#include <QDeadlineTimer>
 #include <QDir>
 #include <QRegularExpression>
 #include <QSettings>
@@ -208,28 +209,39 @@ bool setUp(QSqlDatabase &db)
     return true;
 }
 
-// Opened on first use; an empty, invalid database means history is unavailable (e.g. no writable
-// data directory after dropping privileges), and every call then does nothing.
-QSqlDatabase database()
+bool openDatabase(QSqlDatabase &db)
 {
-    if (QSqlDatabase::contains(connectionName)) {
-        return QSqlDatabase::database(connectionName, false);
-    }
-    auto db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
     const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     if (dir.isEmpty() || !QDir().mkpath(dir)) {
         qWarning() << "History database: no writable data directory";
-        return db;
+        return false;
     }
     db.setDatabaseName(dir + "/history.db");
     // Wait for another instance's write instead of failing at once.
     db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=5000;QSQLITE_ENABLE_REGEXP");
     if (!db.open()) {
         qWarning() << "History database:" << db.lastError().text();
-        return db;
+        return false;
     }
     if (!setUp(db)) {
         db.close();
+        return false;
+    }
+    return true;
+}
+
+QSqlDatabase database()
+{
+    static QDeadlineTimer retryAfter;
+    const bool exists = QSqlDatabase::contains(connectionName);
+    auto db = exists ? QSqlDatabase::database(connectionName, false) : QSqlDatabase::addDatabase("QSQLITE", connectionName);
+    if (db.isOpen() || (exists && !retryAfter.hasExpired())) {
+        return db;
+    }
+    // Retry on demand after a failed open or migration. Multiple callers during startup share
+    // the cooldown and therefore do not each wait for SQLite's busy timeout.
+    if (!openDatabase(db)) {
+        retryAfter.setRemainingTime(1000);
     }
     return db;
 }
