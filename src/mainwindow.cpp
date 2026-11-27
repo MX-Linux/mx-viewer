@@ -24,6 +24,7 @@
 
 #include <QContextMenuEvent>
 #include <QCompleter>
+#include <QDateTime>
 #include <QDrag>
 #include <QKeyEvent>
 #include <QLabel>
@@ -135,7 +136,7 @@ void MainWindow::init()
             }
             // Each entry keeps an icon; only the most recent ones are offered again.
             constexpr qsizetype maxClosedTabs = 25;
-            closedTabs.append({url, icon});
+            closedTabs.append({url, icon, QDateTime::currentSecsSinceEpoch()});
             if (closedTabs.size() > maxClosedTabs) {
                 closedTabs.removeFirst();
             }

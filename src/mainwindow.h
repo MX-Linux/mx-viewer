@@ -166,7 +166,12 @@ private:
     // Tabs (address, pinned) collected from the windows closing as the program quits.
     static inline QList<QPair<QString, bool>> sessionTabs;
     const QCommandLineParser *args;
-    QList<QPair<QUrl, QIcon>> closedTabs;
+    struct ClosedTab {
+        QUrl url;
+        QIcon icon;
+        qint64 closedAt;
+    };
+    QList<ClosedTab> closedTabs;
     QPointer<QMainWindow> devToolsWindow;
     QPointer<QWebEngineView> devToolsView;
     QMetaObject::Connection loadStartedConn;

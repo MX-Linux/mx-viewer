@@ -64,14 +64,14 @@ void MainWindow::listHistory()
         for (int i = closedTabs.size() - 1; i >= 0; --i) {
             const int tabIndex = i;
             const auto entry = closedTabs.at(i);
-            const QUrl url = entry.first;
-            auto *action = history->addAction(entry.second, url.toDisplayString());
+            const QUrl url = entry.url;
+            auto *action = history->addAction(entry.icon, url.toDisplayString());
             connect(action, &QAction::triggered, this, [this, tabIndex] {
                 if (tabIndex < 0 || tabIndex >= closedTabs.size()) {
                     return;
                 }
                 const auto entry = closedTabs.takeAt(tabIndex);
-                openSavedTab(entry.first, true);
+                openSavedTab(entry.url, true);
             });
         }
     }

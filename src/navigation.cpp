@@ -375,7 +375,7 @@ void MainWindow::closeCurrentTab()
 void MainWindow::reopenClosedTab()
 {
     if (!closedTabs.isEmpty()) {
-        openSavedTab(closedTabs.takeLast().first, true);
+        openSavedTab(closedTabs.takeLast().url, true);
     }
 }
 
