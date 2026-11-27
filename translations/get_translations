@@ -1,65 +1,116 @@
 #!/usr/bin/env bash
-set -eu
+set -euo pipefail
+unset CDPATH
 shopt -s nullglob
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+root=$PWD
 
-script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-project_dir=$(dirname -- "$script_dir")
-app=mx-viewer
+fail() { echo "$*" >&2; exit 1; }
 
-if ! command -v tx >/dev/null; then
-    echo "Transifex client (tx) is required to refresh translations." >&2
-    exit 1
-fi
-for lupdate in lupdate lupdate-qt6 /usr/lib/qt6/bin/lupdate /usr/bin/lupdate /usr/local/bin/lupdate; do
-    if command -v "$lupdate" >/dev/null; then
-        break
-    fi
-done
-if ! command -v "$lupdate" >/dev/null; then
-    echo "Qt lupdate is required to refresh translations." >&2
-    exit 1
-fi
+(( $# <= 1 )) || fail "Usage: get_translations [--desktop]"
+case "${1:-}" in
+    '')
+        directory=$root/translations
+        english=("$directory/"*_en.ts)
+        (( ${#english[@]} == 1 )) || fail "Expected one English source catalog in $directory"
+        resource=${english[0]##*/}
+        resource=${resource%_en.ts}
+        source_file=${resource}_en.ts
+        output=.
+        extension=ts
+        minimum=25
+        lupdate=
+        for tool in lupdate-qt6 /usr/lib/qt6/bin/lupdate lupdate6 lupdate; do
+            if command -v "$tool" >/dev/null; then lupdate=$tool; break; fi
+        done
+        [[ -n $lupdate ]] || fail "Qt lupdate is required"
+        sources=()
+        for file in "$root/"*.{cpp,cc,cxx,h,hpp,ui,qml}; do
+            case ${file##*/} in moc_*|qrc_*|ui_*.h) continue ;; esac
+            sources+=("$file")
+        done
+        for dir in src qml; do
+            [[ ! -d $root/$dir ]] || sources+=("$root/$dir")
+        done
+        (( ${#sources[@]} )) || fail "No application sources found in $root"
+        ;;
+    --desktop)
+        directory=$root/translations-desktop-file
+        templates=("$directory/pot/"*.pot)
+        (( ${#templates[@]} == 1 )) || fail "Expected one desktop translation template in $directory/pot"
+        resource=${templates[0]##*/}
+        resource=${resource%.pot}
+        source_file=pot/$resource.pot
+        output=po
+        extension=po
+        minimum=''
+        ;;
+    *) fail "Usage: get_translations [--desktop]" ;;
+esac
 
-# Keep the same depth as translations/ so lupdate writes the correct relative source locations.
-stage=$(mktemp -d "$project_dir/.translations.XXXXXXXX")
+command -v tx >/dev/null || fail "The Transifex client (tx) is required"
+exec 9<"$directory"
+flock -x 9
+# A sibling of translations/ preserves the source paths written by lupdate.
+stage=$(mktemp -d "$root/.translation-refresh.XXXXXXXX")
 trap 'rm -rf -- "$stage"' EXIT
-cd "$stage"
-mkdir .tx
-if [[ -s "$script_dir/.tx/config" ]]; then
-    cp -- "$script_dir/.tx/config" .tx/config
-    if ! grep -q '^minimum_perc' .tx/config; then
-        echo "minimum_perc = 25" >> .tx/config
-    fi
+cd -- "$stage"
+mkdir -p .tx "$output" "$(dirname -- "$source_file")"
+config=$directory/.tx/config
+if [[ -s $config ]]; then
+    # Older desktop configs point at a template in the working directory.
+    sed -E "s|^([[:space:]]*source_file[[:space:]]*=).*|\\1 $source_file|; s|^([[:space:]]*file_filter[[:space:]]*=).*|\\1 $output/${resource}_<lang>.$extension|" "$config" > .tx/config
 else
-    cat > .tx/config <<EOF
+    cat > .tx/config <<CONFIG
 [main]
 host = https://www.transifex.com
 
-[o:anticapitalista:p:antix-development:r:$app]
-file_filter = ./${app}_<lang>.ts
-source_file = ${app}_en.ts
+[o:anticapitalista:p:antix-development:r:$resource]
+file_filter = $output/${resource}_<lang>.$extension
+source_file = $source_file
 source_lang = en
-type = ts
-minimum_perc = 25
-EOF
+type = $extension
+CONFIG
 fi
-
-cp -- "$script_dir/${app}_en.ts" .
-tx pull -r "antix-development.$app" --all
-rm -f -- "${app}_en_US.ts"
-catalogs=("${app}_"*.ts)
-if (( ${#catalogs[@]} < 2 )); then
-    echo "Transifex returned no translated catalogs." >&2
-    exit 1
+if [[ -n $minimum ]] && ! grep -Eq '^[[:space:]]*minimum_perc[[:space:]]*=' .tx/config; then
+    echo "minimum_perc = $minimum" >> .tx/config
 fi
-"$lupdate" "$project_dir/src" -ts "${app}_en.ts"
+cp -- "$directory/$source_file" "$source_file"
+tx pull -r "antix-development.$resource" --all
 
-# Install the refreshed set before retiring languages no longer supplied by Transifex.
-obsolete=()
-for old in "$script_dir/${app}_"*.ts; do
-    if [[ ! -f "${old##*/}" ]]; then
-        obsolete+=("$old")
-    fi
+if [[ $extension == ts ]]; then
+    rm -f -- "$source_file" "${resource}_en_US.ts"
+fi
+downloads=("$output/${resource}_"*."$extension")
+(( ${#downloads[@]} )) || fail "No translations downloaded for $resource"
+for catalog in "${downloads[@]}"; do
+    [[ -f $catalog && -s $catalog ]] || fail "Empty or invalid catalog: $catalog"
 done
-mv -- "${catalogs[@]}" "$script_dir/"
-rm -f -- "${obsolete[@]}"
+if [[ $extension == ts ]]; then
+    python3 - "${downloads[@]}" <<'PYTHON'
+import sys
+import xml.etree.ElementTree as ET
+
+for catalog in sys.argv[1:]:
+    if ET.parse(catalog).getroot().tag != "TS":
+        sys.exit(f"Invalid Qt translation catalog: {catalog}")
+PYTHON
+    cp -- "$directory/$source_file" "$source_file"
+    "$lupdate" "${sources[@]}" -ts "$source_file"
+else
+    for catalog in "${downloads[@]}"; do msgfmt -o /dev/null "$catalog"; done
+fi
+
+# Install the complete download before pruning locales that disappeared upstream.
+mkdir -p "$directory/$output"
+obsolete=()
+for file in "$directory/$output/${resource}_"*."$extension"; do
+    [[ -f "$output/${file##*/}" ]] || obsolete+=("$file")
+done
+mv -f -- "$output/${resource}_"*."$extension" "$directory/$output/"
+if (( ${#obsolete[@]} )); then rm -f -- "${obsolete[@]}"; fi
+# Leave a usable config for tx commands run directly in the catalog directory.
+if ! cmp -s .tx/config "$config"; then
+    mkdir -p "$directory/.tx"
+    mv -f -- .tx/config "$config"
+fi
