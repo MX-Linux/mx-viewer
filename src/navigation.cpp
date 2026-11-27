@@ -265,12 +265,6 @@ void MainWindow::tabChanged()
     forward->setShortcut(QKeySequence::Forward);
     stop->setShortcut(QKeySequence::Cancel);
     toolBar->setUpdatesEnabled(false);
-    // Anchor inserts on the permanent reloadAction/homeAction rather than the
-    // previous tab's (about-to-be-replaced) actions, so this stays correct
-    // even right after the last tab closed and backAction/etc. were nulled.
-    toolBar->insertAction(reloadAction, back);
-    toolBar->insertAction(reloadAction, forward);
-    toolBar->insertAction(homeAction, stop);
     if (backAction) {
         toolBar->removeAction(backAction);
     }
@@ -280,6 +274,12 @@ void MainWindow::tabChanged()
     if (stopAction) {
         toolBar->removeAction(stopAction);
     }
+    // Anchor inserts on the permanent reloadAction/homeAction rather than the
+    // previous tab's (about-to-be-replaced) actions, so this stays correct
+    // even right after the last tab closed and backAction/etc. were nulled.
+    toolBar->insertAction(reloadAction, back);
+    toolBar->insertAction(reloadAction, forward);
+    toolBar->insertAction(homeAction, stop);
     backAction = back;
     forwardAction = forward;
     stopAction = stop;
