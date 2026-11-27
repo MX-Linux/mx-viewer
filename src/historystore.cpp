@@ -35,7 +35,7 @@
 namespace
 {
 const QString connectionName = QStringLiteral("history");
-constexpr int schemaVersion = 2;
+constexpr int schemaVersion = 3;
 constexpr qint64 retentionSeconds = 365LL * 24 * 60 * 60;
 
 // Icons are stored once per site instead of once per visit.
@@ -158,22 +158,30 @@ bool setUp(QSqlDatabase &db)
     }
     const int oldVersion = version.value(0).toInt();
     version.finish();
-    if (oldVersion == 0) {
-        const bool created
-            = exec(db, "CREATE TABLE IF NOT EXISTS visits (id INTEGER PRIMARY KEY, url TEXT NOT NULL, "
-                       "title TEXT, time INTEGER NOT NULL DEFAULT 0, site TEXT)")
-              && exec(db, "CREATE INDEX IF NOT EXISTS visits_time ON visits (time)")
-              && exec(db, "CREATE INDEX IF NOT EXISTS visits_url ON visits (url)")
-              && exec(db, "CREATE TABLE IF NOT EXISTS icons (site TEXT PRIMARY KEY, icon BLOB)");
-        if (!created || !migrateFromSettings(db)) {
+    if (oldVersion == 1 && !cleanVisitUrls(db)) {
+        exec(db, "ROLLBACK");
+        return false;
+    }
+    if (oldVersion < schemaVersion) {
+        // Keep existing IDs when upgrading. AUTOINCREMENT also remembers the high-water mark
+        // after deleting the latest row or clearing the entire history.
+        const bool upgrade = oldVersion > 0;
+        const bool migrated
+            = (!upgrade || exec(db, "ALTER TABLE visits RENAME TO old_visits"))
+              && exec(db, "CREATE TABLE visits (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT NOT NULL, "
+                          "title TEXT, time INTEGER NOT NULL DEFAULT 0, site TEXT)")
+              && (!upgrade || (exec(db, "INSERT INTO visits (id, url, title, time, site) "
+                                        "SELECT id, url, title, time, site FROM old_visits")
+                               && exec(db, "DROP TABLE old_visits")))
+              && exec(db, "CREATE INDEX visits_time ON visits (time)")
+              && exec(db, "CREATE INDEX visits_url ON visits (url)")
+              && exec(db, "CREATE TABLE IF NOT EXISTS icons (site TEXT PRIMARY KEY, icon BLOB)")
+              && (upgrade || migrateFromSettings(db))
+              && exec(db, QStringLiteral("PRAGMA user_version=%1").arg(schemaVersion));
+        if (!migrated) {
             exec(db, "ROLLBACK");
             return false;
         }
-    }
-    if ((oldVersion == 1 && !cleanVisitUrls(db))
-        || (oldVersion < schemaVersion && !exec(db, QStringLiteral("PRAGMA user_version=%1").arg(schemaVersion)))) {
-        exec(db, "ROLLBACK");
-        return false;
     }
     if (!exec(db, "COMMIT")) {
         exec(db, "ROLLBACK");
